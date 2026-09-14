@@ -49,13 +49,22 @@ export async function dbGetProfessionalsByCategory(category: string): Promise<Pr
 /** Crée ou met à jour une fiche professionnelle (upsert par id). */
 export async function dbSaveProfessional(pro: Professional): Promise<void> {
   if (!isDbConfigured) return;
+  // ⚠️ Les colonnes ci-dessous sont NOT NULL en base (voir schema.sql) —
+  // elles ne servent qu'à l'indexation/au filtrage, la vraie source de
+  // vérité reste l'objet complet dans `data` (JSONB, sans contrainte).
+  // Un repli sur une chaîne vide plutôt que de laisser passer `undefined`
+  // évite un échec silencieux de l'écriture (contrainte NOT NULL violée)
+  // lorsque la fiche provient d'un import CSV incomplet ou d'un ajout
+  // manuel depuis l'admin sans tous les champs renseignés — l'écriture
+  // aboutissait alors uniquement en localStorage (même navigateur), sans
+  // jamais atteindre la base (donc invisible depuis un autre navigateur).
   await sql`
     INSERT INTO professionals (
       id, siren, siret, company_name, category, subcategory,
       city, postal_code, plan, status, claimed, lat, lng, email, phone, data, updated_at
     ) VALUES (
-      ${pro.id}, ${pro.siren}, ${pro.siret || null}, ${pro.companyName}, ${pro.category}, ${pro.subcategory || null},
-      ${pro.city}, ${pro.postalCode}, ${pro.plan}, ${pro.status}, ${Boolean((pro as any).claimed)},
+      ${pro.id}, ${pro.siren || ""}, ${pro.siret || null}, ${pro.companyName || ""}, ${pro.category || ""}, ${pro.subcategory || null},
+      ${pro.city || ""}, ${pro.postalCode || ""}, ${pro.plan || "standard"}, ${pro.status || "active"}, ${Boolean((pro as any).claimed)},
       ${pro.lat ?? null}, ${pro.lng ?? null}, ${pro.email || null}, ${pro.phone || null},
       ${JSON.stringify(pro)}::jsonb, now()
     )
