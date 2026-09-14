@@ -1268,7 +1268,7 @@ function InscriptionForm() {
                     {selectedPlan === "gold" ? "Gold" : "Premium"}
                   </span>
                 )}
-                Complétez votre fiche
+                Mots clés
               </h2>
               <p className="text-sm text-gray-500">Ces informations apparaîtront sur votre fiche publique. Toutes sont modifiables depuis votre tableau de bord.</p>
             </div>
@@ -1318,6 +1318,10 @@ function InscriptionForm() {
               </div>
             </div>
             )}
+
+            <h2 className="text-xl font-bold text-landes-pine mb-1 flex items-center gap-2 bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg">
+              Réseaux sociaux
+            </h2>
 
             {/* Réseaux sociaux */}
             <div className="pb-5 border-b border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
