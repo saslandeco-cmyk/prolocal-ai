@@ -191,9 +191,16 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
   const GAP     = 20;
   const VISIBLE = visible;
   const N       = pros.length;
+  // Pas assez de fiches pour remplir tous les emplacements visibles : le
+  // carrousel infini (avec clonage) n'a pas lieu d'être — le clonage
+  // répéterait alors les mêmes fiches côte à côte dans le même écran
+  // (ex: 3 professionnels Gold pour 3 emplacements visibles → les 3
+  // mêmes fiches apparaissaient dupliquées). On affiche simplement les
+  // fiches réelles, sans boucle ni défilement automatique.
+  const needsLoop = N > VISIBLE;
   // Clone: [lastN | pros | firstN] for infinite loop
-  const cloneCount = Math.min(VISIBLE, N);
-  const clones  = [...pros.slice(-cloneCount), ...pros, ...pros.slice(0, cloneCount)];
+  const cloneCount = needsLoop ? Math.min(VISIBLE, N) : 0;
+  const clones  = needsLoop ? [...pros.slice(-cloneCount), ...pros, ...pros.slice(0, cloneCount)] : pros;
   const START   = cloneCount; // real items begin here
 
   // Measure container → derive card width + nombre de cards visibles selon la largeur
@@ -236,7 +243,7 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
   }, [tabKey, cw, START, visible]);
 
   const step = useCallback((dir: 1 | -1) => {
-    if (moving || cw === 0) return;
+    if (moving || cw === 0 || !needsLoop) return;
     const next = pos + dir;
     const nextTx = (START + next) * (cw + GAP);
     setMoving(true);
@@ -248,16 +255,16 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
       setTx((START + wrapped) * (cw + GAP));
       setMoving(false);
     }, 400);
-  }, [moving, cw, pos, START, N]);
+  }, [moving, cw, pos, START, N, needsLoop]);
 
   const next = useCallback(() => step(1),  [step]);
   const prev = useCallback(() => step(-1), [step]);
 
   useEffect(() => {
-    if (paused || cw === 0) return;
+    if (paused || cw === 0 || !needsLoop) return;
     timer.current = setInterval(next, 3500);
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [paused, next, cw]);
+  }, [paused, next, cw, needsLoop]);
 
   const unit = cw + GAP;
 
@@ -301,15 +308,19 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
         )}
       </div>
 
-      {/* Arrows */}
-      <button onClick={prev}
-        className="absolute -left-2 sm:-left-5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 hover:bg-landes-forest hover:text-white hover:border-landes-forest text-gray-600 rounded-full flex items-center justify-center shadow-md transition-all">
-        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-      </button>
-      <button onClick={next}
-        className="absolute -right-2 sm:-right-5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 hover:bg-landes-forest hover:text-white hover:border-landes-forest text-gray-600 rounded-full flex items-center justify-center shadow-md transition-all">
-        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-      </button>
+      {/* Arrows — masquées s'il n'y a pas assez de fiches pour justifier un défilement */}
+      {needsLoop && (
+        <>
+          <button onClick={prev}
+            className="absolute -left-2 sm:-left-5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 hover:bg-landes-forest hover:text-white hover:border-landes-forest text-gray-600 rounded-full flex items-center justify-center shadow-md transition-all">
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button onClick={next}
+            className="absolute -right-2 sm:-right-5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 hover:bg-landes-forest hover:text-white hover:border-landes-forest text-gray-600 rounded-full flex items-center justify-center shadow-md transition-all">
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </>
+      )}
 
       {/* Dots */}
       <div className="flex justify-center gap-2 mt-6">
