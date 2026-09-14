@@ -1,34 +1,16 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MapPin, Phone, ArrowRight } from "lucide-react";
-import StarDisplay from "@/components/ui/StarDisplay";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { getProfessionalsWithImages } from "@/lib/storage";
-import { getBanner } from "@/lib/defaultBanners";
+import ProfessionalCard from "./ProfessionalCard";
 import type { Professional } from "@/types";
-import { getProRating } from "@/lib/reviewUtils";
-
-interface FeaturedPro {
-  id: string;
-  name: string;
-  job: string;
-  city: string;
-  phone: string;
-  desc: string;
-  badge?: "gold" | "premium";
-  from: string;
-  to: string;
-  emoji: string;
-  initials: string;
-  logo?: string;
-  banner?: string;
-}
 
 interface FeaturedTab {
   label: string;
   icon: string;
   category: string;
-  pros: FeaturedPro[];
+  pros: Professional[];
 }
 
 const FEATURED_TABS: FeaturedTab[] = [
@@ -101,84 +83,8 @@ const FEATURED_TABS: FeaturedTab[] = [
 ];
 
 // ── Card individuelle — même apparence que ProfessionalCard ──────
-function ProCard({ pro }: { pro: FeaturedPro }) {
-  const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
-  useEffect(() => {
-    const r = getProRating(pro.id);
-    if (r.count > 0) setRating(r);
-  }, [pro.id]);
-
-  const bannerSrc = pro.banner || null;
-
-  return (
-    <Link href={`/annuaire/${pro.id}`} className="block group">
-      <div className="card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col h-[400px]">
-
-        {/* Bannière + logo à cheval */}
-        <div className="w-full h-32 relative flex-shrink-0">
-          {bannerSrc
-            ? <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${pro.from} 0%, ${pro.to} 100%)` }} />
-          }
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          {/* Logo à cheval */}
-          <div className="absolute -bottom-7 left-5">
-            {pro.logo
-              ? <img src={pro.logo} alt={pro.name} className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md" />
-              : <div className="w-14 h-14 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white font-bold text-lg"
-                  style={{ background: `linear-gradient(135deg, ${pro.from} 0%, ${pro.to} 100%)` }}>
-                  {pro.initials}
-                </div>
-            }
-          </div>
-        </div>
-
-        {/* Contenu — hauteur fixe (h-[400px] ci-dessus) : toutes les cards du
-            diaporama ont donc exactement la même taille, quel que soit le
-            contenu disponible (avis, téléphone, longueur de description). */}
-        <div className="px-5 pt-10 pb-5 flex flex-col flex-1 min-h-0">
-          <h3 className="font-bold text-landes-pine text-lg truncate group-hover:text-landes-forest transition-colors">
-            {pro.name}
-          </h3>
-          <div className="flex items-center gap-2 flex-wrap mt-0.5 min-h-[22px]">
-            <p className="text-sm text-landes-sage font-medium">{pro.job}</p>
-            {rating && rating.avg > 0 && <StarDisplay rating={rating.avg} count={rating.count} size="xs" />}
-          </div>
-          <p className="mt-2 text-sm text-gray-600 line-clamp-2">{pro.desc}</p>
-
-          <div className="mt-3 pt-3 border-t border-gray-100 mt-auto">
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-5 h-5 bg-landes-forest/10 rounded flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-3 h-3 text-landes-forest" />
-                </div>
-                <span className="text-xs font-semibold text-landes-pine truncate">{pro.city}</span>
-              </div>
-              {pro.phone
-                ? <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-5 h-5 bg-landes-sage/10 rounded flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-3 h-3 text-landes-sage" />
-                    </div>
-                    <span className="text-xs font-semibold text-landes-pine truncate">{pro.phone}</span>
-                  </div>
-                : <div />
-              }
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-center justify-end">
-            <span className="text-xs text-landes-forest font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              Voir la fiche <ArrowRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 // ── Carrousel responsive : 1 (mobile) / 2 (tablette) / 3 (desktop) cards visibles ────────────
-function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) {
+function ProCarousel({ pros, tabKey }: { pros: Professional[]; tabKey: number }) {
   const wrapRef   = useRef<HTMLDivElement>(null);
   const [cw, setCw] = useState(0);          // card width in px
   const [visible, setVisible] = useState(3); // nombre de cards visibles (responsive)
@@ -288,8 +194,8 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
             }}
           >
             {clones.map((pro, i) => (
-              <div key={`${tabKey}-${i}`} style={{ width: cw, flexShrink: 0 }}>
-                <ProCard pro={pro} />
+              <div key={`${tabKey}-${i}`} style={{ width: cw, flexShrink: 0 }} className="h-full flex">
+                <ProfessionalCard pro={pro} />
               </div>
             ))}
           </div>
@@ -300,8 +206,8 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
              mode carrousel dès que `cw` est mesuré (voir useEffect ci-dessus). */
           <div className="flex" style={{ gap: GAP }}>
             {pros.slice(0, visible).map((pro, i) => (
-              <div key={`${tabKey}-fallback-${i}`} style={{ flex: `0 0 calc((100% - ${GAP * (visible - 1)}px) / ${visible})` }}>
-                <ProCard pro={pro} />
+              <div key={`${tabKey}-fallback-${i}`} style={{ flex: `0 0 calc((100% - ${GAP * (visible - 1)}px) / ${visible})` }} className="h-full flex">
+                <ProfessionalCard pro={pro} />
               </div>
             ))}
           </div>
@@ -344,26 +250,6 @@ function ProCarousel({ pros, tabKey }: { pros: FeaturedPro[]; tabKey: number }) 
   );
 }
 
-// Convertit un pro réel en FeaturedPro
-function proToFeatured(p: Professional): FeaturedPro {
-  const initials = p.companyName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-  return {
-    id:      p.id,
-    name:    p.companyName,
-    job:     p.activityTitle || p.category,
-    city:    p.city,
-    phone:   p.phone,
-    desc:    p.description.replace(/<[^>]*>/g, " ").trim().slice(0, 160),
-    badge:   "gold",
-    from:    "#1a3a2a",
-    to:      "#2d5a3d",
-    emoji:   "⭐",
-    initials,
-    logo:    p.logo || undefined,
-    banner:  getBanner(p.banner, p.category) || undefined,
-  };
-}
-
 // ── Section principale ─────────────────────────────────────────
 export default function FeaturedProfessionals() {
   const [activeTab, setActiveTab] = useState(0);
@@ -378,7 +264,7 @@ export default function FeaturedProfessionals() {
 
       const updated = FEATURED_TABS.map(tab => ({
         ...tab,
-        pros: realPros.filter(p => p.category === tab.category).map(proToFeatured),
+        pros: realPros.filter(p => p.category === tab.category),
       }));
 
       setMergedTabs(updated);
