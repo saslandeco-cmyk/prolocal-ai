@@ -39,7 +39,8 @@ export interface Professional {
     effectiveDate: string; // ISO — lendemain de la date de renouvellement de l'ancienne formule
     newSubscriptionId?: string; // abonnement de la nouvelle formule, déjà créé mais en période d'essai jusqu'à effectiveDate
   };
-  adBannerImage?: string;
+  // L'option "Encart publicitaire ciblé" utilise la bannière de la fiche
+  // du professionnel (pro.banner) — pas d'image dédiée séparée.
   seoKeywords?: string[];
   /**
    * Identifiant "Place ID" Google Business Profile de l'établissement
