@@ -153,10 +153,12 @@ export interface DayHours {
   // Journée continue
   continuousOpen?:  string;
   continuousClose?: string;
-  // Matin
+  // Matin — morningEnabled permet de n'activer que le matin (sans après-midi)
+  morningEnabled?: boolean;
   morningOpen?:  string;
   morningClose?: string;
-  // Après-midi
+  // Après-midi — afternoonEnabled permet de n'activer que l'après-midi (sans matin)
+  afternoonEnabled?: boolean;
   afternoonOpen?:  string;
   afternoonClose?: string;
   // Legacy simple (kept for backward compat)
@@ -381,9 +383,9 @@ export function formatDayHours(h: DayHours): string {
   if (h.mode === "continuous" && h.continuousOpen && h.continuousClose)
     return `${h.continuousOpen}–${h.continuousClose}`;
   const parts: string[] = [];
-  if (h.morningOpen && h.morningClose)
+  if ((h.morningEnabled ?? true) && h.morningOpen && h.morningClose)
     parts.push(`${h.morningOpen}–${h.morningClose}`);
-  if (h.afternoonOpen && h.afternoonClose)
+  if ((h.afternoonEnabled ?? true) && h.afternoonOpen && h.afternoonClose)
     parts.push(`${h.afternoonOpen}–${h.afternoonClose}`);
   // legacy
   if (!parts.length && h.open && h.close)
