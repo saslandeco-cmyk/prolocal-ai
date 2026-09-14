@@ -415,6 +415,11 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
           {/* LEFT */}
           <div className="lg:col-span-2 space-y-6">
 
+            {/* ── Galerie photos — juste au-dessus de "À propos" ── */}
+            {pro.photos && pro.photos.length > 0 && (
+              <PhotoGallery photos={pro.photos} companyName={pro.companyName} />
+            )}
+
             {/* About — si la description est vide (ex: import CSV sans description), un texte de
                 remplacement explique la situation dans la zone "À propos" elle-même ; la carte
                 "Revendiquer cette fiche" (si non revendiquée) s'affiche juste en dessous. */}
@@ -469,11 +474,6 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
             <div className="hidden lg:block">
               <ReviewSection proId={pro.id} companyName={pro.companyName} formOnly />
             </div>
-
-            {/* ── Galerie photos ── */}
-            {pro.photos && pro.photos.length > 0 && (
-              <PhotoGallery photos={pro.photos} companyName={pro.companyName} />
-            )}
 
           </div>
 
