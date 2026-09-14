@@ -144,9 +144,47 @@ export function getProfessionals(): Professional[] {
   return getRawProfessionals();
 }
 
+/**
+ * Retourne tous les professionnels avec leurs images, en donnant la
+ * priorité à la base de données (accessible depuis n'importe quel
+ * navigateur/appareil) — avec repli et fusion sur les données locales
+ * pour ne jamais rien perdre.
+ *
+ * ⚠️ Correctif important : cette fonction est utilisée par TOUTES les
+ * pages publiques (catégories, sous-catégories, villes, recherche,
+ * carrousel d'accueil...). Avant ce correctif, elle ne lisait QUE le
+ * localStorage — une fiche fraîchement importée en CSV ou ajoutée
+ * manuellement depuis l'admin (et bien répliquée en base) restait donc
+ * invisible sur toutes ces pages dans un nouveau navigateur/fenêtre
+ * privée, sans la moindre erreur (ce n'était pas un échec, juste une
+ * lecture qui n'allait jamais chercher la base).
+ */
 export async function getProfessionalsWithImages(): Promise<Professional[]> {
-  const list = getRawProfessionals();
-  return Promise.all(list.map(rehydrateAsync));
+  const local = getRawProfessionals();
+
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/db/professionals");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.professionals) && data.professionals.length > 0) {
+          // Fusion : base en priorité (source de vérité cross-appareil),
+          // complétée par les fiches uniquement locales (pas encore
+          // répliquées en base — jamais de perte de données pour autant).
+          const dbIds = new Set(data.professionals.map((p: Professional) => p.id));
+          const localOnly = await Promise.all(
+            local.filter(p => !dbIds.has(p.id)).map(rehydrateAsync)
+          );
+          return [...data.professionals, ...localOnly];
+        }
+      }
+    } catch {
+      // Réseau indisponible ou base non configurée : repli silencieux
+      // sur le localStorage ci-dessous, comportement inchangé.
+    }
+  }
+
+  return Promise.all(local.map(rehydrateAsync));
 }
 
 export function saveProfessional(pro: Professional): void {
