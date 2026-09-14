@@ -219,6 +219,7 @@ export const PLANS: Plan[] = [
       "Affichage prioritaire au niveau de tout le département",
       "Badge recommandé",
       "Affichage de 3 services",
+      "Liens vers 3 réseaux sociaux",
       "Support prioritaire",
       "Statistiques de visite",
     ],
