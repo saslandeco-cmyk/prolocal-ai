@@ -1004,7 +1004,7 @@ function InscriptionForm() {
         <div className="space-y-6">
           <div className="card p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-landes-pine mb-1">Paiement</h2>
+              <h2 className="text-xl font-bold text-landes-pine mb-1 flex items-center gap-2 bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg">Paiement</h2>
               <p className="text-sm text-gray-500">Récapitulatif de votre commande et choix du règlement.</p>
             </div>
 
@@ -1035,7 +1035,7 @@ function InscriptionForm() {
 
             {/* Informations de facturation — préremplies depuis l'inscription, modifiables */}
             <div>
-              <p className="label mb-2">Informations de facturation</p>
+              <p className="text-xl font-bold text-landes-pine mb-1 flex items-center gap-2 bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg">Informations de facturation</p>
               <div className="border border-gray-100 rounded-xl p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
