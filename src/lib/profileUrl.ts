@@ -17,7 +17,7 @@ export function slugify(text: string): string {
 // même si l'intitulé de la catégorie est légèrement modifié un jour).
 export const CATEGORY_SLUGS: Record<string, string> = {
   "Alimentation & Épicerie": "alimentation",
-  "Artisanat & Métiers d'art": "artisanat-metiers-dart",
+  "Artisanat & Métiers d'art": "artisanat",
   "Bâtiment & Travaux": "batiment",
   "Beauté & Bien-être": "beaute",
   "Commerce & Vente": "commerce",
