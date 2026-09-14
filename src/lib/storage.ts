@@ -190,10 +190,18 @@ export function mirrorProfessionalToDb(pro: Professional): void {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(pro),
-  }).catch(() => {
-    // Silencieux : la base peut ne pas être configurée, ou temporairement
-    // indisponible — le site continue de fonctionner normalement via
-    // localStorage dans tous les cas.
+  }).then(async (res) => {
+    // Ne bloque jamais l'expérience, mais rend l'échec visible en console
+    // (auparavant totalement silencieux — une fiche pouvait sembler
+    // enregistrée avec succès en local tout en échouant en base, sans
+    // aucun moyen de le savoir, notamment pour un import CSV ou un ajout
+    // manuel depuis l'admin avec des champs incomplets).
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.error(`[db-mirror] Échec de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, body.error || res.status);
+    }
+  }).catch((err) => {
+    console.error(`[db-mirror] Erreur réseau lors de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, err);
   });
 }
 
