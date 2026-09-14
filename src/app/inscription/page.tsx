@@ -17,7 +17,7 @@ import StripePaymentForm from "@/components/professional/StripePaymentForm";
 import BannerCropper from "@/components/ui/BannerCropper";
 
 type PlanType = "standard" | "premium" | "gold";
-type Step = 1 | 2 | "pub" | "seo" | 3 | 4;
+type Step = 1 | 2 | "seo" | 3 | 4;
 
 const MAX_PHOTOS = 5;
 
@@ -271,7 +271,6 @@ function InscriptionForm() {
   const [sirenMsg,     setSirenMsg]     = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [pubImage, setPubImage] = useState<string>("");
   const [seoKeywords, setSeoKeywords] = useState<string[]>(["", ""]);
   const [paymentChoice, setPaymentChoice] = useState<"card" | "cheque">("card");
   const [stripePaid, setStripePaid] = useState(false);
@@ -513,9 +512,12 @@ function InscriptionForm() {
     }
   };
 
-  // Étapes dédiées aux options complémentaires sélectionnées (dans l'ordre pub → seo)
+  // Étapes dédiées aux options complémentaires sélectionnées — l'étape de
+  // téléchargement de bannière pour "Encart publicitaire ciblé" a été
+  // retirée : le professionnel la téléchargera plus tard depuis son
+  // tableau de bord (voir handleSubmit, adBannerImage n'est plus collecté ici).
   const optionSteps = useMemo(
-    () => (["pub", "seo"] as const).filter(id => selectedOptions.includes(id)),
+    () => (["seo"] as const).filter(id => selectedOptions.includes(id)),
     [selectedOptions]
   );
 
@@ -598,7 +600,8 @@ function InscriptionForm() {
       paymentMethod: needsPayment ? paymentChoice : undefined,
       stripeCustomerId: stripeCustomerId || claimingPro?.stripeCustomerId || undefined,
       stripeSubscriptionId: stripeSubscriptionId || claimingPro?.stripeSubscriptionId || undefined,
-      adBannerImage: selectedOptions.includes("pub") && pubImage ? pubImage : undefined,
+      // L'option "Encart publicitaire ciblé" utilise la bannière de la
+      // fiche (pro.banner) — aucune image dédiée séparée à collecter.
       seoKeywords: selectedOptions.includes("seo") && seoKeywords.filter(k => k.trim()).length > 0
         ? seoKeywords.filter(k => k.trim())
         : undefined,
@@ -1208,31 +1211,6 @@ function InscriptionForm() {
               </button>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── STEP pub : Encart publicitaire ciblé ── */}
-      {step === "pub" && (
-        <div className="space-y-6">
-          <div className="card p-8 space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-landes-pine mb-1 bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg inline-block">Encart publicitaire ciblé</h2>
-              <p className="text-sm text-gray-500 mt-2">Téléchargez l&apos;image de votre bannière publicitaire, affichée sur la page de votre catégorie pendant 1 mois.</p>
-            </div>
-            <ImageUploader label="Bannière publicitaire" hint="Format JPG ou PNG · 1200 × 400 px recommandé" value={pubImage} onChange={setPubImage} aspect="banner" />
-            <p className="text-xs text-gray-400">Si vous ne disposez pas de votre bannière, vous pourrez la télécharger ultérieurement depuis votre tableau de bord.</p>
-          </div>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => goPrevFromSequence("pub")} className="btn-secondary flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Retour
-            </button>
-            <button type="button" onClick={() => goNextFromSequence("pub")} disabled={loading} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              {isLastStepInSequence("pub")
-                ? (loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Finalisation…</> : <>Finaliser l&apos;inscription <ArrowRight className="w-4 h-4" /></>)
-                : <>Suivant <ArrowRight className="w-4 h-4" /></>
-              }
-            </button>
-          </div>
         </div>
       )}
 
