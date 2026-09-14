@@ -58,7 +58,12 @@ function ImageUploader({
     e.target.value = "";
   };
 
-  const h = aspect === "banner" ? "h-28" : "h-28 w-28";
+  // Ratio identique à l'affichage réel en front-office (fiche publique :
+  // bannière pleine largeur, h-44/h-56 — soit environ 2.8:1) et au cadre
+  // de recadrage (BannerCropper, 1400×500). Utiliser une hauteur fixe
+  // indépendante de la largeur du conteneur donnait un aperçu qui ne
+  // représentait pas fidèlement le rendu final.
+  const h = aspect === "banner" ? "aspect-[2.8/1]" : "h-28 w-28";
   const r = aspect === "banner" ? "rounded-xl w-full" : "rounded-2xl";
 
   return (
