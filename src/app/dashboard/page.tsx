@@ -60,6 +60,7 @@ function DashboardContent() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [confirmAction, setConfirmAction] = useState<"suspend" | "delete" | null>(null);
   const [planChanging, setPlanChanging] = useState(false);
+  const [planRenewalDate, setPlanRenewalDate] = useState<string | null>(null);
   const [planOrderTarget, setPlanOrderTarget] = useState<string | null>(null);
   const [planOrderClientSecret, setPlanOrderClientSecret] = useState<string | null>(null);
   const [planOrderCustomerId, setPlanOrderCustomerId] = useState<string | null>(null);
@@ -68,6 +69,30 @@ function DashboardContent() {
   const [planOrderDone, setPlanOrderDone] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
   const subscriptionManagerRef = useRef<SubscriptionManagerHandle>(null);
+
+  // Date de renouvellement de la formule active — affichée directement sur
+  // sa card dans l'onglet "Formule" (en complément du badge "Votre formule
+  // actuelle" déjà existant).
+  useEffect(() => {
+    if (activeTab !== "plan" || !pro || pro.plan === "standard" || !(pro as any).stripeCustomerId) {
+      setPlanRenewalDate(null);
+      return;
+    }
+    const planItemName = pro.plan === "gold" ? "Formule Gold" : "Formule Premium";
+    fetch(`/api/subscriptions/list?customerId=${encodeURIComponent((pro as any).stripeCustomerId)}`)
+      .then(res => res.json())
+      .then(data => {
+        const subs = (data.subscriptions || []).filter((s: any) => s.status === "active" || s.status === "trialing");
+        for (const sub of subs) {
+          if (sub.items?.some((it: any) => it.name === planItemName)) {
+            setPlanRenewalDate(new Date(sub.currentPeriodEnd * 1000).toLocaleDateString("fr-FR"));
+            return;
+          }
+        }
+        setPlanRenewalDate(null);
+      })
+      .catch(() => setPlanRenewalDate(null));
+  }, [activeTab, pro?.plan, (pro as any)?.stripeCustomerId]);
   const [autoEditProfile, setAutoEditProfile] = useState(false);
   const [photoSaved, setPhotoSaved] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
@@ -1317,6 +1342,11 @@ function DashboardContent() {
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-landes-forest text-white text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
                       Votre formule actuelle
                     </div>
+                  )}
+                  {pro.plan === plan.id && planRenewalDate && !(pro as any).pendingPlanChange && (
+                    <p className="flex items-center justify-center gap-1.5 text-xs text-landes-forest bg-landes-forest/8 border border-landes-forest/20 rounded-lg px-3 py-1.5 mb-3">
+                      <Calendar className="w-3.5 h-3.5 flex-shrink-0" /> Date de renouvellement : <strong>{planRenewalDate}</strong>
+                    </p>
                   )}
                   {(pro as any).pendingPlanChange?.targetPlan === plan.id && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
