@@ -50,15 +50,24 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
     return { totalFetched: 0, totalInserted: 0, totalUpdated: 0, totalUnchanged: 0, totalGeocoded: 0, codesApe: [], durationMs: Date.now() - start };
   }
 
-  const logId = await startSyncLog(codes);
+  let logId: number | null = null;
   let inserted = 0, updated = 0, unchanged = 0, geocoded = 0;
 
   try {
+    // Déplacé à l'intérieur du try : si l'ouverture du journal échoue
+    // (ex: problème réseau ponctuel avec la base), la synchronisation
+    // continue quand même plutôt que d'échouer entièrement avant même
+    // d'avoir tenté d'enregistrer la moindre entreprise.
+    logId = await startSyncLog(codes).catch(() => null);
+
     // Un appel paginé par code APE, pour rester dans des lots raisonnables
     // et pouvoir identifier facilement quel code APE pose problème en cas
     // d'erreur partielle.
     for (const code of codes) {
-      const etablissements = await fetchAllEtablissements([code], "40");
+      const etablissements = await fetchAllEtablissements([code], "40").catch((err) => {
+        console.error(`[sync] Échec de récupération pour le code APE ${code}:`, err);
+        return [];
+      });
 
       for (const etab of etablissements) {
         // Géocode uniquement si l'API n'a pas déjà fourni de coordonnées
@@ -75,9 +84,13 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
           await new Promise(r => setTimeout(r, 1000));
         }
 
-        const result = await upsertEtablissement(etab);
+        const result = await upsertEtablissement(etab).catch((err) => {
+          console.error(`[sync] Échec de l'enregistrement de ${etab.siret} (${etab.denomination}):`, err);
+          return null;
+        });
+        if (!result) continue; // un échec isolé ne bloque jamais le reste du lot
         if (result.status === "inserted") inserted++;
-        else if (result.status === "updated") { updated++; await logHistorique(etab.siret, result.changes); }
+        else if (result.status === "updated") { updated++; await logHistorique(etab.siret, result.changes).catch(() => {}); }
         else unchanged++;
       }
     }

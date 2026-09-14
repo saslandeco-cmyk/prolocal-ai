@@ -87,8 +87,8 @@ export async function deleteEntreprise(siret: string): Promise<boolean> {
 /** Supprime plusieurs établissements en une fois (sélection en masse depuis l'admin). */
 export async function deleteEntreprises(sirets: string[]): Promise<number> {
   if (!isDbConfigured || sirets.length === 0) return 0;
-  await sql`DELETE FROM entreprises_sirene_historique WHERE siret = ANY(${sirets})`;
-  const { rows } = await sql`DELETE FROM entreprises_sirene WHERE siret = ANY(${sirets}) RETURNING siret`;
+  await sql`DELETE FROM entreprises_sirene_historique WHERE siret = ANY(${sirets}::text[])`;
+  const { rows } = await sql`DELETE FROM entreprises_sirene WHERE siret = ANY(${sirets}::text[]) RETURNING siret`;
   return rows.length;
 }
 
@@ -96,7 +96,7 @@ export async function deleteEntreprises(sirets: string[]): Promise<number> {
 export async function getEntreprisesBySirets(sirets: string[]): Promise<EntrepriseRow[]> {
   if (!isDbConfigured || sirets.length === 0) return [];
   const { rows } = await sql`
-    SELECT * FROM entreprises_sirene WHERE siret = ANY(${sirets}) ORDER BY commune ASC NULLS LAST, denomination ASC NULLS LAST
+    SELECT * FROM entreprises_sirene WHERE siret = ANY(${sirets}::text[]) ORDER BY commune ASC NULLS LAST, denomination ASC NULLS LAST
   `;
   return rows.map(rowToEntreprise);
 }
@@ -240,7 +240,7 @@ export async function searchEntreprises(params: SearchEntreprisesParams): Promis
     SELECT COUNT(*)::int AS count FROM entreprises_sirene
     WHERE etat_administratif = 'A'
       AND (${q}::text IS NULL OR to_tsvector('french', coalesce(denomination, '') || ' ' || coalesce(enseigne, '')) @@ plainto_tsquery('french', ${q}))
-      AND (${codesApe}::text[] IS NULL OR code_ape = ANY(${codesApe}))
+      AND (${codesApe}::text[] IS NULL OR code_ape = ANY(${codesApe}::text[]))
       AND (${commune}::text IS NULL OR commune ILIKE ${commune ? `%${commune}%` : null})
       AND (${codePostal}::text IS NULL OR code_postal = ${codePostal})
   `;
@@ -250,7 +250,7 @@ export async function searchEntreprises(params: SearchEntreprisesParams): Promis
     SELECT * FROM entreprises_sirene
     WHERE etat_administratif = 'A'
       AND (${q}::text IS NULL OR to_tsvector('french', coalesce(denomination, '') || ' ' || coalesce(enseigne, '')) @@ plainto_tsquery('french', ${q}))
-      AND (${codesApe}::text[] IS NULL OR code_ape = ANY(${codesApe}))
+      AND (${codesApe}::text[] IS NULL OR code_ape = ANY(${codesApe}::text[]))
       AND (${commune}::text IS NULL OR commune ILIKE ${commune ? `%${commune}%` : null})
       AND (${codePostal}::text IS NULL OR code_postal = ${codePostal})
     ORDER BY denomination ASC NULLS LAST
@@ -348,7 +348,7 @@ export async function removeWatchedApeCode(codeApe: string): Promise<void> {
 export async function startSyncLog(codesApe: string[]): Promise<number | null> {
   if (!isDbConfigured) return null;
   const { rows } = await sql`
-    INSERT INTO sirene_sync_log (codes_ape, status) VALUES (${codesApe}, 'running')
+    INSERT INTO sirene_sync_log (codes_ape, status) VALUES (${codesApe}::text[], 'running')
     RETURNING id
   `;
   return rows[0]?.id ?? null;
