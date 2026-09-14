@@ -44,9 +44,9 @@ function isOpenNow(pro: Professional): { open: boolean; label: string } {
 
   if (hours.mode === "continuous" && inRange(hours.continuousOpen, hours.continuousClose))
     return { open: true, label: `Ouvert · Ferme à ${hours.continuousClose}` };
-  if (inRange(hours.morningOpen, hours.morningClose))
+  if ((hours.morningEnabled ?? true) && inRange(hours.morningOpen, hours.morningClose))
     return { open: true, label: `Ouvert · Ferme à ${hours.morningClose}` };
-  if (inRange(hours.afternoonOpen, hours.afternoonClose))
+  if ((hours.afternoonEnabled ?? true) && inRange(hours.afternoonOpen, hours.afternoonClose))
     return { open: true, label: `Ouvert · Ferme à ${hours.afternoonClose}` };
   // legacy
   if (inRange(hours.open, hours.close))
