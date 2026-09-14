@@ -157,7 +157,12 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
             name: categoryLabel ? `${categoryLabel} à ${cityMeta.name}` : `Professionnels à ${cityMeta.name}`,
             url,
             isPartOf: { "@type": "WebSite", name: "Prolocal-Landes", url: baseUrl },
-            about: { "@type": "Place", name: cityMeta.name, address: { "@type": "PostalAddress", addressLocality: cityMeta.name, postalCode: cityMeta.postalCode, addressCountry: "FR" } },
+            about: {
+              "@type": "Place",
+              name: cityMeta.name,
+              address: { "@type": "PostalAddress", addressLocality: cityMeta.name, postalCode: cityMeta.postalCode, addressCountry: "FR" },
+              geo: { "@type": "GeoCoordinates", latitude: cityMeta.lat, longitude: cityMeta.lng },
+            },
           },
           {
             // Questions génériques, cohérentes avec le contenu affiché avant
@@ -259,7 +264,10 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
               postalCode: pro.postalCode,
               addressCountry: "FR",
             },
-            ...(pro.lat && pro.lng ? { geo: { "@type": "GeoCoordinates", latitude: pro.lat, longitude: pro.lng } } : {}),
+            ...(pro.lat && pro.lng ? {
+              geo: { "@type": "GeoCoordinates", latitude: pro.lat, longitude: pro.lng },
+              hasMap: `https://www.google.com/maps/search/?api=1&query=${pro.lat},${pro.lng}`,
+            } : {}),
             ...(openingHoursSpecification && openingHoursSpecification.length > 0 ? { openingHoursSpecification } : {}),
             ...(sameAs.length > 0 ? { sameAs } : {}),
             areaServed: "Landes (40), France",
