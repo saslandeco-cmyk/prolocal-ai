@@ -667,7 +667,11 @@ function DashboardContent() {
                 <label className="label">Bannière (image de couverture)</label>
                 <p className="text-xs text-gray-400 mb-2">Dimensions recommandées : <span className="font-medium text-gray-500">1 400 × 467 px</span> · Format paysage · JPG ou PNG</p>
                 <div className="mt-1 space-y-2">
-                  <div className="h-24 rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+                  {/* Ratio identique à l'affichage réel en front-office
+                      (fiche publique : bannière pleine largeur, h-44/h-56 —
+                      soit environ 2.8:1) et au cadre de recadrage
+                      (BannerCropper, 1400×500), pour un aperçu fidèle. */}
+                  <div className="aspect-[2.8/1] w-full rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
                     {(() => {
                       const src = getBanner(form.banner as string | undefined, pro.category);
                       return src
