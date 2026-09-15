@@ -195,7 +195,7 @@ function ProCarousel({ pros, tabKey }: { pros: Professional[]; tabKey: number })
           >
             {clones.map((pro, i) => (
               <div key={`${tabKey}-${i}`} style={{ width: cw, flexShrink: 0 }} className="h-full flex">
-                <ProfessionalCard pro={pro} />
+                <ProfessionalCard pro={pro} hideGoldRing />
               </div>
             ))}
           </div>
@@ -207,7 +207,7 @@ function ProCarousel({ pros, tabKey }: { pros: Professional[]; tabKey: number })
           <div className="flex" style={{ gap: GAP }}>
             {pros.slice(0, visible).map((pro, i) => (
               <div key={`${tabKey}-fallback-${i}`} style={{ flex: `0 0 calc((100% - ${GAP * (visible - 1)}px) / ${visible})` }} className="h-full flex">
-                <ProfessionalCard pro={pro} />
+                <ProfessionalCard pro={pro} hideGoldRing />
               </div>
             ))}
           </div>

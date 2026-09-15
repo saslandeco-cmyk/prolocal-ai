@@ -9,20 +9,6 @@ import { Professional } from "@/types";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
 
-// Pros de démo géolocalisés pour peupler la carte
-const DEMO_PROS: Professional[] = [
-  { id: "d1",  companyName: "Boulangerie des Pins",    category: "Alimentation & Épicerie",      city: "Mont-de-Marsan", postalCode: "40000", address: "12 rue de la Paix",           lat: 43.8940, lng: -0.5020, plan: "gold",     status: "active", siren: "000000001", legalForm: "SARL",   description: "", firstName: "Jean",     lastName: "Martin",   email: "d1@demo.fr", phone: "05 58 11 22 33", createdAt: "", updatedAt: "" },
-  { id: "d2",  companyName: "Charpente Landaise",      category: "Bâtiment & Travaux",            city: "Dax",            postalCode: "40100", address: "5 avenue du Bois",            lat: 43.7080, lng: -1.0550, plan: "premium",  status: "active", siren: "000000002", legalForm: "SAS",    description: "", firstName: "Paul",     lastName: "Dupont",   email: "d2@demo.fr", phone: "05 58 22 33 44", createdAt: "", updatedAt: "" },
-  { id: "d3",  companyName: "Surf School Biscarrosse", category: "Sport & Fitness",               city: "Biscarrosse",    postalCode: "40600", address: "1 front de mer",              lat: 44.3970, lng: -1.1650, plan: "gold",     status: "active", siren: "000000003", legalForm: "EURL",   description: "", firstName: "Marc",     lastName: "Surfer",   email: "d3@demo.fr", phone: "05 58 33 44 55", createdAt: "", updatedAt: "" },
-  { id: "d5",  companyName: "Spa des Thermes",         category: "Beauté & Bien-être",            city: "Dax",            postalCode: "40100", address: "3 rue des Thermes",           lat: 43.7120, lng: -1.0500, plan: "gold",     status: "active", siren: "000000005", legalForm: "SAS",    description: "", firstName: "Claire",   lastName: "Zen",      email: "d5@demo.fr", phone: "05 58 55 66 77", createdAt: "", updatedAt: "" },
-  { id: "d7",  companyName: "Web Landes",              category: "Informatique & Numérique",      city: "Mont-de-Marsan", postalCode: "40000", address: "15 rue du Numérique",         lat: 43.8960, lng: -0.5040, plan: "standard", status: "active", siren: "000000007", legalForm: "SASU",   description: "", firstName: "Alex",     lastName: "Dev",      email: "d7@demo.fr", phone: "05 58 66 77 88", createdAt: "", updatedAt: "" },
-  { id: "d8",  companyName: "Poterie Landaise",        category: "Artisanat & Métiers d'art",     city: "Dax",            postalCode: "40100", address: "2 impasse des Arts",          lat: 43.7060, lng: -1.0580, plan: "premium",  status: "active", siren: "000000008", legalForm: "EI",     description: "", firstName: "Anne",     lastName: "Potter",   email: "d8@demo.fr", phone: "05 58 77 88 99", createdAt: "", updatedAt: "" },
-  { id: "d9",  companyName: "Ferme des Landes",        category: "Culture & Élevage",          city: "Hagetmau",       postalCode: "40700", address: "Chemin de la Ferme",          lat: 43.6429, lng: -0.5910, plan: "standard", status: "active", siren: "000000009", legalForm: "EI",     description: "", firstName: "Louis",    lastName: "Farmer",   email: "d9@demo.fr", phone: "05 58 88 99 00", createdAt: "", updatedAt: "" },
-  { id: "d10", companyName: "Taxi Landes Express",     category: "Transport de personnes",        city: "Capbreton",      postalCode: "40130", address: "Place de la Gare",            lat: 43.6640, lng: -1.4450, plan: "premium",  status: "active", siren: "000000010", legalForm: "EI",     description: "", firstName: "René",     lastName: "Taxi",     email: "d10@demo.fr", phone: "05 58 99 00 11", createdAt: "", updatedAt: "" },
-  { id: "d14", companyName: "Landes Immobilier",       category: "Immobilier",                   city: "Mont-de-Marsan", postalCode: "40000", address: "15 rue Saint-Pierre",         lat: 43.8914, lng: -0.5006, plan: "gold",     status: "active", siren: "000000014", legalForm: "SARL",   description: "", firstName: "Frédéric", lastName: "Immo",     email: "d14@demo.fr", phone: "05 58 11 22 33", createdAt: "", updatedAt: "" },
-  { id: "d15", companyName: "Vélo Évasion Landes",     category: "Sport & Fitness",               city: "Mimizan",        postalCode: "40200", address: "5 Route des Pistes",          lat: 44.2050, lng: -1.2350, plan: "premium",  status: "active", siren: "000000015", legalForm: "EURL",   description: "", firstName: "Pierre",   lastName: "Vélo",     email: "d15@demo.fr", phone: "05 58 33 44 55", createdAt: "", updatedAt: "" },
-];
-
 export default function FullWidthMap() {
   const router = useRouter();
   const [pros, setPros]   = useState<Professional[]>([]);
@@ -30,9 +16,7 @@ export default function FullWidthMap() {
 
   useEffect(() => {
     const real = getProfessionals().filter(p => p.status === "active" && p.lat && p.lng);
-    const merged = [...real];
-    DEMO_PROS.forEach(d => { if (!merged.find(p => p.id === d.id)) merged.push(d); });
-    setPros(merged);
+    setPros(real);
     setLoaded(true);
   }, []);
 

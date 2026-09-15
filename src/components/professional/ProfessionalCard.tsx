@@ -11,9 +11,10 @@ import { buildProfileUrl } from "@/lib/profileUrl";
 
 interface ProfessionalCardProps {
   pro: Professional;
+  hideGoldRing?: boolean;
 }
 
-export default function ProfessionalCard({ pro: propPro }: ProfessionalCardProps) {
+export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }: ProfessionalCardProps) {
   const [pro, setPro] = useState<Professional>(propPro);
   const initials = pro.companyName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
@@ -36,7 +37,7 @@ export default function ProfessionalCard({ pro: propPro }: ProfessionalCardProps
     <Link
       href={buildProfileUrl(pro)}
       className={`card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 block group overflow-hidden ${
-        pro.plan === "gold" ? "ring-2 ring-amber-400/70" : ""
+        pro.plan === "gold" && !hideGoldRing ? "ring-2 ring-amber-400/70" : ""
       }`}
     >
       {/* Bannière + logo à cheval */}

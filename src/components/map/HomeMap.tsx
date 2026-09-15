@@ -9,17 +9,6 @@ import { Professional } from "@/types";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
 
-const DEMO_PROS: Professional[] = [
-  { id: "d1",  companyName: "Boulangerie des Pins",  category: "Alimentation & Épicerie",      city: "Mont-de-Marsan", lat: 43.8940, lng: -0.5020, plan: "gold",     status: "active", siren: "123456789", legalForm: "SARL",   description: "", firstName: "Jean",     lastName: "Martin",  email: "boulangerie@demo.fr",  phone: "05 58 11 22 33", address: "12 rue de la Paix",        postalCode: "40000", createdAt: "", updatedAt: "" },
-  { id: "d2",  companyName: "Charpente Landaise",    category: "Bâtiment & Travaux",            city: "Dax",            lat: 43.7080, lng: -1.0550, plan: "premium",  status: "active", siren: "234567890", legalForm: "SAS",    description: "", firstName: "Paul",     lastName: "Dupont",  email: "charpente@demo.fr",    phone: "05 58 22 33 44", address: "5 avenue du Bois",         postalCode: "40100", createdAt: "", updatedAt: "" },
-  { id: "d3",  companyName: "Surf School Bisca",     category: "Sport & Fitness",               city: "Biscarrosse",    lat: 44.3970, lng: -1.1650, plan: "gold",     status: "active", siren: "345678901", legalForm: "EURL",   description: "", firstName: "Marc",     lastName: "Surfer",  email: "surf@demo.fr",         phone: "05 58 33 44 55", address: "1 front de mer",           postalCode: "40600", createdAt: "", updatedAt: "" },
-  { id: "d5",  companyName: "Spa des Thermes",       category: "Beauté & Bien-être",            city: "Dax",            lat: 43.7120, lng: -1.0500, plan: "gold",     status: "active", siren: "567890123", legalForm: "SAS",    description: "", firstName: "Claire",   lastName: "Zen",     email: "spa@demo.fr",          phone: "05 58 55 66 77", address: "3 rue des Thermes",        postalCode: "40100", createdAt: "", updatedAt: "" },
-  { id: "d7",  companyName: "Web Landes",            category: "Informatique & Numérique",      city: "Mont-de-Marsan", lat: 43.8960, lng: -0.5040, plan: "standard", status: "active", siren: "789012345", legalForm: "SASU",   description: "", firstName: "Alex",     lastName: "Dev",     email: "web@demo.fr",          phone: "05 58 66 77 88", address: "15 rue du Numérique",      postalCode: "40000", createdAt: "", updatedAt: "" },
-  { id: "d8",  companyName: "Poterie Landaise",      category: "Artisanat & Métiers d'art",     city: "Dax",            lat: 43.7060, lng: -1.0580, plan: "premium",  status: "active", siren: "890123456", legalForm: "EI",     description: "", firstName: "Anne",     lastName: "Potter",  email: "poterie@demo.fr",      phone: "05 58 77 88 99", address: "2 impasse des Arts",       postalCode: "40100", createdAt: "", updatedAt: "" },
-  { id: "d9",  companyName: "Ferme des Landes",      category: "Culture & Élevage",          city: "Hagetmau",       lat: 43.6429, lng: -0.5910, plan: "standard", status: "active", siren: "901234567", legalForm: "EI",     description: "", firstName: "Louis",    lastName: "Farmer",  email: "ferme@demo.fr",        phone: "05 58 88 99 00", address: "Chemin de la Ferme",       postalCode: "40700", createdAt: "", updatedAt: "" },
-  { id: "d10", companyName: "Taxi Landes Express",   category: "Transport de personnes",        city: "Capbreton",      lat: 43.6640, lng: -1.4450, plan: "premium",  status: "active", siren: "012345678", legalForm: "EI",     description: "", firstName: "René",     lastName: "Taxi",    email: "taxi@demo.fr",         phone: "05 58 99 00 11", address: "Place de la Gare",         postalCode: "40130", createdAt: "", updatedAt: "" },
-];
-
 const LANDES_CITIES = [
   { name: "Mont-de-Marsan", lat: 43.8914, lng: -0.5006 },
   { name: "Dax",            lat: 43.7101, lng: -1.0527 },
@@ -55,9 +44,7 @@ export default function HomeMap() {
 
   useEffect(() => {
     const real = getProfessionals().filter(p => p.status === "active" && p.lat && p.lng);
-    const merged = [...real];
-    DEMO_PROS.forEach(d => { if (!merged.find(p => p.id === d.id)) merged.push(d); });
-    setPros(merged);
+    setPros(real);
     setLoaded(true);
   }, []);
 
