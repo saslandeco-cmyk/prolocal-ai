@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { MapPin, ArrowRight, Search, X, Loader2 } from "lucide-react";
-import { getProfessionals } from "@/lib/storage";
+import { getProfessionalsWithImages } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import { Professional } from "@/types";
 
@@ -43,9 +43,10 @@ export default function HomeMap() {
   const sugRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const real = getProfessionals().filter(p => p.status === "active" && p.lat && p.lng);
-    setPros(real);
-    setLoaded(true);
+    getProfessionalsWithImages().then(all => {
+      setPros(all.filter(p => p.status === "active" && p.lat && p.lng));
+      setLoaded(true);
+    });
   }, []);
 
   // Suggestions de villes
