@@ -670,7 +670,7 @@ export async function deleteHeroImage(): Promise<void> {
 
 // ── Diaporama hero "Encart publicitaire ciblé" ──────────────────────
 // Liste des IDs de professionnels à afficher dans le diaporama de la
-// section hero, gérée manuellement par l'administrateur (voir /admin).
+// section hero, gérée manuellement par l'administrateur (voir l'espace admin).
 const HERO_SLIDESHOW_KEY = "prolocal_hero_slideshow_ids";
 
 export function getHeroSlideshowIds(): string[] {

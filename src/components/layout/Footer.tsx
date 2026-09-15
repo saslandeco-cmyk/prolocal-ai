@@ -42,7 +42,6 @@ export default function Footer() {
               <li><Link href="/inscription" className="hover:text-white transition-colors">S'inscrire</Link></li>
               <li><Link href="/connexion" className="hover:text-white transition-colors">Se connecter</Link></li>
               <li><Link href="/inscription#tarifs" className="hover:text-white transition-colors">Nos tarifs</Link></li>
-              <li><Link href="/admin" className="hover:text-white transition-colors">Espace admin</Link></li>
             </ul>
           </div>
         </div>

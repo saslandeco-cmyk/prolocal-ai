@@ -23,7 +23,7 @@ interface Props {
  * ayant l'option complémentaire "Encart publicitaire ciblé".
  *
  * - Sur la page d'accueil (aucune prop) : sélection manuelle de l'admin si
- *   renseignée (voir /admin, panneau "Diaporama Hero"), sinon tous les
+ *   renseignée (voir l'espace admin, panneau "Diaporama Hero"), sinon tous les
  *   professionnels actifs ayant l'option active, toutes catégories confondues.
  * - Sur une page catégorie/sous-catégorie (props `category`/`subcategory`) :
  *   uniquement les professionnels de cette catégorie/sous-catégorie ayant
