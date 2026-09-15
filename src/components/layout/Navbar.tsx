@@ -41,7 +41,11 @@ export default function Navbar() {
     };
     load();
     window.addEventListener("storage", load);
-    return () => window.removeEventListener("storage", load);
+    window.addEventListener("prolocal-session-changed", load);
+    return () => {
+      window.removeEventListener("storage", load);
+      window.removeEventListener("prolocal-session-changed", load);
+    };
   }, []);
 
   // Ferme dropdowns au clic extérieur

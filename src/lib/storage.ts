@@ -289,6 +289,11 @@ const SESSION_TTL = 7 * 24 * 3600 * 1000; // 7 jours
 export function setSession(type: "pro" | "admin", id?: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(SESSION_KEY, JSON.stringify({ type, id, ts: Date.now() }));
+  // L'événement "storage" du navigateur ne se déclenche jamais dans l'onglet
+  // qui vient d'écrire (seulement dans les autres onglets ouverts) — sans cet
+  // événement personnalisé, le Navbar ne détecterait la connexion qu'après un
+  // rechargement complet de la page.
+  window.dispatchEvent(new Event("prolocal-session-changed"));
 }
 
 export function getSession(): { type: "pro" | "admin"; id?: string } | null {
@@ -311,6 +316,7 @@ export function getSession(): { type: "pro" | "admin"; id?: string } | null {
 export function clearSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SESSION_KEY);
+  window.dispatchEvent(new Event("prolocal-session-changed"));
 }
 
 // ── Admin ─────────────────────────────────────────────────────
