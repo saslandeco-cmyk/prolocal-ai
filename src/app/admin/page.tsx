@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { checkAdminCredentials, setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds } from "@/lib/storage";
 import { Professional, PLANS, StatusType, Review } from "@/types";
-import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
 import PlanBadge from "@/components/ui/PlanBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import OpeningHoursEditor from "@/components/ui/OpeningHoursEditor";
@@ -870,7 +870,7 @@ function CategoriesManager() {
       const res = await fetch("/api/db/categories?admin=1");
       const data = await res.json();
       if (data.error) { setLoadError(data.error); return; }
-      setCategories((data.categories || []).slice().sort((a: CategoryRecord, b: CategoryRecord) => a.order - b.order));
+      setCategories((data.categories || []).slice().sort((a: CategoryRecord, b: CategoryRecord) => compareLabelsFr(a.label, b.label)));
     } catch {
       setLoadError("Impossible de charger les catégories. Vérifiez que la base de données est configurée (POSTGRES_URL).");
     } finally {

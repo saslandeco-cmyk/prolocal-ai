@@ -30,13 +30,25 @@ export interface CategoryRecord {
 }
 
 /**
+ * Tri alphabétique croissant, sensible aux règles de collation françaises
+ * (accents/casse ignorés pour l'ordre). Utilisé partout où des catégories
+ * ou sous-catégories sont listées — calculé à la lecture plutôt que stocké,
+ * pour que tout ajout s'insère automatiquement à sa place dans le
+ * classement existant, sans logique de tri supplémentaire à maintenir.
+ */
+export function compareLabelsFr(a: string, b: string): number {
+  return a.localeCompare(b, "fr", { sensitivity: "base" });
+}
+
+/**
  * Catalogue par défaut, dérivé des constantes historiques codées en dur
  * (CATEGORIES/SUBCATEGORIES, CATEGORY_META, CATEGORY_SLUGS) — sert de repli
  * tant que la base n'est pas configurée ou que la table est vide, et de
  * données d'amorçage (seed) une fois la base disponible. Aucune duplication
- * de contenu : c'est un simple mapping vers la nouvelle forme.
+ * de contenu : c'est un simple mapping vers la nouvelle forme, trié par
+ * ordre alphabétique.
  */
-export const DEFAULT_CATEGORIES: CategoryRecord[] = CATEGORIES.map((label, i) => {
+export const DEFAULT_CATEGORIES: CategoryRecord[] = [...CATEGORIES].sort(compareLabelsFr).map((label, i) => {
   const meta = Object.values(CATEGORY_META).find(m => m.category === label);
   const slug = CATEGORY_SLUGS[label] || slugify(label);
   return {
@@ -49,7 +61,7 @@ export const DEFAULT_CATEGORIES: CategoryRecord[] = CATEGORIES.map((label, i) =>
     subtitle: meta?.subtitle || "",
     seoText: meta?.seoText || [],
     ctaText: meta?.ctaText || "",
-    subcategories: (SUBCATEGORIES[label] || []).map((subLabel, j) => ({
+    subcategories: [...(SUBCATEGORIES[label] || [])].sort(compareLabelsFr).map((subLabel, j) => ({
       id: `${slug}__${slugify(subLabel)}`,
       categoryId: slug,
       slug: slugify(subLabel),

@@ -1,6 +1,6 @@
 import { sql, isDbConfigured } from "./client";
 import { slugify } from "@/lib/profileUrl";
-import { DEFAULT_CATEGORIES, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
+import { DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
 import {
   dbCountProfessionalsByCategory,
   dbCountProfessionalsBySubcategory,
@@ -48,7 +48,7 @@ function rowToCategory(row: CategoryRow, subRows: SubcategoryRow[]): CategoryRec
     ctaText: row.data?.ctaText || "",
     subcategories: subRows
       .filter(s => s.category_id === row.id)
-      .sort((a, b) => a.display_order - b.display_order)
+      .sort((a, b) => compareLabelsFr(a.label, b.label))
       .map(rowToSubcategory),
   };
 }
@@ -61,12 +61,12 @@ function rowToSubcategory(row: SubcategoryRow): SubcategoryRecord {
 export async function dbGetCategories(): Promise<CategoryRecord[]> {
   if (!isDbConfigured) return DEFAULT_CATEGORIES;
   try {
-    const { rows: catRows } = await sql`SELECT * FROM categories ORDER BY display_order ASC`;
+    const { rows: catRows } = await sql`SELECT * FROM categories`;
     if (catRows.length === 0) return DEFAULT_CATEGORIES;
-    const { rows: subRows } = await sql`SELECT * FROM subcategories ORDER BY display_order ASC`;
+    const { rows: subRows } = await sql`SELECT * FROM subcategories`;
     return (catRows as CategoryRow[])
-      .sort((a, b) => a.display_order - b.display_order)
-      .map(row => rowToCategory(row, subRows as SubcategoryRow[]));
+      .map(row => rowToCategory(row, subRows as SubcategoryRow[]))
+      .sort((a, b) => compareLabelsFr(a.label, b.label));
   } catch {
     return DEFAULT_CATEGORIES;
   }
