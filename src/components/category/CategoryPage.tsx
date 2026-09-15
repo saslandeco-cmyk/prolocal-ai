@@ -6,7 +6,7 @@ import { Search, MapPin, ArrowRight, ChevronRight, X, TrendingUp, Loader2, Locat
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
-import { Professional, SUBCATEGORIES } from "@/types";
+import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
 
@@ -14,13 +14,14 @@ const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false
 
 export interface CategoryMeta {
   slug: string;
-  category: string;          // exact match with CATEGORIES
+  category: string;          // libellé exact de la catégorie
   emoji: string;
   title: string;             // H1
   subtitle: string;          // hero subtitle
   seoTitle: string;          // H2 SEO section
   seoText: string[];         // paragraphs (HTML string)
   ctaText: string;           // bottom CTA description
+  subcategories?: string[];  // libellés des sous-catégories (puces de filtre)
   demoPros: Omit<Professional, "createdAt" | "updatedAt">[];
 }
 
@@ -454,9 +455,9 @@ export default function CategoryPage({ meta }: Props) {
           </p>
 
           {/* Boutons sous-catégories */}
-          {SUBCATEGORIES[meta.category] && SUBCATEGORIES[meta.category].length > 0 && (
+          {meta.subcategories && meta.subcategories.length > 0 && (
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 sm:flex-wrap sm:overflow-visible mt-4">
-              {SUBCATEGORIES[meta.category].map(sub => (
+              {meta.subcategories.map(sub => (
                 <button
                   key={sub}
                   onClick={() => handleSubClick(sub)}

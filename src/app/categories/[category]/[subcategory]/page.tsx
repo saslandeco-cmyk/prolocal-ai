@@ -1,31 +1,34 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUrl";
+import { dbGetCategories } from "@/lib/db/categories";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+
+export const revalidate = 3600;
 
 /**
  * Page dédiée à une sous-catégorie (un "métier" précis), toutes villes
  * confondues — /categories/[categorie]/[sous-categorie].
  *
- * Cette route dynamique cohabite avec les 11 dossiers statiques déjà
- * existants sous /categories/ (beaute, alimentation, etc.) sans conflit :
- * Next.js autorise un dossier dynamique en complément de dossiers statiques
- * au même niveau (contrairement à deux dossiers dynamiques de noms
- * différents, qui eux provoquent une erreur de routage).
+ * Cette route dynamique cohabite avec le dossier dynamique [category] (page
+ * catégorie) au même niveau sans conflit : Next.js autorise un dossier
+ * dynamique en complément d'un autre dossier dynamique de même nom
+ * ([category]) à un niveau donné — voir ../page.tsx.
  */
-function resolve(categorySlug: string, subcategorySlug: string) {
-  const categoryLabel = categoryLabelFromSlug(categorySlug);
+async function resolve(categorySlug: string, subcategorySlug: string) {
+  const categories = await dbGetCategories();
+  const categoryLabel = categoryLabelFromSlug(categorySlug, categories);
   if (!categoryLabel) return null;
-  const subcategoryLabel = subcategoryLabelFromSlug(categoryLabel, subcategorySlug);
+  const subcategoryLabel = subcategoryLabelFromSlug(categoryLabel, subcategorySlug, categories);
   if (!subcategoryLabel) return null;
   return { categoryLabel, subcategoryLabel };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string; subcategory: string }> }): Promise<Metadata> {
   const { category, subcategory } = await params;
-  const resolved = resolve(category, subcategory);
+  const resolved = await resolve(category, subcategory);
   if (!resolved) return { title: "Page introuvable | Prolocal-Landes" };
 
   const { categoryLabel, subcategoryLabel } = resolved;
@@ -43,7 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
 
 export default async function Page({ params }: { params: Promise<{ category: string; subcategory: string }> }) {
   const { category, subcategory } = await params;
-  const resolved = resolve(category, subcategory);
+  const resolved = await resolve(category, subcategory);
   if (!resolved) notFound();
 
   const { categoryLabel, subcategoryLabel } = resolved;

@@ -5,11 +5,12 @@ import {
   Search, MapPin, ArrowRight,
   Trees, Shield, TrendingUp,
 } from "lucide-react";
-import { PLANS, CATEGORIES } from "@/types";
+import { PLANS } from "@/types";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
 import SearchBar from "@/components/professional/SearchBar";
 import FeaturedProfessionals from "@/components/professional/FeaturedProfessionals";
 import FullWidthMap from "@/components/map/FullWidthMap";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 const STATS = [
   { value: "500+", label: "Professionnels référencés" },
@@ -18,42 +19,9 @@ const STATS = [
   { value: "4.8/5",label: "Note moyenne" },
 ];
 
-const CATEGORY_ICONS: Record<string, string> = {
-  "Alimentation & Épicerie":    "🥖",
-  "Artisanat & Métiers d'art":  "🎨",
-  "Bâtiment & Travaux":         "🔨",
-  "Beauté & Bien-être":         "💆",
-  "Commerce & Vente":           "🛍️",
-  "Immobilier":                 "🏠",
-  "Informatique & Numérique":   "💻",
-  "Culture & Élevage":       "🌾",
-  "Services à la personne":     "🤝",
-  "Sport & Fitness":            "🏄",
-  "Transport de personnes":     "🚚",
-};
-
-const CATEGORY_SLUGS: Record<string, string> = {
-  "Alimentation & Épicerie":    "alimentation",
-  "Artisanat & Métiers d'art":  "artisanat",
-  "Bâtiment & Travaux":         "batiment",
-  "Beauté & Bien-être":         "beaute",
-  "Commerce & Vente":           "commerce",
-  "Immobilier":                 "immobilier",
-  "Informatique & Numérique":   "informatique",
-  "Culture & Élevage":       "agriculture",
-  "Services à la personne":     "services",
-  "Sport & Fitness":            "sport",
-  "Transport de personnes":     "transport",
-};
-
-const FEATURED_CATEGORIES = CATEGORIES.map(name => ({
-  name,
-  icon: CATEGORY_ICONS[name] || "📌",
-  slug: CATEGORY_SLUGS[name],
-}));
-
 export default function HomePage() {
   const [optionsCatalog, setOptionsCatalog] = useState<Record<string, { unitAmount: number; cadence: string }>>({});
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
 
   useEffect(() => {
     fetch("/api/db/options")
@@ -61,6 +29,8 @@ export default function HomePage() {
       .then(data => { if (data?.options) setOptionsCatalog(data.options); })
       .catch(() => {});
   }, []);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   const priceOf = (id: string, fallbackAmount: number, fallbackCadence: "month" | "once") => {
     const opt = optionsCatalog[id];
@@ -154,12 +124,12 @@ export default function HomePage() {
           <h2 className="section-title">Toutes les catégories</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {FEATURED_CATEGORIES.map(cat => (
-            <Link key={cat.name}
+          {categories.map(cat => (
+            <Link key={cat.slug}
               href={`/categories/${cat.slug}`}
               className="card p-4 sm:p-5 hover:shadow-md hover:border-landes-sage/30 border border-transparent transition-all duration-200 group">
-              <div className="text-2xl sm:text-3xl mb-2">{cat.icon}</div>
-              <h3 className="font-semibold text-gray-800 text-xs sm:text-sm group-hover:text-landes-forest transition-colors leading-tight">{cat.name}</h3>
+              <div className="text-2xl sm:text-3xl mb-2">{cat.emoji}</div>
+              <h3 className="font-semibold text-gray-800 text-xs sm:text-sm group-hover:text-landes-forest transition-colors leading-tight">{cat.label}</h3>
             </Link>
           ))}
         </div>

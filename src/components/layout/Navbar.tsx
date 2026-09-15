@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X, MapPin, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3 } from "lucide-react";
 import { getSession, clearSession, getProfessionalById } from "@/lib/storage";
-import { categorySlug, subcategorySlugForUrl } from "@/lib/profileUrl";
-import { SUBCATEGORIES } from "@/types";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 interface ProSession {
   firstName: string;
@@ -14,21 +13,8 @@ interface ProSession {
   id: string;
 }
 
-const CATEGORIES = [
-  { slug: "alimentation",  label: "Alimentation & Épicerie",    emoji: "🥖" },
-  { slug: "artisanat",     label: "Artisanat & Métiers d'art",  emoji: "🎨" },
-  { slug: "batiment",      label: "Bâtiment & Travaux",         emoji: "🔨" },
-  { slug: "beaute",        label: "Beauté & Bien-être",         emoji: "💆" },
-  { slug: "commerce",      label: "Commerce & Vente",           emoji: "🛍️" },
-  { slug: "agriculture",   label: "Culture & Élevage",          emoji: "🌾" },
-  { slug: "immobilier",    label: "Immobilier",                 emoji: "🏠" },
-  { slug: "informatique",  label: "Informatique & Numérique",   emoji: "💻" },
-  { slug: "services",      label: "Services à la personne",     emoji: "🤝" },
-  { slug: "sport",         label: "Sport & Fitness",            emoji: "🏄" },
-  { slug: "transport",     label: "Transport de personnes",     emoji: "🚚" },
-];
-
 export default function Navbar() {
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const router = useRouter();
   const [open,       setOpen]       = useState(false);
   const [proSession, setProSession] = useState<ProSession | null>(null);
@@ -38,6 +24,8 @@ export default function Navbar() {
   const [mobileSubOpen, setMobileSubOpen] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const catRef  = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   useEffect(() => {
     const load = () => {
@@ -130,8 +118,8 @@ export default function Navbar() {
 
                   {/* Grille des catégories + sous-catégories */}
                   <div className="p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-5 max-h-[75vh] overflow-y-auto">
-                    {CATEGORIES.map(cat => {
-                      const subs = SUBCATEGORIES[cat.label];
+                    {categories.map(cat => {
+                      const subs = cat.subcategories;
                       return (
                         <div key={cat.slug}>
                           <Link
@@ -147,13 +135,13 @@ export default function Navbar() {
                           {subs && subs.length > 0 && (
                             <ul className="ml-6 space-y-0.5 border-l border-gray-100 pl-3">
                               {subs.map(sub => (
-                                <li key={sub}>
+                                <li key={sub.id}>
                                   <Link
-                                    href={`/categories/${categorySlug(cat.label)}/${subcategorySlugForUrl(sub)}`}
+                                    href={`/categories/${cat.slug}/${sub.slug}`}
                                     onClick={() => setCatOpen(false)}
                                     className="block text-xs text-gray-500 hover:text-landes-forest py-0.5 transition-colors leading-snug"
                                   >
-                                    {sub}
+                                    {sub.label}
                                   </Link>
                                 </li>
                               ))}
@@ -253,8 +241,8 @@ export default function Navbar() {
                   className="block py-2 px-2 text-sm text-landes-forest font-semibold hover:bg-landes-forest/5 rounded-lg transition-colors">
                   Voir toutes les catégories →
                 </Link>
-                {CATEGORIES.map(cat => {
-                  const subs = SUBCATEGORIES[cat.label];
+                {categories.map(cat => {
+                  const subs = cat.subcategories;
                   const isOpen = mobileSubOpen === cat.slug;
                   return (
                     <div key={cat.slug}>
@@ -279,12 +267,12 @@ export default function Navbar() {
                         <div className="ml-6 border-l border-gray-100 pl-3 space-y-0.5 mb-1">
                           {subs.map(sub => (
                             <Link
-                              key={sub}
-                              href={`/categories/${categorySlug(cat.label)}/${subcategorySlugForUrl(sub)}`}
+                              key={sub.id}
+                              href={`/categories/${cat.slug}/${sub.slug}`}
                               onClick={() => { setOpen(false); setMobileCatOpen(false); setMobileSubOpen(null); }}
                               className="block py-1.5 px-2 text-xs text-gray-500 hover:text-landes-forest hover:bg-landes-forest/5 rounded-lg transition-colors leading-snug"
                             >
-                              {sub}
+                              {sub.label}
                             </Link>
                           ))}
                         </div>

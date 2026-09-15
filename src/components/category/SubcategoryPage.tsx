@@ -9,8 +9,8 @@ import { categorySlug } from "@/lib/profileUrl";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
-import { CATEGORY_META } from "@/lib/categoryData";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
 
@@ -28,6 +28,7 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
 }
 
 export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Props) {
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [pros, setPros] = useState<Professional[]>([]);
   const [filtered, setFiltered] = useState<Professional[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -48,6 +49,8 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
   const [radius, setRadius] = useState<number>(25);
   const [showRadius, setShowRadius] = useState(false);
   const radiusRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   useEffect(() => {
     (async () => {
@@ -136,7 +139,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
     : citiesWithPros.slice(0, 5);
 
   const mapPros = pros.filter(p => p.lat && p.lng);
-  const catMeta = CATEGORY_META[categorySlug(categoryLabel)];
+  const catMeta = categories.find(c => c.label === categoryLabel);
 
   return (
     <div className="bg-landes-cream min-h-screen">

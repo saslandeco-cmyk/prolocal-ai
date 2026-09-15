@@ -121,6 +121,36 @@ CREATE TABLE IF NOT EXISTS complementary_options (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- ── Catégories & sous-catégories d'activité (gérées depuis l'admin) ──
+-- Tables facultatives : si vides ou base non configurée, le site retombe
+-- sur le catalogue par défaut codé en dur (src/lib/categories.ts), pour ne
+-- jamais casser l'affichage. `id` = slug, immuable après création (garde
+-- les URLs /categories/[slug] stables même si le libellé est renommé
+-- ensuite — le renommage d'un libellé bascule en cascade les fiches
+-- professionnelles concernées, voir dbRenameCategoryLabel).
+CREATE TABLE IF NOT EXISTS categories (
+  id             TEXT PRIMARY KEY,
+  slug           TEXT UNIQUE NOT NULL,
+  label          TEXT NOT NULL,
+  display_order  INTEGER NOT NULL DEFAULT 0,
+  data           JSONB NOT NULL DEFAULT '{}'::jsonb,  -- emoji, seoTitle, subtitle, seoText[], ctaText
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS subcategories (
+  id             TEXT PRIMARY KEY,
+  category_id    TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  slug           TEXT NOT NULL,
+  label          TEXT NOT NULL,
+  display_order  INTEGER NOT NULL DEFAULT 0,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(category_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories (category_id);
+
 -- ═══════════════════════════════════════════════════════════════════
 -- Base exhaustive des entreprises actives des Landes (données SIRENE)
 -- Étape 1 : schéma + client API + synchronisation manuelle (preuve de

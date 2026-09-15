@@ -93,6 +93,45 @@ export async function dbDeleteProfessional(id: string): Promise<void> {
   await sql`DELETE FROM professionals WHERE id = ${id}`;
 }
 
+/** Nombre de fiches rattachées à une catégorie (pour bloquer sa suppression depuis l'admin). */
+export async function dbCountProfessionalsByCategory(label: string): Promise<number> {
+  if (!isDbConfigured) return 0;
+  const { rows } = await sql`SELECT COUNT(*)::int AS count FROM professionals WHERE category = ${label}`;
+  return rows[0]?.count || 0;
+}
+
+/** Nombre de fiches rattachées à une sous-catégorie (pour bloquer sa suppression depuis l'admin). */
+export async function dbCountProfessionalsBySubcategory(categoryLabel: string, subLabel: string): Promise<number> {
+  if (!isDbConfigured) return 0;
+  const { rows } = await sql`SELECT COUNT(*)::int AS count FROM professionals WHERE category = ${categoryLabel} AND subcategory = ${subLabel}`;
+  return rows[0]?.count || 0;
+}
+
+/**
+ * Bascule en cascade toutes les fiches d'une ancienne catégorie vers son
+ * nouveau libellé (appelée quand l'admin renomme une catégorie) — la
+ * correspondance `Professional.category === label` reste ainsi valide
+ * partout dans le code sans avoir à migrer vers des identifiants.
+ */
+export async function dbRenameCategoryLabel(oldLabel: string, newLabel: string): Promise<void> {
+  if (!isDbConfigured || oldLabel === newLabel) return;
+  await sql`
+    UPDATE professionals
+    SET category = ${newLabel}, data = jsonb_set(data, '{category}', to_jsonb(${newLabel}::text)), updated_at = now()
+    WHERE category = ${oldLabel}
+  `;
+}
+
+/** Même bascule en cascade pour un renommage de sous-catégorie. */
+export async function dbRenameSubcategoryLabel(categoryLabel: string, oldSub: string, newSub: string): Promise<void> {
+  if (!isDbConfigured || oldSub === newSub) return;
+  await sql`
+    UPDATE professionals
+    SET subcategory = ${newSub}, data = jsonb_set(data, '{subcategory}', to_jsonb(${newSub}::text)), updated_at = now()
+    WHERE category = ${categoryLabel} AND subcategory = ${oldSub}
+  `;
+}
+
 /** Marque une fiche comme migrée vers la base (table de suivi, étape 4). */
 export async function dbMarkMigrated(proId: string): Promise<void> {
   if (!isDbConfigured) return;

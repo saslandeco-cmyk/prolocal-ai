@@ -10,7 +10,8 @@ import {
   getSession, clearSession, getProfessionalById, saveProfessional, rehydrateAsync,
   generateId, getReviewsByPro, saveReview, deleteProfessional, mirrorProfessionalToDb,
 } from "@/lib/storage";
-import { Professional, CATEGORIES, SUBCATEGORIES, LANDES_CITIES, PLANS, OpeningHours, Review } from "@/types";
+import { Professional, LANDES_CITIES, PLANS, OpeningHours, Review } from "@/types";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import PlanBadge from "@/components/ui/PlanBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -45,6 +46,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const welcome = searchParams.get("welcome");
 
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [pro, setPro]         = useState<Professional | null>(null);
   const [editing, setEditing] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
@@ -69,6 +71,8 @@ function DashboardContent() {
   const [planOrderDone, setPlanOrderDone] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
   const subscriptionManagerRef = useRef<SubscriptionManagerHandle>(null);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   // Date de renouvellement de la formule active — affichée directement sur
   // sa card dans l'onglet "Formule" (en complément du badge "Votre formule
@@ -767,7 +771,7 @@ function DashboardContent() {
               <label className="label">Catégorie</label>
               {editing && !ficheLocked
                 ? <select value={form.category || ""} onChange={e => { update("category", e.target.value); update("subcategory", ""); }} className="input-field">
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {categories.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                   </select>
                 : <>
                     <p className="text-gray-900 font-medium">{pro.category}</p>
@@ -775,13 +779,13 @@ function DashboardContent() {
                   </>}
             </div>
 
-            {SUBCATEGORIES[((editing && !ficheLocked) ? form.category : pro.category) as string] && (
+            {(categories.find(c => c.label === (((editing && !ficheLocked) ? form.category : pro.category) as string))?.subcategories.length || 0) > 0 && (
               <div>
                 <label className="label">Sous-catégorie <span className="text-gray-400 font-normal text-xs">(facultatif)</span></label>
                 {editing && !ficheLocked
                   ? <select value={(form.subcategory as string) || ""} onChange={e => update("subcategory", e.target.value)} className="input-field">
                       <option value="">Sélectionner…</option>
-                      {SUBCATEGORIES[form.category as string].map(s => <option key={s} value={s}>{s}</option>)}
+                      {categories.find(c => c.label === (form.category as string))?.subcategories.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
                     </select>
                   : <>
                       <p className="text-gray-900 font-medium">{(pro as any).subcategory || <span className="text-gray-400 italic text-sm">Non renseigné</span>}</p>

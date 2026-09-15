@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw } from "lucide-react";
+import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { checkAdminCredentials, setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds } from "@/lib/storage";
-import { Professional, CATEGORIES, SUBCATEGORIES, PLANS, StatusType, Review } from "@/types";
+import { Professional, PLANS, StatusType, Review } from "@/types";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
 import PlanBadge from "@/components/ui/PlanBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import OpeningHoursEditor from "@/components/ui/OpeningHoursEditor";
@@ -844,6 +845,364 @@ function OptionsManager() {
   );
 }
 
+function CategoriesManager() {
+  const [categories, setCategories] = useState<CategoryRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const emptyForm = { label: "", emoji: "🏷️", seoTitle: "", subtitle: "", seoText: "", ctaText: "" };
+  const [form, setForm] = useState(emptyForm);
+
+  // Sous-catégories : un seul formulaire actif à la fois, rattaché à une catégorie précise
+  const [subFormFor, setSubFormFor] = useState<string | null>(null);
+  const [subEditingId, setSubEditingId] = useState<string | null>(null);
+  const [subLabel, setSubLabel] = useState("");
+  const [subSaving, setSubSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/db/categories?admin=1");
+      const data = await res.json();
+      if (data.error) { setLoadError(data.error); return; }
+      setCategories((data.categories || []).slice().sort((a: CategoryRecord, b: CategoryRecord) => a.order - b.order));
+    } catch {
+      setLoadError("Impossible de charger les catégories. Vérifiez que la base de données est configurée (POSTGRES_URL).");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const startEdit = (cat: CategoryRecord) => {
+    setEditingId(cat.id);
+    setShowAddForm(false);
+    setForm({
+      label: cat.label,
+      emoji: cat.emoji,
+      seoTitle: cat.seoTitle,
+      subtitle: cat.subtitle,
+      seoText: cat.seoText.join("\n\n"),
+      ctaText: cat.ctaText,
+    });
+  };
+
+  const startAdd = () => {
+    setShowAddForm(true);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
+  const cancelForm = () => {
+    setEditingId(null);
+    setShowAddForm(false);
+    setForm(emptyForm);
+  };
+
+  const handleSave = async () => {
+    if (!form.label.trim()) {
+      alert("Le libellé de la catégorie est requis.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/db/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingId || undefined,
+          label: form.label.trim(),
+          emoji: form.emoji.trim() || "🏷️",
+          seoTitle: form.seoTitle.trim(),
+          subtitle: form.subtitle.trim(),
+          seoText: form.seoText.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean),
+          ctaText: form.ctaText.trim(),
+          order: editingId ? (categories.find(c => c.id === editingId)?.order ?? 0) : categories.length,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      await load();
+      cancelForm();
+    } catch {
+      alert("Erreur réseau lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (cat: CategoryRecord) => {
+    if (!confirm(`Supprimer définitivement la catégorie "${cat.label}" ? Cette action est irréversible.`)) return;
+    try {
+      const res = await fetch(`/api/db/categories/${cat.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      await load();
+    } catch {
+      alert("Erreur réseau lors de la suppression.");
+    }
+  };
+
+  const startSubAdd = (categoryId: string) => {
+    setSubFormFor(categoryId);
+    setSubEditingId(null);
+    setSubLabel("");
+  };
+
+  const startSubEdit = (categoryId: string, sub: SubcategoryRecord) => {
+    setSubFormFor(categoryId);
+    setSubEditingId(sub.id);
+    setSubLabel(sub.label);
+  };
+
+  const cancelSubForm = () => {
+    setSubFormFor(null);
+    setSubEditingId(null);
+    setSubLabel("");
+  };
+
+  const handleSubSave = async (cat: CategoryRecord) => {
+    if (!subLabel.trim()) {
+      alert("Le libellé de la sous-catégorie est requis.");
+      return;
+    }
+    setSubSaving(true);
+    try {
+      const res = await fetch(`/api/db/categories/${cat.id}/subcategories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: subEditingId || undefined,
+          label: subLabel.trim(),
+          order: subEditingId ? (cat.subcategories.find(s => s.id === subEditingId)?.order ?? 0) : cat.subcategories.length,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      await load();
+      cancelSubForm();
+    } catch {
+      alert("Erreur réseau lors de l'enregistrement.");
+    } finally {
+      setSubSaving(false);
+    }
+  };
+
+  const handleSubDelete = async (sub: SubcategoryRecord) => {
+    if (!confirm(`Supprimer définitivement la sous-catégorie "${sub.label}" ?`)) return;
+    try {
+      const res = await fetch(`/api/db/subcategories/${sub.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      await load();
+    } catch {
+      alert("Erreur réseau lors de la suppression.");
+    }
+  };
+
+  const renderCategoryForm = () => (
+    <div className="border-2 border-landes-forest/30 bg-landes-forest/5 rounded-xl p-4 space-y-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Emoji</label>
+          <input
+            value={form.emoji}
+            onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))}
+            placeholder="🏷️"
+            maxLength={4}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Libellé {editingId && <span className="text-gray-400">(l'URL /categories/… reste inchangée)</span>}</label>
+          <input
+            value={form.label}
+            onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+            placeholder="ex: Photographie & Vidéo"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Titre SEO</label>
+          <input
+            value={form.seoTitle}
+            onChange={e => setForm(f => ({ ...f, seoTitle: e.target.value }))}
+            placeholder="ex: Photographes et vidéastes dans les Landes"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Sous-titre (affiché sous le titre de la page)</label>
+          <input
+            value={form.subtitle}
+            onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Texte descriptif (un paragraphe par bloc, séparés par une ligne vide)</label>
+          <textarea
+            value={form.seoText}
+            onChange={e => setForm(f => ({ ...f, seoText: e.target.value }))}
+            rows={5}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-y"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Texte du bouton d&apos;appel à l&apos;action (bas de page)</label>
+          <textarea
+            value={form.ctaText}
+            onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))}
+            rows={2}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-50">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? "Enregistrement…" : "Enregistrer"}
+        </button>
+        <button onClick={cancelForm} className="btn-secondary px-4 py-2 text-sm">Annuler</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-start justify-between mb-1 flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-landes-pine">Catégories &amp; sous-catégories</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Ajoutez, modifiez ou supprimez les catégories et sous-catégories d&apos;activité. Elles apparaissent
+            immédiatement dans les menus, l&apos;accueil, les pages catégories, l&apos;annuaire et les formulaires
+            d&apos;inscription — aucune modification de code n&apos;est nécessaire.
+          </p>
+        </div>
+        {!showAddForm && !editingId && (
+          <button onClick={startAdd} className="btn-primary flex items-center gap-2 px-4 py-2 text-sm flex-shrink-0">
+            <Plus className="w-4 h-4" /> Ajouter une catégorie
+          </button>
+        )}
+      </div>
+
+      <div className="mt-5">
+        {showAddForm && renderCategoryForm()}
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+            <Loader2 className="w-5 h-5 animate-spin" /> Chargement des catégories…
+          </div>
+        ) : loadError ? (
+          <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-3">{loadError}</p>
+        ) : categories.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">Aucune catégorie.</p>
+        ) : (
+          <div className="border border-gray-100 rounded-xl divide-y divide-gray-50">
+            {categories.map(cat => (
+              <div key={cat.id}>
+                {editingId === cat.id ? (
+                  <div className="p-3">{renderCategoryForm()}</div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <button
+                        onClick={() => setExpandedId(expandedId === cat.id ? null : cat.id)}
+                        className="p-1 text-gray-400 hover:text-landes-forest flex-shrink-0"
+                        aria-label={`Sous-catégories de ${cat.label}`}
+                      >
+                        {expandedId === cat.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      <span className="text-xl flex-shrink-0">{cat.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-gray-800 text-sm">{cat.label}</p>
+                          <span className="text-xs text-gray-400 font-mono">/{cat.slug}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {cat.subcategories.length} sous-catégorie{cat.subcategories.length > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button onClick={() => startEdit(cat)} className="p-1.5 rounded-lg text-gray-400 hover:text-landes-forest hover:bg-landes-forest/5">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(cat)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {expandedId === cat.id && (
+                      <div className="px-4 pb-4 pl-11">
+                        {cat.subcategories.length > 0 && (
+                          <div className="border border-gray-100 rounded-lg divide-y divide-gray-50 mb-2">
+                            {cat.subcategories.map(sub => (
+                              <div key={sub.id}>
+                                {subFormFor === cat.id && subEditingId === sub.id ? (
+                                  <div className="p-2 flex items-center gap-2">
+                                    <input
+                                      value={subLabel}
+                                      onChange={e => setSubLabel(e.target.value)}
+                                      className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                                    />
+                                    <button onClick={() => handleSubSave(cat)} disabled={subSaving} className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50 flex-shrink-0">
+                                      {subSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Enregistrer"}
+                                    </button>
+                                    <button onClick={cancelSubForm} className="btn-secondary px-3 py-1.5 text-xs flex-shrink-0">Annuler</button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 px-3 py-2">
+                                    <span className="flex-1 text-sm text-gray-700">{sub.label}</span>
+                                    <button onClick={() => startSubEdit(cat.id, sub)} className="p-1 rounded text-gray-400 hover:text-landes-forest hover:bg-landes-forest/5">
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button onClick={() => handleSubDelete(sub)} className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {subFormFor === cat.id && !subEditingId ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={subLabel}
+                              onChange={e => setSubLabel(e.target.value)}
+                              placeholder="Nouvelle sous-catégorie"
+                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                            />
+                            <button onClick={() => handleSubSave(cat)} disabled={subSaving} className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50 flex-shrink-0">
+                              {subSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Ajouter"}
+                            </button>
+                            <button onClick={cancelSubForm} className="btn-secondary px-3 py-1.5 text-xs flex-shrink-0">Annuler</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => startSubAdd(cat.id)} className="flex items-center gap-1.5 text-xs text-landes-forest font-medium hover:underline">
+                            <Plus className="w-3.5 h-3.5" /> Ajouter une sous-catégorie
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Gestion manuelle du diaporama hero (professionnels avec l'option
 // "Encart publicitaire ciblé"), sélection et ordre entièrement contrôlés
 // par l'administrateur.
@@ -1005,7 +1364,8 @@ export default function AdminPage() {
   const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(ALL_COLUMN_LABELS));
   const [migrating, setMigrating] = useState(false);
   const [migrationSummary, setMigrationSummary] = useState<string | null>(null);
-  const [adminSection, setAdminSection] = useState<"pros" | "reviews" | "site" | "options" | "sirene">("pros");
+  const [adminSection, setAdminSection] = useState<"pros" | "reviews" | "site" | "options" | "sirene" | "categories">("pros");
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [editReview, setEditReview] = useState<Review | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<StatusType | "">("");
@@ -1028,6 +1388,8 @@ export default function AdminPage() {
       setReviews(getReviews());
     }
   }, []);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1277,12 +1639,23 @@ export default function AdminPage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${adminSection === "sirene" ? "bg-landes-forest text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
           <Building2 className="w-4 h-4" /> Entreprises (SIRENE)
         </button>
+        <button onClick={() => setAdminSection("categories")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${adminSection === "categories" ? "bg-landes-forest text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+          <Tag className="w-4 h-4" /> Catégories
+        </button>
       </div>
 
       {/* ── Section Entreprises SIRENE ── */}
       {adminSection === "sirene" && (
         <div className="space-y-6">
           <SireneManager />
+        </div>
+      )}
+
+      {/* ── Section Catégories ── */}
+      {adminSection === "categories" && (
+        <div className="space-y-6">
+          <CategoriesManager />
         </div>
       )}
 
@@ -1617,8 +1990,9 @@ export default function AdminPage() {
 
                 // Normalise la catégorie (insensible à la casse)
                 const csvCat = gatedVal("Catégorie");
+                const categoryLabels = categories.map(c => c.label);
                 const matchedCat = csvCat
-                  ? (CATEGORIES.find(c => c === csvCat) ?? CATEGORIES.find(c => c.toLowerCase().trim() === csvCat.toLowerCase().trim()))
+                  ? (categoryLabels.find(c => c === csvCat) ?? categoryLabels.find(c => c.toLowerCase().trim() === csvCat.toLowerCase().trim()))
                   : undefined;
 
                 const service1 = gatedVal("Service 1");
@@ -1632,7 +2006,7 @@ export default function AdminPage() {
                   id,
                   companyName,
                   activityTitle:    gatedVal("Titre de l'activité")  || existing?.activityTitle,
-                  category:         matchedCat ?? existing?.category ?? CATEGORIES[0],
+                  category:         matchedCat ?? existing?.category ?? categoryLabels[0],
                   subcategory:      gatedVal("Sous-catégorie")        || existing?.subcategory,
                   email:            gatedVal("Email")                || existing?.email            || "",
                   phone:            gatedVal("Téléphone")            || existing?.phone             || "",
@@ -1943,7 +2317,7 @@ export default function AdminPage() {
                   <div>
                     <label className="label">Catégorie</label>
                     <select value={editForm.category || ""} onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))} className="input-field">
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      {categories.map((c) => <option key={c.id} value={c.label}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
@@ -2090,14 +2464,14 @@ export default function AdminPage() {
                   <div>
                     <label className="label">Catégorie</label>
                     <select value={fullEditForm.category || ""} onChange={e => { updFull("category", e.target.value); updFull("subcategory", ""); }} className="input-field">
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {categories.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="label">Sous-catégorie</label>
-                    <select value={fullEditForm.subcategory || ""} onChange={e => updFull("subcategory", e.target.value)} disabled={!fullEditForm.category || !SUBCATEGORIES[fullEditForm.category]} className="input-field disabled:bg-gray-50 disabled:text-gray-400">
+                    <select value={fullEditForm.subcategory || ""} onChange={e => updFull("subcategory", e.target.value)} disabled={!fullEditForm.category || !categories.find(c => c.label === fullEditForm.category)?.subcategories.length} className="input-field disabled:bg-gray-50 disabled:text-gray-400">
                       <option value="">Sélectionner…</option>
-                      {fullEditForm.category && SUBCATEGORIES[fullEditForm.category]?.map(s => <option key={s} value={s}>{s}</option>)}
+                      {fullEditForm.category && categories.find(c => c.label === fullEditForm.category)?.subcategories.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
                     </select>
                   </div>
                   <div className="sm:col-span-2">

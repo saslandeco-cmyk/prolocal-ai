@@ -1,23 +1,12 @@
-"use client";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { CITY_META } from "@/lib/cityData";
+import { dbGetCategories } from "@/lib/db/categories";
 
-const CATEGORIES = [
-  { slug: "alimentation",  label: "Alimentation & Épicerie",    emoji: "🥖", desc: "Boulangers, fromagers, épiciers et artisans de bouche" },
-  { slug: "artisanat",     label: "Artisanat & Métiers d'art",  emoji: "🎨", desc: "Céramistes, forgerons, ébénistes et créateurs" },
-  { slug: "batiment",      label: "Bâtiment & Travaux",         emoji: "🔨", desc: "Maçons, charpentiers, plombiers et électriciens" },
-  { slug: "beaute",        label: "Beauté & Bien-être",         emoji: "💆", desc: "Instituts, spas, coiffeurs et thérapeutes" },
-  { slug: "commerce",      label: "Commerce & Vente",           emoji: "🛍️", desc: "Boutiques, surf shops et commerces de proximité" },
-  { slug: "agriculture",   label: "Culture & Élevage",          emoji: "🌾", desc: "Producteurs locaux, apiculteurs et paysagistes" },
-  { slug: "immobilier",    label: "Immobilier",                 emoji: "🏠", desc: "Agences, constructeurs et gestionnaires locatifs" },
-  { slug: "informatique",  label: "Informatique & Numérique",   emoji: "💻", desc: "Développeurs web, graphistes et réparateurs" },
-  { slug: "services",      label: "Services à la personne",     emoji: "🤝", desc: "Aide à domicile, baby-sitting et jardinage" },
-  { slug: "sport",         label: "Sport & Fitness",            emoji: "🏄", desc: "Surf, clubs de sport, coaches et bien-être" },
-  { slug: "transport",     label: "Transport de personnes",     emoji: "🚚", desc: "Taxis, déménageurs, ambulances et coursiers" },
-];
+export const revalidate = 3600;
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const categories = await dbGetCategories();
   return (
     <div className="bg-landes-cream min-h-screen">
 
@@ -42,7 +31,7 @@ export default function CategoriesPage() {
               <span className="text-landes-sand">de professionnels</span>
             </h1>
             <p className="text-gray-300 text-lg">
-              Explorez les {CATEGORIES.length} catégories de professionnels référencés dans les Landes (40).
+              Explorez les {categories.length} catégories de professionnels référencés dans les Landes (40).
               Cliquez sur une catégorie pour découvrir tous les prestataires disponibles près de chez vous.
             </p>
           </div>
@@ -68,7 +57,7 @@ export default function CategoriesPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <Link
               key={cat.slug}
               href={`/categories/${cat.slug}`}
@@ -83,7 +72,7 @@ export default function CategoriesPage() {
                     {cat.label}
                   </h3>
                   <p className="text-gray-500 text-sm leading-relaxed">
-                    {cat.desc}
+                    {cat.subtitle}
                   </p>
                 </div>
               </div>

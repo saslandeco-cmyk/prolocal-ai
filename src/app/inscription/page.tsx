@@ -6,7 +6,8 @@ import {
 import { useState, useRef, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PLANS, CATEGORIES, SUBCATEGORIES, type Professional } from "@/types";
+import { PLANS, type Professional } from "@/types";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 import { saveProfessional, setSession, generateId, getProfessionals, getProfessionalById } from "@/lib/storage";
 import { REQUIRE_VALIDATION } from "@/lib/config";
 import { lookupSiren } from "@/lib/siren";
@@ -241,6 +242,9 @@ function InscriptionForm() {
   const [COMPLEMENTARY_OPTIONS, setComplementaryOptions] = useState<
     { id: string; label: string; price: string; unit: string }[]
   >(DEFAULT_COMPLEMENTARY_OPTIONS as any);
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   // Charge le catalogue effectif des options (base si configurée/alimentée
   // par l'admin, sinon repli automatique sur les valeurs par défaut ci-dessus).
@@ -716,7 +720,7 @@ function InscriptionForm() {
                 <label className="label">Catégorie *</label>
                 <select value={form.category} onChange={e => { upd("category",e.target.value); upd("subcategory",""); }} className="input-field">
                   <option value="">Sélectionner…</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {categories.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                 </select>
                 {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
               </div>
@@ -726,17 +730,17 @@ function InscriptionForm() {
                 <select
                   value={form.subcategory}
                   onChange={e => upd("subcategory",e.target.value)}
-                  disabled={!form.category || !SUBCATEGORIES[form.category]}
+                  disabled={!form.category || !categories.find(c => c.label === form.category)?.subcategories.length}
                   className="input-field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {!form.category
                       ? "Choisissez d'abord une catégorie"
-                      : SUBCATEGORIES[form.category]
+                      : categories.find(c => c.label === form.category)?.subcategories.length
                         ? "Sélectionner…"
                         : "Aucune sous-catégorie disponible"}
                   </option>
-                  {form.category && SUBCATEGORIES[form.category]?.map(s => <option key={s} value={s}>{s}</option>)}
+                  {form.category && categories.find(c => c.label === form.category)?.subcategories.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
                 </select>
               </div>
 

@@ -4,6 +4,7 @@ import { categoryLabelFromSlug, unslugify, extractIdFromSlug } from "@/lib/profi
 import { cityMetaFromSlug } from "@/lib/cityData";
 import { dbGetProfessionalById } from "@/lib/db/professionals";
 import { dbGetReviewsByPro } from "@/lib/db/reviews";
+import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
 import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
@@ -32,6 +33,8 @@ function parseSegments(segments: string[]) {
   const fallbackName = unslugify(nameSlugOnly) || "Fiche professionnelle";
   return { categorySlugSeg, subcategorySlugSeg, categoryLabel, subcategoryLabel, id, fallbackName };
 }
+
+const getCategories = cache(() => dbGetCategories());
 
 async function resolveProfessional(id: string | null): Promise<Professional | null> {
   if (!id || !isDbConfigured) return null;
@@ -68,7 +71,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (segments.length === 1 || segments.length === 2) {
     const cityMeta = cityMetaFromSlug(segments[0]);
     if (cityMeta) {
-      const categoryLabel = segments.length === 2 ? categoryLabelFromSlug(segments[1]) : null;
+      const categories = segments.length === 2 ? await getCategories() : undefined;
+      const categoryLabel = segments.length === 2 ? categoryLabelFromSlug(segments[1], categories) : null;
       const url = `${baseUrl}/annuaire/${segments.join("/")}`;
       const title = categoryLabel
         ? `${categoryLabel} à ${cityMeta.name} (${cityMeta.postalCode}) | Prolocal-Landes`
@@ -137,7 +141,8 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
   if (segments.length === 1 || segments.length === 2) {
     const cityMeta = cityMetaFromSlug(segments[0]);
     if (cityMeta) {
-      const categoryLabel = segments.length === 2 ? categoryLabelFromSlug(segments[1]) : null;
+      const categories = segments.length === 2 ? await getCategories() : undefined;
+      const categoryLabel = segments.length === 2 ? categoryLabelFromSlug(segments[1], categories) : null;
       const url = `${baseUrl}/annuaire/${segments.join("/")}`;
 
       const cityJsonLd = {
@@ -195,7 +200,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
       return (
         <>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cityJsonLd) }} />
-          <AnnuaireCatchAllClient initialData={null} />
+          <AnnuaireCatchAllClient initialData={null} categories={categories} />
         </>
       );
     }

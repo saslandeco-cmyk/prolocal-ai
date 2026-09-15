@@ -6,9 +6,10 @@ import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
 import { categorySlug } from "@/lib/profileUrl";
 import { CITY_META } from "@/lib/cityData";
-import { Professional, CATEGORIES, SUBCATEGORIES } from "@/types";
+import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import type { CityMeta } from "@/lib/cityData";
+import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 interface Props {
   meta: CityMeta;
@@ -23,11 +24,14 @@ function joinCategories(cats: string[]): string {
 }
 
 export default function CityPage({ meta, categoryFilter }: Props) {
+  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [pros, setPros] = useState<Professional[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   useEffect(() => {
     (async () => {
@@ -42,20 +46,20 @@ export default function CityPage({ meta, categoryFilter }: Props) {
       setLoaded(true);
 
       const present = new Set(all.map(p => p.category));
-      setAvailableCategories(CATEGORIES.filter(c => present.has(c)));
+      setAvailableCategories(categories.map(c => c.label).filter(c => present.has(c)));
 
       // Sous-catégories réellement présentes, pour la page ville + catégorie
       if (categoryFilter) {
         const presentSubs = new Set(
           filtered.map(p => p.subcategory).filter((s): s is string => Boolean(s))
         );
-        const allSubsForCategory = SUBCATEGORIES[categoryFilter] || [];
+        const allSubsForCategory = categories.find(c => c.label === categoryFilter)?.subcategories.map(s => s.label) || [];
         setAvailableSubcategories(allSubsForCategory.filter(s => presentSubs.has(s)));
       } else {
         setAvailableSubcategories([]);
       }
     })();
-  }, [meta.name, categoryFilter]);
+  }, [meta.name, categoryFilter, categories]);
 
   const title = categoryFilter
     ? `${categoryFilter} à ${meta.name}`

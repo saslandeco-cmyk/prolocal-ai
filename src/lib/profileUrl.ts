@@ -1,5 +1,6 @@
 import type { Professional } from "@/types";
 import { SUBCATEGORIES } from "@/types";
+import type { CategoryRecord } from "@/lib/categories";
 
 /** Transforme un texte en slug URL (minuscules, sans accents, tirets). */
 export function slugify(text: string): string {
@@ -39,8 +40,17 @@ export function subcategorySlug(subcategory?: string): string {
   return subcategory ? slugify(subcategory) : "general";
 }
 
-/** Retrouve le libellé de catégorie à partir de son slug (recherche inverse dans CATEGORY_SLUGS). */
-export function categoryLabelFromSlug(slug: string): string | null {
+/**
+ * Retrouve le libellé de catégorie à partir de son slug. Si une liste de
+ * catégories (issue de la base, voir src/lib/db/categories.ts) est fournie,
+ * elle est consultée en priorité — pour résoudre aussi les catégories
+ * créées depuis l'admin — avec repli sur la table statique historique.
+ */
+export function categoryLabelFromSlug(slug: string, categories?: CategoryRecord[]): string | null {
+  if (categories) {
+    const found = categories.find(c => c.slug === slug);
+    if (found) return found.label;
+  }
   const entry = Object.entries(CATEGORY_SLUGS).find(([, s]) => s === slug);
   return entry ? entry[0] : null;
 }
@@ -94,8 +104,17 @@ export function subcategorySlugForUrl(subcategory: string): string {
   return slugify(subcategory);
 }
 
-/** Retrouve le libellé exact d'une sous-catégorie à partir de son slug, au sein d'une catégorie donnée. */
-export function subcategoryLabelFromSlug(categoryLabel: string, slug: string): string | null {
+/**
+ * Retrouve le libellé exact d'une sous-catégorie à partir de son slug, au
+ * sein d'une catégorie donnée. Même principe de repli que
+ * categoryLabelFromSlug() ci-dessus.
+ */
+export function subcategoryLabelFromSlug(categoryLabel: string, slug: string, categories?: CategoryRecord[]): string | null {
+  if (categories) {
+    const cat = categories.find(c => c.label === categoryLabel);
+    const found = cat?.subcategories.find(s => s.slug === slug);
+    if (found) return found.label;
+  }
   const list = SUBCATEGORIES[categoryLabel] || [];
   return list.find(s => slugify(s) === slug) || null;
 }

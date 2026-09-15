@@ -1,9 +1,8 @@
 import { MetadataRoute } from "next";
-import { CATEGORY_META } from "@/lib/categoryData";
 import { CITY_META } from "@/lib/cityData";
-import { buildProfileUrl, categorySlug, subcategorySlugForUrl } from "@/lib/profileUrl";
-import { SUBCATEGORIES } from "@/types";
+import { buildProfileUrl } from "@/lib/profileUrl";
 import { dbGetAllProfessionals } from "@/lib/db/professionals";
+import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
 
 /**
@@ -27,16 +26,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/protection-donnees-personnelles`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  const categoryRoutes: MetadataRoute.Sitemap = Object.keys(CATEGORY_META).map(slug => ({
-    url: `${baseUrl}/categories/${slug}`,
+  const categories = await dbGetCategories();
+
+  const categoryRoutes: MetadataRoute.Sitemap = categories.map(cat => ({
+    url: `${baseUrl}/categories/${cat.slug}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
-  const subcategoryRoutes: MetadataRoute.Sitemap = Object.values(CATEGORY_META).flatMap(meta =>
-    (SUBCATEGORIES[meta.category] || []).map(sub => ({
-      url: `${baseUrl}/categories/${categorySlug(meta.category)}/${subcategorySlugForUrl(sub)}`,
+  const subcategoryRoutes: MetadataRoute.Sitemap = categories.flatMap(cat =>
+    cat.subcategories.map(sub => ({
+      url: `${baseUrl}/categories/${cat.slug}/${sub.slug}`,
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.7,

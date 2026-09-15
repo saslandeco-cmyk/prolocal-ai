@@ -8,6 +8,7 @@ import ProfessionalProfileView from "@/components/professional/ProfessionalProfi
 import CityPage from "@/components/category/CityPage";
 import { Loader2 } from "lucide-react";
 import type { Professional } from "@/types";
+import type { CategoryRecord } from "@/lib/categories";
 
 /**
  * Route unique gérant à la fois :
@@ -26,7 +27,7 @@ import type { Professional } from "@/types";
  * c'est une page ville ; sinon, on retombe sur l'ancien comportement
  * (identifiant de fiche legacy, avec redirection automatique).
  */
-export default function AnnuaireCatchAllClient({ initialData }: { initialData?: Professional | null }) {
+export default function AnnuaireCatchAllClient({ initialData, categories }: { initialData?: Professional | null; categories?: CategoryRecord[] }) {
   const params = useParams<{ slug: string[] }>();
   const router = useRouter();
   const [notFound, setNotFound] = useState(false);
@@ -37,7 +38,7 @@ export default function AnnuaireCatchAllClient({ initialData }: { initialData?: 
   const cityMetaSingle = segments.length === 1 ? cityMetaFromSlug(segments[0]) : null;
   // Page ville + catégorie : 2 segments [ville]/[categorie]
   const cityMetaCombo = segments.length === 2 ? cityMetaFromSlug(segments[0]) : null;
-  const comboCategoryLabel = cityMetaCombo ? categoryLabelFromSlug(segments[1]) : null;
+  const comboCategoryLabel = cityMetaCombo ? categoryLabelFromSlug(segments[1], categories) : null;
 
   // Format SEO fiche pro : /annuaire/[categorie]/[sous-categorie]/[nom-entreprise]-[id] (3 segments)
   const isSeoFormat = segments.length === 3;
