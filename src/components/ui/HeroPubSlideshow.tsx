@@ -110,12 +110,12 @@ export default function HeroPubSlideshow({ category, subcategory, fallback }: Pr
 
   return (
     <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl group flex flex-col">
-      <Link href={buildProfileUrl(pro)} className="block h-full">
-        {/* Image sur toute la hauteur de la card */}
+      <Link href={buildProfileUrl(pro)} className="flex flex-col h-full">
+        {/* Image limitée à la zone du haut de la card */}
         <img
           src={pro.banner || pro.logo || "/placeholder-banner.jpg"}
           alt={pro.companyName}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full flex-1 min-h-0 object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
         {/* Badge "Encart sponsorisé" */}
@@ -137,11 +137,10 @@ export default function HeroPubSlideshow({ category, subcategory, fallback }: Pr
           </div>
         )}
 
-        {/* Bloc d'informations — en surimpression sur l'image, au même
-            emplacement qu'auparavant (bas de la card). Les avis et la
-            description ne s'affichent que s'ils existent réellement (pas
-            de texte de repli). */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-5 py-4 text-white flex-shrink-0">
+        {/* Bloc d'informations — sous l'image (plus en surimpression), en
+            bas de la card. Les avis et la description ne s'affichent que
+            s'ils existent réellement (pas de texte de repli). */}
+        <div className="bg-black/60 px-5 py-4 text-white flex-shrink-0">
           <p className="font-bold text-xl leading-tight truncate">{pro.companyName}</p>
           <p className="text-white/80 text-sm truncate">{pro.subcategory || pro.category} — {pro.city}</p>
 
