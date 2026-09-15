@@ -47,9 +47,12 @@ Ouvrez [http://localhost:3000](http://localhost:3000)
 - Email : `boulangerie@example.com`
 - Mot de passe : `demo123`
 
-### Espace Administrateur (`/admin`)
-- Email : `admin@prolocal-landes.fr`
-- Mot de passe : `Admin2024!`
+### Espace Administrateur
+Aucun identifiant par défaut : à configurer via les variables d'environnement
+`ADMIN_USERNAME` / `ADMIN_PASSWORD` (voir `.env.local.example`), vérifiées
+côté serveur par `/api/admin/login`. L'URL d'accès est elle-même définie par
+`ADMIN_SECRET_PATH` (voir `src/middleware.ts`) — `/admin` renvoie une erreur
+404 directe.
 
 ## Fonctionnalités
 
@@ -73,7 +76,7 @@ Ouvrez [http://localhost:3000](http://localhost:3000)
 - Modification des informations
 - Affichage de la formule active
 
-### Administration (`/admin`)
+### Administration
 - Vue d'ensemble (stats)
 - Liste des professionnels avec filtres
 - Validation / Refus / Suspension / Suppression des fiches

@@ -1,13 +1,10 @@
 import { Professional } from "@/types";
 
 const STORAGE_KEY         = "prolocal_professionals";
-const ADMIN_KEY           = "prolocal_admin";
 const SESSION_KEY         = "prolocal_session";
 const IDB_DB_NAME         = "prolocal_images";
 const IDB_STORE           = "images";
 const IDB_VERSION         = 1;
-
-const DEFAULT_ADMIN = { email: "admin@prolocal-landes.fr", password: "Admin2024!" };
 
 // ── localStorage helper ────────────────────────────────────────
 
@@ -320,12 +317,9 @@ export function clearSession(): void {
 }
 
 // ── Admin ─────────────────────────────────────────────────────
-
-export function checkAdminCredentials(email: string, password: string): boolean {
-  const stored = localStorage.getItem(ADMIN_KEY);
-  const admin = stored ? JSON.parse(stored) : DEFAULT_ADMIN;
-  return admin.email === email && admin.password === password;
-}
+// La vérification des identifiants se fait désormais côté serveur
+// (voir /api/admin/login), jamais avec des identifiants codés en dur
+// côté client — voir src/app/admin/page.tsx (handleLogin).
 
 // ── Appointments ──────────────────────────────────────────────
 const APPT_KEY = "prolocal_appointments";

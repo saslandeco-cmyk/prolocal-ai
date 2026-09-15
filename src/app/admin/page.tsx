@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag } from "lucide-react";
-import { checkAdminCredentials, setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds } from "@/lib/storage";
+import { setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds } from "@/lib/storage";
 import { Professional, PLANS, StatusType, Review } from "@/types";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
 import PlanBadge from "@/components/ui/PlanBadge";
@@ -1355,9 +1355,10 @@ function HeroSaveButton() {
 export default function AdminPage() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [pros, setPros] = useState<Professional[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showColumnsModal, setShowColumnsModal] = useState(false);
@@ -1391,14 +1392,25 @@ export default function AdminPage() {
 
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (checkAdminCredentials(loginEmail, loginPassword)) {
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setLoginError(data.error || "Identifiants incorrects."); return; }
       setSession("admin");
       setAuthenticated(true);
       getProfessionalsWithImages().then(setPros);
-    } else {
-      setLoginError("Identifiants incorrects.");
+    } catch {
+      setLoginError("Erreur réseau lors de la connexion.");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -1548,21 +1560,18 @@ export default function AdminPage() {
           <div className="card p-8">
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="label">Email administrateur</label>
-                <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="input-field" placeholder="admin@prolocal-landes.fr" required />
+                <label className="label">Identifiant administrateur</label>
+                <input type="text" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="input-field" autoComplete="username" required />
               </div>
               <div>
                 <label className="label">Mot de passe</label>
-                <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="input-field" placeholder="••••••••" required />
+                <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="input-field" placeholder="••••••••" autoComplete="current-password" required />
               </div>
               {loginError && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">{loginError}</div>}
-              <button type="submit" className="btn-primary w-full py-3.5">Se connecter</button>
+              <button type="submit" disabled={loginLoading} className="btn-primary w-full py-3.5 disabled:opacity-50">
+                {loginLoading ? "Connexion…" : "Se connecter"}
+              </button>
             </form>
-          </div>
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-            <p className="font-medium mb-1">Accès démo :</p>
-            <p>Email : <code className="bg-blue-100 px-1 rounded">admin@prolocal-landes.fr</code></p>
-            <p>Mot de passe : <code className="bg-blue-100 px-1 rounded">Admin2024!</code></p>
           </div>
         </div>
       </div>

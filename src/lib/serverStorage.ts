@@ -104,12 +104,6 @@ export function serverSaveClient(client: Client): void {
   writeJSON(CLIENTS_FILE, all);
 }
 
-// ── Admin ─────────────────────────────────────────────────────
-const DEFAULT_ADMIN = {
-  email:    process.env.ADMIN_EMAIL    || "admin@prolocal-landes.fr",
-  password: process.env.ADMIN_PASSWORD || "Admin2024!",
-};
-
-export function serverCheckAdmin(email: string, password: string): boolean {
-  return email === DEFAULT_ADMIN.email && password === DEFAULT_ADMIN.password;
-}
+// La vérification des identifiants admin se fait via /api/admin/login
+// (voir src/app/api/admin/login/route.ts), contre ADMIN_USERNAME /
+// ADMIN_PASSWORD — jamais avec des identifiants codés en dur ici.
