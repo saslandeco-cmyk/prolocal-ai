@@ -1418,29 +1418,29 @@ export default function AdminPage() {
 
   const refresh = () => { getProfessionalsWithImages().then(setPros); setReviews(getReviews()); };
 
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedIds.size === 0) return;
     const label = bulkAction === "delete" ? "supprimer" : "suspendre";
     if (!confirm(`Confirmer : ${label} ${selectedIds.size} professionnel(s) ?`)) return;
-    selectedIds.forEach(id => {
+    await Promise.all(Array.from(selectedIds).map(async id => {
       if (bulkAction === "delete") {
-        deleteProfessional(id);
+        await deleteProfessional(id);
         if (selectedPro?.id === id) setSelectedPro(null);
       } else {
         const pro = pros.find(p => p.id === id);
-        if (pro) saveProfessional({ ...pro, status: "suspended", updatedAt: new Date().toISOString() });
+        if (pro) await saveProfessional({ ...pro, status: "suspended", updatedAt: new Date().toISOString() });
       }
-    });
+    }));
     setSelectedIds(new Set());
     setBulkAction("");
     refresh();
   };
 
-  const updateStatus = (id: string, status: StatusType) => {
+  const updateStatus = async (id: string, status: StatusType) => {
     const pro = pros.find((p) => p.id === id);
     if (!pro) return;
     const updated = { ...pro, status, updatedAt: new Date().toISOString(), ...(status === "active" ? { validatedAt: new Date().toISOString() } : {}) };
-    saveProfessional(updated);
+    await saveProfessional(updated);
     refresh();
     if (selectedPro?.id === id) setSelectedPro(updated);
   };
@@ -1490,9 +1490,9 @@ export default function AdminPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement cette fiche ?")) return;
-    deleteProfessional(id);
+    await deleteProfessional(id);
     refresh();
     if (selectedPro?.id === id) setSelectedPro(null);
   };

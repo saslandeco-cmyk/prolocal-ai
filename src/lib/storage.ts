@@ -184,7 +184,14 @@ export async function getProfessionalsWithImages(): Promise<Professional[]> {
   return Promise.all(local.map(rehydrateAsync));
 }
 
-export function saveProfessional(pro: Professional): void {
+/**
+ * Enregistre une fiche professionnelle en localStorage puis en base (si
+ * configurée). Retourne une promesse résolue une fois la réplication en
+ * base tentée — à `await`er avant de rafraîchir une liste dépendante de la
+ * base (voir getProfessionalsWithImages), pour éviter qu'un rechargement
+ * trop rapide ne rate encore la mise à jour côté serveur.
+ */
+export async function saveProfessional(pro: Professional): Promise<void> {
   // Séparer les images du reste
   const { logo, banner, photos, ...rest } = pro;
 
@@ -206,26 +213,30 @@ export function saveProfessional(pro: Professional): void {
   // ── Étape 2 de la migration base de données : double-écriture ──
   // Reflète également la fiche vers la base Postgres (si configurée), en
   // plus du localStorage qui reste la source de vérité pour l'instant.
-  // Entièrement non-bloquant : un échec (base non configurée, hors-ligne,
-  // etc.) n'affecte jamais le fonctionnement normal du site.
-  mirrorProfessionalToDb(pro);
+  // Un échec (base non configurée, hors-ligne, etc.) n'affecte jamais le
+  // fonctionnement normal du site pour les appelants qui n'attendent pas
+  // cette promesse.
+  await mirrorProfessionalToDb(pro);
 }
 
-/** Réplique une fiche professionnelle vers la base (fire-and-forget, jamais bloquant). */
 /**
- * Réplique une fiche professionnelle vers la base (fire-and-forget, jamais
- * bloquant). Exportée pour être réutilisable en dehors de saveProfessional()
- * — notamment pour la synchronisation à la connexion (étape 4) et la
+ * Réplique une fiche professionnelle vers la base. Peut être utilisée en
+ * fire-and-forget (sans `await`, comportement historique) ou attendue par
+ * l'appelant lorsqu'il a besoin de la garantie que la tentative est
+ * terminée avant de continuer (ex: rafraîchir une liste juste après).
+ * Exportée pour être réutilisable en dehors de saveProfessional() —
+ * notamment pour la synchronisation à la connexion (étape 4) et la
  * migration en masse depuis l'admin, sans avoir besoin de réécrire dans
  * localStorage ni de retoucher les images à chaque fois.
  */
-export function mirrorProfessionalToDb(pro: Professional): void {
+export async function mirrorProfessionalToDb(pro: Professional): Promise<void> {
   if (typeof window === "undefined") return;
-  fetch("/api/db/professionals", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pro),
-  }).then(async (res) => {
+  try {
+    const res = await fetch("/api/db/professionals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pro),
+    });
     // Ne bloque jamais l'expérience, mais rend l'échec visible en console
     // (auparavant totalement silencieux — une fiche pouvait sembler
     // enregistrée avec succès en local tout en échouant en base, sans
@@ -235,12 +246,20 @@ export function mirrorProfessionalToDb(pro: Professional): void {
       const body = await res.json().catch(() => ({}));
       console.error(`[db-mirror] Échec de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, body.error || res.status);
     }
-  }).catch((err) => {
+  } catch (err) {
     console.error(`[db-mirror] Erreur réseau lors de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, err);
-  });
+  }
 }
 
-export function deleteProfessional(id: string): void {
+/**
+ * Supprime une fiche professionnelle du localStorage ET de la base (si
+ * configurée). Retourne une promesse résolue une fois la suppression en
+ * base tentée — à `await`er avant de rafraîchir une liste ou de naviguer,
+ * pour éviter qu'un rechargement (ré-alimenté en priorité depuis la base,
+ * voir getProfessionalsWithImages) ne fasse réapparaître une fiche dont la
+ * suppression côté serveur n'avait pas encore eu le temps d'aboutir.
+ */
+export async function deleteProfessional(id: string): Promise<void> {
   deleteImagesAsync(id);
   const pros = getRawProfessionals()
     .map(p => ({ ...p, logo: undefined, banner: undefined, photos: undefined }))
@@ -249,7 +268,15 @@ export function deleteProfessional(id: string): void {
 
   // Étape 2 — reflète la suppression vers la base également
   if (typeof window !== "undefined") {
-    fetch(`/api/db/professionals/${id}`, { method: "DELETE" }).catch(() => {});
+    try {
+      const res = await fetch(`/api/db/professionals/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error(`[db-mirror] Échec de la suppression en base pour l'id "${id}" :`, body.error || res.status);
+      }
+    } catch (err) {
+      console.error(`[db-mirror] Erreur réseau lors de la suppression en base pour l'id "${id}" :`, err);
+    }
   }
 }
 

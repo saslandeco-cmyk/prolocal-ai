@@ -1586,8 +1586,8 @@ function DashboardContent() {
                 <div className="flex gap-3 justify-end">
                   <button onClick={() => setConfirmAction(null)} className="btn-secondary py-2.5 px-5">Annuler</button>
                   <button
-                    onClick={() => {
-                      deleteProfessional(pro.id);
+                    onClick={async () => {
+                      await deleteProfessional(pro.id);
                       clearSession();
                       router.push("/");
                     }}
