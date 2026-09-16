@@ -82,7 +82,7 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
 
           {/* Catégorie + étoiles sur la même ligne */}
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
-            <p className="text-sm text-landes-sage font-medium">{pro.category}</p>
+            <p className="text-sm text-landes-sage font-medium">{pro.subcategory || pro.category}</p>
             {rating && rating.avg > 0 && (
               <StarDisplay rating={rating.avg} count={rating.count} size="xs" />
             )}
