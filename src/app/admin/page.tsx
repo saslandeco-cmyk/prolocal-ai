@@ -1371,6 +1371,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<StatusType | "">("");
   const [filterClaimed, setFilterClaimed] = useState<"" | "claimed" | "unclaimed">("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterSubcategory, setFilterSubcategory] = useState("");
   const [selectedPro, setSelectedPro] = useState<Professional | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Professional>>({});
@@ -1533,7 +1535,9 @@ export default function AdminPage() {
     const matchSearch = !search || p.companyName.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.city.toLowerCase().includes(q);
     const matchStatus = !filterStatus || p.status === filterStatus;
     const matchClaimed = !filterClaimed || (filterClaimed === "claimed" ? !!(p as any).claimed : !(p as any).claimed);
-    return matchSearch && matchStatus && matchClaimed;
+    const matchCategory = !filterCategory || p.category === filterCategory;
+    const matchSubcategory = !filterSubcategory || p.subcategory === filterSubcategory;
+    return matchSearch && matchStatus && matchClaimed && matchCategory && matchSubcategory;
   });
 
   const stats = {
@@ -2174,6 +2178,23 @@ export default function AdminPage() {
               <option value="">Revendication : toutes</option>
               <option value="claimed">Revendiquées</option>
               <option value="unclaimed">Non revendiquées</option>
+            </select>
+            <select
+              value={filterCategory}
+              onChange={(e) => { setFilterCategory(e.target.value); setFilterSubcategory(""); }}
+              className="input-field sm:w-48"
+            >
+              <option value="">Toutes catégories</option>
+              {categories.map((c) => <option key={c.id} value={c.label}>{c.label}</option>)}
+            </select>
+            <select
+              value={filterSubcategory}
+              onChange={(e) => setFilterSubcategory(e.target.value)}
+              disabled={!filterCategory || !categories.find((c) => c.label === filterCategory)?.subcategories.length}
+              className="input-field sm:w-48 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              <option value="">Toutes sous-catégories</option>
+              {filterCategory && categories.find((c) => c.label === filterCategory)?.subcategories.map((s) => <option key={s.id} value={s.label}>{s.label}</option>)}
             </select>
           </div>
 
