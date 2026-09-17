@@ -9,6 +9,11 @@ import type { Professional } from "@/types";
 
 const DEFAULT_RADIUS_KM = 30;
 const KEYWORD_MATCH_WEIGHT = 4;
+// Les intitulés de services sont explicitement choisis par le professionnel
+// pour décrire ce qu'il propose (jusqu'à 3, voir Professional.services) —
+// un mot-clé du besoin qui s'y retrouve est un signal bien plus fort qu'une
+// simple occurrence dans le texte libre de la description.
+const SERVICES_MATCH_WEIGHT = 10;
 
 function cityCoords(communeName: string | null): { lat: number; lng: number } | null {
   if (!communeName) return null;
@@ -19,12 +24,14 @@ function cityCoords(communeName: string | null): { lat: number; lng: number } | 
 }
 
 /**
- * Texte "à propos" d'un professionnel — titre d'activité, description,
- * services et mots-clés SEO (quand renseignés) — utilisé pour faire
+ * Texte "à propos" d'un professionnel — titre d'activité, description
+ * longue, mots-clés SEO (quand renseignés) — utilisé pour faire
  * correspondre les mots-clés du besoin exprimé par l'utilisateur (voir
  * needParser.ts → NeedRequest.motsCles) à ce que le professionnel a
- * lui-même écrit sur sa fiche. Purement un signal de pertinence : ne
- * remplace jamais la correspondance par catégorie, ne génère aucune donnée.
+ * lui-même écrit sur sa fiche. Les intitulés de services sont traités à
+ * part (voir servicesScore) car ils constituent une cible prioritaire.
+ * Purement un signal de pertinence : ne remplace jamais la correspondance
+ * par catégorie, ne génère aucune donnée.
  */
 function proSearchableText(pro: Professional): string {
   return normalize(
@@ -33,7 +40,6 @@ function proSearchableText(pro: Professional): string {
       pro.activityTitle,
       pro.shortDescription,
       stripHtml(pro.description || ""),
-      ...(pro.services || []),
       ...(pro.seoKeywords || []),
     ]
       .filter(Boolean)
@@ -43,6 +49,18 @@ function proSearchableText(pro: Professional): string {
 
 function keywordScore(searchableText: string, motsCles: string[]): number {
   return motsCles.filter((kw) => containsWholeWord(searchableText, normalize(kw))).length * KEYWORD_MATCH_WEIGHT;
+}
+
+/**
+ * Cible prioritaire : les intitulés de services que le professionnel a
+ * lui-même renseignés (jusqu'à 3, ex: "Installation climatisation",
+ * "Fromages affinés"). Un mot-clé du besoin qui y correspond pèse plus
+ * lourd qu'une simple mention dans la description longue.
+ */
+function servicesScore(services: string[] | undefined, motsCles: string[]): number {
+  if (!services || services.length === 0) return 0;
+  const servicesText = normalize(services.join(" "));
+  return motsCles.filter((kw) => containsWholeWord(servicesText, normalize(kw))).length * SERVICES_MATCH_WEIGHT;
 }
 
 function locationScore(
@@ -79,7 +97,9 @@ function locationScore(
  *     catégorie entière seulement si aucune sous-catégorie n'a pu être
  *     déterminée. Affinée par localisation et par les mots-clés trouvés
  *     dans le descriptif du professionnel (description longue "à propos",
- *     titre d'activité, services, mots-clés SEO).
+ *     titre d'activité, mots-clés SEO) — les intitulés de services
+ *     (jusqu'à 3, choisis explicitement par le professionnel) constituent
+ *     une cible prioritaire, pondérée plus fortement (voir servicesScore).
  *  2. Repli mots-clés seuls, sur TOUTES les fiches actives, uniquement si
  *     l'étape 1 n'a rien donné — pour ne pas laisser une recherche
  *     bredouille alors qu'un professionnel a justement écrit le bon mot
@@ -101,6 +121,7 @@ export async function matchProfessionals(
 
     const loc = locationScore(professional, need, refCoords, radiusKm);
     matchScore += loc.score;
+    matchScore += servicesScore(professional.services, need.motsCles);
     matchScore += keywordScore(proSearchableText(professional), need.motsCles);
 
     return { professional, distanceKm: loc.distanceKm, matchScore };
@@ -129,7 +150,7 @@ export async function matchProfessionals(
     const all = (await dbGetAllProfessionals()).filter((p) => p.status === "active");
     const scored = all
       .map((professional) => {
-        const kwScore = keywordScore(proSearchableText(professional), need.motsCles);
+        const kwScore = servicesScore(professional.services, need.motsCles) + keywordScore(proSearchableText(professional), need.motsCles);
         if (kwScore === 0) return null;
         const loc = locationScore(professional, need, refCoords, radiusKm);
         if (need.commune && !loc.withinReach) return null;
