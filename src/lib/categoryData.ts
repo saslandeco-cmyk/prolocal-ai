@@ -159,6 +159,25 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     demoPros: [],
   },
 
+  // ── Restauration ─────────────────────────────────────────────
+  restauration: {
+    slug: "restauration",
+    category: "Restauration",
+    emoji: "🍽️",
+    title: "Restauration<br/><span class=\"text-landes-sand\">dans les Landes</span>",
+    subtitle: "Restaurants, cafés, bars et traiteurs du département des Landes (40).",
+    seoTitle: "Restaurants et traiteurs dans les Landes",
+    seoText: [
+      "Les Landes offrent une scène culinaire riche, entre cuisine traditionnelle du Sud-Ouest, produits du terroir landais et adresses tournées vers l'océan. Restaurants gastronomiques, tables familiales, cafés de village et traiteurs se côtoient dans tout le département.",
+      "Notre annuaire référence les meilleurs <strong class=\"text-landes-pine\">restaurants et professionnels de la restauration dans les Landes</strong> : restaurants traditionnels, brasseries, cafés-bars, traiteurs pour événements et adresses spécialisées dans les produits landais.",
+      "Foie gras, magret de canard, huîtres du bassin d'Arcachon voisin ou poissons de l'Adour composent des cartes qui font la réputation des tables landaises, aussi bien à <strong class=\"text-landes-pine\">Mont-de-Marsan</strong> et <strong class=\"text-landes-pine\">Dax</strong> que sur le littoral à <strong class=\"text-landes-pine\">Hossegor</strong> ou <strong class=\"text-landes-pine\">Capbreton</strong>.",
+      "Que vous cherchiez un restaurant pour un dîner en famille, une adresse conviviale entre amis, un traiteur pour un mariage ou un événement professionnel, notre annuaire vous aide à trouver rapidement l'établissement adapté, avec ses coordonnées et sa localisation.",
+      "Faire le choix d'une table landaise, c'est aussi soutenir les producteurs et artisans locaux qui approvisionnent ces établissements en produits frais et de saison, dans une démarche de circuit court chère au département.",
+    ],
+    ctaText: "Restaurant, café, bar ou traiteur — référencez votre établissement et soyez trouvé par les habitants et visiteurs des Landes.",
+    demoPros: [],
+  },
+
   // ── Services ─────────────────────────────────────────────────
   services: {
     slug: "services",

@@ -258,3 +258,24 @@ CREATE TABLE IF NOT EXISTS sirene_watched_ape_codes (
   libelle       TEXT,
   added_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ═══════════════════════════════════════════════════════════════════
+-- PROLOCAL AI — demandes de devis/contact issues du parcours en langage
+-- naturel (src/lib/ai/**). Une demande est toujours rattachée à un
+-- professionnel réellement présent dans `professionals` — jamais générée
+-- automatiquement, toujours créée après confirmation explicite de
+-- l'utilisateur (voir src/app/api/demandes/route.ts).
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS demandes (
+  id              TEXT PRIMARY KEY,
+  pro_id          TEXT NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+  categorie       TEXT,
+  commune         TEXT,
+  status          TEXT NOT NULL DEFAULT 'nouvelle',  -- nouvelle | en_cours | repondue | acceptee | terminee | annulee
+  data            JSONB NOT NULL,                    -- besoin structuré, message, coordonnées du demandeur, réponse pro
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_demandes_pro_id ON demandes (pro_id);
+CREATE INDEX IF NOT EXISTS idx_demandes_status ON demandes (status);

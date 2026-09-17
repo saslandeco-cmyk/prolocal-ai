@@ -235,6 +235,7 @@ export const CATEGORIES = [
   "Culture & Élevage",
   "Immobilier",
   "Informatique & Numérique",
+  "Restauration",
   "Services à la personne",
   "Sport & Fitness",
   "Transport de personnes",
@@ -335,11 +336,17 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Webdesigner",
     "Webmaster indépendant",
   ],
+  "Restauration": [
+    "Restaurant",
+    "Café / Bar",
+    "Traiteur",
+  ],
   "Services à la personne": [
     "Aide à domicile",
     "Assistant administratif",
     "Assistant informatique et Internet",
     "Employé de ménage / Repassage",
+    "Garde d'animaux",
     "Garde d'enfants",
     "Travaux de jardinerie",
   ],
@@ -349,6 +356,7 @@ export const SUBCATEGORIES: Record<string, string[]> = {
   ],
   "Transport de personnes": [
     "Ambulance",
+    "Déménagement",
     "Taxi",
     "Transport de groupe",
   ],

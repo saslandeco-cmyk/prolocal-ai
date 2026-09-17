@@ -25,6 +25,7 @@ export const CATEGORY_SLUGS: Record<string, string> = {
   "Culture & Élevage": "agriculture",
   "Immobilier": "immobilier",
   "Informatique & Numérique": "informatique",
+  "Restauration": "restauration",
   "Services à la personne": "services",
   "Sport & Fitness": "sport",
   "Transport de personnes": "transport",

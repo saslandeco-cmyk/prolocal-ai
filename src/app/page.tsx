@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { PLANS } from "@/types";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
-import SearchBar from "@/components/professional/SearchBar";
+import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import FeaturedProfessionals from "@/components/professional/FeaturedProfessionals";
 import FullWidthMap from "@/components/map/FullWidthMap";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
@@ -61,13 +61,11 @@ export default function HomePage() {
                 <span>Annuaire local — Département des Landes (40)</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-5">
-                Trouvez les pros<br />
-                <span className="text-landes-sand">près de chez vous</span><br />
-                dans les Landes
+                De quoi avez-vous<br />
+                <span className="text-landes-sand">besoin ?</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-300 max-w-md">
-                L&apos;annuaire de référence des professionnels landais.
-                Géolocalisez, filtrez et contactez en un clic.
+                Décrivez simplement votre besoin. PROLOCAL AI vous aide à trouver le bon professionnel près de chez vous, dans les Landes.
               </p>
             </div>
 
@@ -80,8 +78,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Barre de recherche pleine largeur */}
-          <SearchBar />
+          {/* Recherche conversationnelle — coeur de PROLOCAL AI */}
+          <NeedSearchBar />
+
+          <div className="mt-4 flex justify-center">
+            <Link href="/annuaire" className="text-sm text-white/70 hover:text-white underline underline-offset-2 transition-colors">
+              Ou parcourir l&apos;annuaire par catégorie
+            </Link>
+          </div>
 
           {/* Bouton inscription pro */}
           <div className="mt-5 flex justify-center">

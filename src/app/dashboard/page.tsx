@@ -26,6 +26,7 @@ import { REQUIRE_VALIDATION } from "@/lib/config";
 import StatsTab from "@/app/dashboard/StatsTab";
 import FacturationTab from "@/app/dashboard/FacturationTab";
 import CrmTab from "@/app/dashboard/CrmTab";
+import DemandesTab from "@/app/dashboard/DemandesTab";
 import RevenueTab from "@/app/dashboard/RevenueTab";
 import Link from "next/link";
 
@@ -54,7 +55,7 @@ function DashboardContent() {
   const [savedSection,  setSavedSection]  = useState<string | null>(null);
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
-  const [activeTab, setActiveTab] = useState<"fiche" | "photos" | "horaires" | "avis" | "stats" | "info-facturation" | "facturation" | "clients" | "revenue" | "plan" | "subscriptions">("fiche");
+  const [activeTab, setActiveTab] = useState<"fiche" | "photos" | "horaires" | "avis" | "stats" | "info-facturation" | "facturation" | "clients" | "demandes" | "revenue" | "plan" | "subscriptions">("fiche");
   const [photos, setPhotos] = useState<string[]>([]);
   const [proReviews, setProReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -605,6 +606,7 @@ function DashboardContent() {
                 { id: "horaires",         label: "Horaires",              emoji: "🕐", editable: true,  plans: ["premium","gold"] },
                 { id: "info-facturation", label: "Infos facturation",     emoji: "🏢", editable: true,  plans: ["gold"] },
                 { id: "facturation",      label: "Devis / Facture",       emoji: "🧾", editable: false, plans: ["gold"] },
+                { id: "demandes",         label: "Demandes reçues",       emoji: "📩", editable: false, plans: ["standard","premium","gold"] },
                 { id: "clients",          label: "Prospects / Clients",   emoji: "👥", editable: false, plans: ["gold"] },
                 { id: "revenue",          label: "Chiffre d'affaires",    emoji: "📈", editable: false, plans: ["gold"] },
                 { id: "stats",            label: "Statistiques",          emoji: "📊", editable: false, plans: ["gold"] },
@@ -1315,6 +1317,11 @@ function DashboardContent() {
       {/* ── TAB FACTURATION ── */}
       {activeTab === "facturation" && (
         <FacturationTab pro={pro} docsOnly />
+      )}
+
+      {/* ── TAB DEMANDES REÇUES (PROLOCAL AI) ── */}
+      {activeTab === "demandes" && (
+        <DemandesTab proId={pro.id} />
       )}
 
       {/* ── TAB CLIENTS (CRM) ── */}

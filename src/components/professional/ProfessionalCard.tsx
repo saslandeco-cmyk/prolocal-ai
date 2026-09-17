@@ -122,22 +122,22 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
         </div>
         <div className="flex gap-2 mt-2">
           {pro.phone && (
-            <a
-              href={`tel:${pro.phone}`}
-              onClick={e => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = `tel:${pro.phone}`; }}
               className="flex-1 flex items-center justify-center gap-1.5 bg-landes-forest text-white text-xs font-semibold py-2 rounded-lg hover:bg-landes-pine transition-colors"
             >
               <Phone className="w-3.5 h-3.5" /> Appeler
-            </a>
+            </button>
           )}
           {pro.email && (
-            <a
-              href={`mailto:${pro.email}`}
-              onClick={e => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = `mailto:${pro.email}`; }}
               className="flex-1 flex items-center justify-center gap-1.5 bg-landes-ocean/10 text-landes-ocean text-xs font-semibold py-2 rounded-lg hover:bg-landes-ocean/20 transition-colors"
             >
               <Mail className="w-3.5 h-3.5" /> Email
-            </a>
+            </button>
           )}
         </div>
       </div>
