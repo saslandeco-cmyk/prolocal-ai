@@ -1,32 +1,7 @@
 import { CITY_META } from "@/lib/cityData";
 import { NEED_RULES, STOPWORDS } from "./needDictionary";
+import { normalize, containsWholeWord } from "./textMatch";
 import type { NeedRequest } from "@/types/needs";
-
-/** Minuscule + sans accents + apostrophes normalisées, pour un matching robuste. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[''`]/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Vrai si `keyword` apparaît dans `text` en tant que mot/expression entière
- * (bornée par un début/fin de chaîne ou un caractère non alphabétique) —
- * évite les faux positifs de sous-chaîne, ex: "menage" ne doit PAS matcher
- * à l'intérieur de "demenager".
- */
-function containsWholeWord(text: string, keyword: string): boolean {
-  const pattern = new RegExp(`(^|[^a-z0-9])${escapeRegExp(keyword)}([^a-z0-9]|$)`);
-  return pattern.test(text);
-}
 
 /** Met en forme un nom de commune importé en majuscules (ex: "SAINT-AVIT" → "Saint-Avit"). Laisse intact un nom déjà correctement casé. */
 const LOWERCASE_PARTICLES = new Set(["de", "du", "des", "la", "le", "les", "sur", "en", "et"]);

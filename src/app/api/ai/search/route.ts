@@ -10,17 +10,20 @@ const MAX_LENGTH = 500;
 const MIN_LENGTH = 3;
 
 function buildMessage(need: ReturnType<typeof parseNeedLocally>, resultCount: number): string {
-  if (need.categorieIncertaine) {
+  const hasSignal = need.categorie !== null || need.motsCles.length > 0;
+  const label = need.besoin || need.motsCles.join(", ");
+
+  if (!hasSignal) {
     return "Nous n'avons pas réussi à identifier précisément le type de service recherché. Pouvez-vous préciser votre besoin (le métier ou le type de prestation) ?";
   }
   if (!need.commune) {
-    return `Nous avons compris que vous recherchez : ${need.besoin}. Dans quelle ville ou commune des Landes recherchez-vous ce service ?`;
+    return `Nous avons compris que vous recherchez : ${label}. Dans quelle ville ou commune des Landes recherchez-vous ce service ?`;
   }
   const suffix = ` à ${need.commune}`;
   if (resultCount === 0) {
-    return `Nous avons compris que vous recherchez : ${need.besoin}${suffix}. Nous n'avons malheureusement aucun professionnel correspondant référencé pour le moment dans cette zone.`;
+    return `Nous avons compris que vous recherchez : ${label}${suffix}. Nous n'avons malheureusement aucun professionnel correspondant référencé pour le moment dans cette zone.`;
   }
-  return `Nous avons compris que vous recherchez : ${need.besoin}${suffix}. Voici les professionnels correspondants près de chez vous.`;
+  return `Nous avons compris que vous recherchez : ${label}${suffix}. Voici les professionnels correspondants près de chez vous.`;
 }
 
 export async function POST(req: Request) {
@@ -58,14 +61,20 @@ export async function POST(req: Request) {
     need = mergeLlmExtraction(need, extraction);
   }
 
-  const results = need.categorie && need.commune ? await matchProfessionals(need) : [];
+  // On tente une recherche dès qu'il y a un signal exploitable (catégorie
+  // identifiée OU mots-clés extraits du texte, ex: mots retrouvés dans le
+  // descriptif d'un professionnel) — pas seulement quand la catégorie est
+  // connue, pour ne pas rater un professionnel dont la fiche correspond au
+  // besoin sans que la taxonomie de catégories l'ait explicitement prévu.
+  const hasSignal = need.categorie !== null || need.motsCles.length > 0;
+  const results = need.commune && hasSignal ? await matchProfessionals(need) : [];
   const message = buildMessage(need, results.length);
 
   const response: NeedSearchResponse = {
     need,
     results,
     message,
-    needsLocation: !need.categorieIncertaine && !need.commune,
+    needsLocation: hasSignal && !need.commune,
   };
   return NextResponse.json(response);
 }
