@@ -55,6 +55,8 @@ const COLUMN_DEFS: { label: string; getValue: (p: Professional) => string }[] = 
   { label: "Service 3",             getValue: p => p.services?.[2] ?? "" },
   { label: "Description courte",    getValue: p => p.shortDescription ?? "" },
   { label: "Description longue",    getValue: p => p.description ?? "" },
+  { label: "Logo (URL)",            getValue: p => (p.logo ?? "").startsWith("data:") ? "" : (p.logo ?? "") },
+  { label: "Bannière (URL)",        getValue: p => (p.banner ?? "").startsWith("data:") ? "" : (p.banner ?? "") },
   { label: "Date inscription",      getValue: p => p.createdAt ? new Date(p.createdAt).toLocaleDateString("fr-FR") : "" },
 ];
 const ALL_COLUMN_LABELS = COLUMN_DEFS.map(c => c.label);
@@ -1969,11 +1971,23 @@ export default function AdminPage() {
               let imported = 0;
               let updatedCount = 0;
               let unchangedCount = 0;
+              const malformedLines: number[] = [];
 
               for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
                 const cols = parseCSVLine(line);
+                // Si une valeur non protégée par des guillemets contient le
+                // séparateur détecté (ex: une adresse "12 rue X, Dax" tapée
+                // sans guillemets), cette ligne se retrouve avec plus (ou
+                // moins) de colonnes que l'en-tête : toutes les valeurs
+                // seraient alors décalées silencieusement (un email pourrait
+                // atterrir dans le téléphone, etc.). On ignore la ligne
+                // plutôt que d'écrire des données fausses en base.
+                if (cols.length !== headers.length) {
+                  malformedLines.push(i + 1);
+                  continue;
+                }
                 // Une colonne n'est lue que si elle est à la fois présente dans le fichier
                 // ET cochée dans le sélecteur de colonnes ; sinon la valeur existante est conservée.
                 const rawVal = (name: string): string => (cols[idxOf(name)] ?? "").trim();
@@ -2031,8 +2045,12 @@ export default function AdminPage() {
                   city:             gatedVal("Ville")                  || existing?.city              || "",
                   lat:              gatedVal("Lat")   ? parseFloat(gatedVal("Lat"))  : existing?.lat,
                   lng:              gatedVal("Lng")   ? parseFloat(gatedVal("Lng"))  : existing?.lng,
-                  plan:             (gatedVal("Formule") || existing?.plan   || "standard") as Professional["plan"],
-                  status:           (gatedVal("Statut")  || existing?.status || "active")   as Professional["status"],
+                  plan:             (["standard", "premium", "gold"].includes(gatedVal("Formule").toLowerCase())
+                                        ? gatedVal("Formule").toLowerCase()
+                                        : existing?.plan || "standard") as Professional["plan"],
+                  status:           (["pending", "active", "suspended", "rejected"].includes(gatedVal("Statut").toLowerCase())
+                                        ? gatedVal("Statut").toLowerCase()
+                                        : existing?.status || "active") as Professional["status"],
                   website:          gatedVal("Site web")               || existing?.website,
                   services:         hasServiceColumn
                     ? [service1, service2, service3].filter(s => s.trim())
@@ -2040,8 +2058,8 @@ export default function AdminPage() {
                   shortDescription: gatedVal("Description courte")    || existing?.shortDescription,
                   description:      gatedVal("Description longue")   || existing?.description,
                   password:         existing?.password   || "changeme2024",
-                  logo:             existing?.logo,
-                  banner:           existing?.banner,
+                  logo:             gatedVal("Logo (URL)")     || existing?.logo,
+                  banner:           gatedVal("Bannière (URL)") || existing?.banner,
                   photos:           existing?.photos     || [],
                   createdAt:        existing?.createdAt  || now,
                   updatedAt:        now,
@@ -2066,7 +2084,10 @@ export default function AdminPage() {
               const fresh = await getProfessionalsWithImages();
               setPros(fresh);
               setReviews(getReviews());
-              alert(`✅ ${imported} créé(s), ${updatedCount} mis à jour, ${unchangedCount} inchangé(s) — aucun doublon créé (colonnes sélectionnées : ${selectedColumns.size}/${ALL_COLUMN_LABELS.length}).`);
+              const malformedMsg = malformedLines.length > 0
+                ? `\n⚠️ ${malformedLines.length} ligne(s) ignorée(s) car mal formée(s) (nombre de colonnes incohérent avec l'en-tête — vérifiez les virgules/points-virgules non protégés par des guillemets) : lignes ${malformedLines.join(", ")}.`
+                : "";
+              alert(`✅ ${imported} créé(s), ${updatedCount} mis à jour, ${unchangedCount} inchangé(s) — aucun doublon créé (colonnes sélectionnées : ${selectedColumns.size}/${ALL_COLUMN_LABELS.length}).${malformedMsg}`);
               e.target.value = "";
             }} />
           </label>

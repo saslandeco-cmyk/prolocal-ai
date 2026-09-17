@@ -12,7 +12,10 @@ const STATUS_CONFIG = {
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+  // Repli défensif : une valeur de statut invalide ou inattendue (donnée
+  // corrompue, ex: import CSV mal aligné) ne doit jamais faire planter toute
+  // la page — on affiche la valeur brute plutôt que de crasher.
+  const config = STATUS_CONFIG[status] ?? { label: status || "Inconnu", className: "bg-gray-100 text-gray-600 border-gray-200" };
   return (
     <span className={`inline-flex items-center rounded-full text-xs font-medium px-2 py-0.5 border ${config.className}`}>
       {config.label}
