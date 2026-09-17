@@ -1,4 +1,4 @@
-import { dbGetProfessionalsByCategory, dbGetAllProfessionals } from "@/lib/db/professionals";
+import { dbGetProfessionalsByCategory, dbGetProfessionalsBySubcategory, dbGetAllProfessionals } from "@/lib/db/professionals";
 import { getNeedResultsRank } from "@/lib/listingOrder";
 import { haversineKm } from "@/lib/geo/distance";
 import { CITY_META } from "@/lib/cityData";
@@ -71,13 +71,19 @@ function locationScore(
  * structuré. Ne retourne QUE des fiches existantes — aucune donnée générée.
  *
  * Deux étapes :
- *  1. Correspondance par catégorie (dbGetProfessionalsByCategory), affinée
- *     par sous-catégorie, localisation et mots-clés trouvés dans le
- *     descriptif du professionnel (à propos, services, mots-clés SEO).
+ *  1. Correspondance par SOUS-CATÉGORIE quand elle est identifiée
+ *     (dbGetProfessionalsBySubcategory) — pas par la catégorie principale,
+ *     pour ne pas noyer un besoin précis ("fromagerie") parmi tous les
+ *     professionnels de la catégorie parente (toute l'Alimentation &
+ *     Épicerie, boulangeries et boucheries comprises). Repli sur la
+ *     catégorie entière seulement si aucune sous-catégorie n'a pu être
+ *     déterminée. Affinée par localisation et par les mots-clés trouvés
+ *     dans le descriptif du professionnel (description longue "à propos",
+ *     titre d'activité, services, mots-clés SEO).
  *  2. Repli mots-clés seuls, sur TOUTES les fiches actives, uniquement si
- *     aucune catégorie n'a été identifiée (ou qu'elle n'a rien donné) — pour
- *     ne pas laisser une recherche bredouille alors qu'un professionnel a
- *     justement écrit le bon mot dans sa fiche.
+ *     l'étape 1 n'a rien donné — pour ne pas laisser une recherche
+ *     bredouille alors qu'un professionnel a justement écrit le bon mot
+ *     dans sa fiche.
  *
  * Stratégie volontairement simple (cohérente avec AnnuaireSearchClient /
  * CategoryPage) : filtre/tri en mémoire, le volume de fiches restant faible
@@ -91,8 +97,7 @@ export async function matchProfessionals(
   const refCoords = cityCoords(need.commune);
 
   const scoreCategoryCandidate = (professional: Professional): MatchedProfessionalResult => {
-    let matchScore = 10; // correspondance de catégorie de base
-    if (need.sousCategorie && professional.subcategory === need.sousCategorie) matchScore += 5;
+    let matchScore = 10; // correspondance de base (catégorie ou sous-catégorie)
 
     const loc = locationScore(professional, need, refCoords, radiusKm);
     matchScore += loc.score;
@@ -104,7 +109,9 @@ export async function matchProfessionals(
   let results: MatchedProfessionalResult[] = [];
 
   if (need.categorie) {
-    const candidates = await dbGetProfessionalsByCategory(need.categorie);
+    const candidates = need.sousCategorie
+      ? await dbGetProfessionalsBySubcategory(need.categorie, need.sousCategorie)
+      : await dbGetProfessionalsByCategory(need.categorie);
     const scored = candidates.map(scoreCategoryCandidate);
     results = need.commune
       ? scored.filter((r) => {

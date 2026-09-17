@@ -46,6 +46,22 @@ export async function dbGetProfessionalsByCategory(category: string): Promise<Pr
   return rows.map(rowToProfessional);
 }
 
+/**
+ * Recherche par sous-catégorie précise — utilisée par le moteur PROLOCAL AI
+ * (matchProfessionals.ts) pour ne pas noyer un besoin précis (ex: "fromagerie")
+ * parmi tous les professionnels de la catégorie parente (ex: toute
+ * "Alimentation & Épicerie", boulangeries et boucheries comprises).
+ */
+export async function dbGetProfessionalsBySubcategory(category: string, subcategory: string): Promise<Professional[]> {
+  if (!isDbConfigured) return [];
+  const { rows } = await sql`
+    SELECT data FROM professionals
+    WHERE category = ${category} AND subcategory = ${subcategory} AND status = 'active'
+    ORDER BY plan = 'gold' DESC, plan = 'premium' DESC, updated_at DESC
+  `;
+  return rows.map(rowToProfessional);
+}
+
 /** Crée ou met à jour une fiche professionnelle (upsert par id). */
 export async function dbSaveProfessional(pro: Professional): Promise<void> {
   if (!isDbConfigured) return;
