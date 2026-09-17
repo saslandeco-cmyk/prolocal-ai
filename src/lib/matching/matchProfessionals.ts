@@ -1,5 +1,5 @@
 import { dbGetProfessionalsByCategory, dbGetAllProfessionals } from "@/lib/db/professionals";
-import { getListingRank } from "@/lib/listingOrder";
+import { getNeedResultsRank } from "@/lib/listingOrder";
 import { haversineKm } from "@/lib/geo/distance";
 import { CITY_META } from "@/lib/cityData";
 import { normalize, containsWholeWord, stripHtml } from "@/lib/ai/textMatch";
@@ -97,7 +97,6 @@ export async function matchProfessionals(
     const loc = locationScore(professional, need, refCoords, radiusKm);
     matchScore += loc.score;
     matchScore += keywordScore(proSearchableText(professional), need.motsCles);
-    matchScore -= getListingRank(professional); // départage à pertinence égale, jamais la pertinence elle-même
 
     return { professional, distanceKm: loc.distanceKm, matchScore };
   };
@@ -127,12 +126,20 @@ export async function matchProfessionals(
         if (kwScore === 0) return null;
         const loc = locationScore(professional, need, refCoords, radiusKm);
         if (need.commune && !loc.withinReach) return null;
-        const matchScore = kwScore + loc.score - getListingRank(professional);
+        const matchScore = kwScore + loc.score;
         return { professional, distanceKm: loc.distanceKm, matchScore } as MatchedProfessionalResult;
       })
       .filter((r): r is MatchedProfessionalResult => r !== null);
     results = scored;
   }
 
-  return results.sort((a, b) => b.matchScore - a.matchScore).slice(0, 20);
+  // Ordre d'affichage : formule/coordonnées d'abord (voir getNeedResultsRank),
+  // pertinence de la recherche en second critère au sein d'un même palier.
+  return results
+    .sort((a, b) => {
+      const rankDiff = getNeedResultsRank(a.professional) - getNeedResultsRank(b.professional);
+      if (rankDiff !== 0) return rankDiff;
+      return b.matchScore - a.matchScore;
+    })
+    .slice(0, 20);
 }

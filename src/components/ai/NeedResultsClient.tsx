@@ -52,7 +52,7 @@ function NeedResultsContent() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="w-[90%] mx-auto py-8 sm:py-12">
       <div className="mb-6">
         <NeedSearchBar initialValue={texte} compact onSearch={runSearch} />
       </div>
@@ -93,7 +93,7 @@ function NeedResultsContent() {
           )}
 
           {response.results.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               {response.results.map((r) => (
                 <div key={r.professional.id}>
                   <ProfessionalCard pro={r.professional} />
