@@ -63,8 +63,53 @@ function detectCommune(normalizedText: string, extraCities: string[] = []): stri
   return null;
 }
 
+export interface CategoryLookup {
+  label: string;
+  subcategories: string[];
+}
+
+/**
+ * Repli automatique : si le dictionnaire curé (NEED_RULES) ne trouve rien,
+ * cherche si le texte contient directement le nom d'une catégorie ou
+ * sous-catégorie du catalogue réel (transmis par la route API, voir
+ * dbGetCategories) — couvre ainsi TOUTE catégorie/sous-catégorie existante
+ * (y compris créée depuis l'admin ou apparue via un import), sans qu'il soit
+ * nécessaire de lui associer des synonymes à la main au préalable.
+ */
+/**
+ * Beaucoup de libellés du catalogue regroupent deux métiers proches sous la
+ * forme "X / Y" (ex: "Sophrologue / Réflexologue", "Fromagerie / Crèmerie").
+ * On doit reconnaître X ou Y isolément, pas seulement la phrase complète.
+ */
+function labelVariants(label: string): string[] {
+  const parts = label.split("/").map(p => p.trim()).filter(Boolean);
+  return parts.length > 1 ? [label, ...parts] : [label];
+}
+
+function detectCategoryFromCatalog(
+  normalizedText: string,
+  catalog: CategoryLookup[]
+): { categorie: string; sousCategorie: string | null } | null {
+  for (const cat of catalog) {
+    for (const sub of cat.subcategories) {
+      if (labelVariants(sub).some(v => containsWholeWord(normalizedText, normalize(v)))) {
+        return { categorie: cat.label, sousCategorie: sub };
+      }
+    }
+  }
+  for (const cat of catalog) {
+    if (labelVariants(cat.label).some(v => containsWholeWord(normalizedText, normalize(v)))) {
+      return { categorie: cat.label, sousCategorie: null };
+    }
+  }
+  return null;
+}
+
 /** Score chaque règle du dictionnaire par nombre de mots-clés trouvés, retient la meilleure. */
-function detectCategory(normalizedText: string): { categorie: string; sousCategorie: string | null; score: number } | null {
+function detectCategory(
+  normalizedText: string,
+  catalog: CategoryLookup[] = []
+): { categorie: string; sousCategorie: string | null; score: number } | null {
   let best: { categorie: string; sousCategorie: string | null; score: number } | null = null;
   for (const rule of NEED_RULES) {
     let score = 0;
@@ -75,7 +120,10 @@ function detectCategory(normalizedText: string): { categorie: string; sousCatego
       best = { categorie: rule.categorie, sousCategorie: rule.sousCategorie, score };
     }
   }
-  return best;
+  if (best) return best;
+
+  const labelMatch = detectCategoryFromCatalog(normalizedText, catalog);
+  return labelMatch ? { ...labelMatch, score: 1 } : null;
 }
 
 function detectUrgence(normalizedText: string): NeedRequest["urgence"] {
@@ -108,10 +156,14 @@ function extractKeywords(normalizedText: string): string[] {
  * formulations courantes (voir needDictionary.ts). Le fallback LLM optionnel
  * (llmFallback.ts) n'est tenté qu'en cas d'ambiguïté, côté route API.
  */
-export function parseNeedLocally(rawText: string, extraCities: string[] = []): NeedRequest {
+export function parseNeedLocally(
+  rawText: string,
+  extraCities: string[] = [],
+  categoryCatalog: CategoryLookup[] = []
+): NeedRequest {
   const normalized = normalize(rawText);
   const commune = detectCommune(normalized, extraCities);
-  const categoryMatch = detectCategory(normalized);
+  const categoryMatch = detectCategory(normalized, categoryCatalog);
 
   return {
     rawText,

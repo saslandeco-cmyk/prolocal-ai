@@ -165,7 +165,7 @@ export const NEED_RULES: CategoryRule[] = [
     "boucherie", "charcuterie",
   ]},
   { categorie: "Alimentation & Épicerie", sousCategorie: "Fromagerie / Crèmerie", keywords: [
-    "fromagerie", "fromager", "cremerie", "acheter du fromage", "produits laitiers",
+    "fromagerie", "fromager", "fromage", "cremerie", "cremier", "acheter du fromage", "produits laitiers",
   ]},
   { categorie: "Alimentation & Épicerie", sousCategorie: "Caviste / Marchand de boissons", keywords: [
     "caviste", "acheter du vin", "marchand de vin", "cave a vin",

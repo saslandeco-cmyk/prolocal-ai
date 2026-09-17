@@ -3,6 +3,7 @@ import { parseNeedLocally } from "@/lib/ai/needParser";
 import { tryLlmFallback, mergeLlmExtraction } from "@/lib/ai/llmFallback";
 import { matchProfessionals } from "@/lib/matching/matchProfessionals";
 import { dbGetDistinctActiveCities } from "@/lib/db/professionals";
+import { dbGetCategories } from "@/lib/db/categories";
 import type { NeedSearchResponse } from "@/types/needs";
 
 const MAX_LENGTH = 500;
@@ -43,11 +44,17 @@ export async function POST(req: Request) {
   // ne serait jamais localisé, même avec des fiches actives à cet endroit.
   const knownCities = await dbGetDistinctActiveCities();
 
-  let need = parseNeedLocally(text.trim(), knownCities);
+  // Catalogue complet des catégories/sous-catégories (base ou repli codé en
+  // dur) — permet de reconnaître automatiquement toute catégorie/sous-catégorie
+  // existante par son propre nom, même sans synonymes dédiés dans needDictionary.ts.
+  const categories = await dbGetCategories();
+  const categoryCatalog = categories.map(c => ({ label: c.label, subcategories: c.subcategories.map(s => s.label) }));
+
+  let need = parseNeedLocally(text.trim(), knownCities, categoryCatalog);
 
   // Fallback LLM uniquement si l'interprétation locale est ambiguë — jamais systématique.
   if (need.categorieIncertaine || need.localisationManquante) {
-    const extraction = await tryLlmFallback(text.trim(), knownCities);
+    const extraction = await tryLlmFallback(text.trim(), knownCities, categoryCatalog);
     need = mergeLlmExtraction(need, extraction);
   }
 

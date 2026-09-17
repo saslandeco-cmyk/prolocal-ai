@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { CATEGORIES, SUBCATEGORIES } from "@/types";
 import { CITY_META } from "@/lib/cityData";
 import type { NeedRequest } from "@/types/needs";
+import type { CategoryLookup } from "./needParser";
 
 /**
  * Fallback IA optionnel, appelé UNIQUEMENT quand l'interprétation locale
@@ -32,11 +33,23 @@ const CURATED_CITIES = Object.values(CITY_META).map((c) => c.name);
  * dbGetDistinctActiveCities), en complément de la liste éditorialisée
  * CITY_META — sans ça, le LLM rejetterait toute commune hors de cette
  * liste, même avec des fiches actives à cet endroit.
+ * @param categoryCatalog Catalogue réel des catégories/sous-catégories (voir
+ * dbGetCategories) — inclut celles créées depuis l'admin, en complément des
+ * constantes codées en dur.
  */
-export async function tryLlmFallback(rawText: string, knownCities: string[] = []): Promise<LlmExtraction | null> {
+export async function tryLlmFallback(
+  rawText: string,
+  knownCities: string[] = [],
+  categoryCatalog: CategoryLookup[] = []
+): Promise<LlmExtraction | null> {
   if (!isLlmFallbackConfigured) return null;
 
   const validCities = Array.from(new Set([...CURATED_CITIES, ...knownCities]));
+  const validCategories = categoryCatalog.length > 0 ? categoryCatalog.map(c => c.label) : CATEGORIES;
+  const subcategoriesByCategory: Record<string, string[]> =
+    categoryCatalog.length > 0
+      ? Object.fromEntries(categoryCatalog.map(c => [c.label, c.subcategories]))
+      : SUBCATEGORIES;
 
   try {
     const client = new Anthropic();
@@ -48,8 +61,8 @@ export async function tryLlmFallback(rawText: string, knownCities: string[] = []
         "Tu extrais une catégorie de service, une sous-catégorie et une commune des Landes " +
         "à partir d'une phrase écrite par un particulier. Réponds UNIQUEMENT avec un objet JSON " +
         `strict de la forme {"categorie": string|null, "sousCategorie": string|null, "commune": string|null}. ` +
-        `"categorie" doit être exactement l'une de ces valeurs (ou null si aucune ne convient) : ${CATEGORIES.join(" | ")}. ` +
-        `"sousCategorie" doit être une sous-catégorie valide de la catégorie choisie, parmi : ${JSON.stringify(SUBCATEGORIES)}, ou null. ` +
+        `"categorie" doit être exactement l'une de ces valeurs (ou null si aucune ne convient) : ${validCategories.join(" | ")}. ` +
+        `"sousCategorie" doit être une sous-catégorie valide de la catégorie choisie, parmi : ${JSON.stringify(subcategoriesByCategory)}, ou null. ` +
         `"commune" doit être exactement l'une de ces communes des Landes (ou null si aucune n'est mentionnée) : ${validCities.join(" | ")}. ` +
         "N'invente aucune autre valeur. Aucun texte hors du JSON.",
       messages: [{ role: "user", content: rawText }],
@@ -59,9 +72,9 @@ export async function tryLlmFallback(rawText: string, knownCities: string[] = []
     if (!textBlock || textBlock.type !== "text") return null;
 
     const parsed = JSON.parse(textBlock.text.trim());
-    const categorie = typeof parsed.categorie === "string" && CATEGORIES.includes(parsed.categorie) ? parsed.categorie : null;
+    const categorie = typeof parsed.categorie === "string" && validCategories.includes(parsed.categorie) ? parsed.categorie : null;
     const sousCategorie =
-      categorie && typeof parsed.sousCategorie === "string" && SUBCATEGORIES[categorie]?.includes(parsed.sousCategorie)
+      categorie && typeof parsed.sousCategorie === "string" && subcategoriesByCategory[categorie]?.includes(parsed.sousCategorie)
         ? parsed.sousCategorie
         : null;
     const commune = typeof parsed.commune === "string" && validCities.includes(parsed.commune) ? parsed.commune : null;
