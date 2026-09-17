@@ -164,6 +164,24 @@ export const NEED_RULES: CategoryRule[] = [
   { categorie: "Alimentation & Épicerie", sousCategorie: "Boucherie / Charcuterie", keywords: [
     "boucherie", "charcuterie",
   ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Fromagerie / Crèmerie", keywords: [
+    "fromagerie", "fromager", "cremerie", "acheter du fromage", "produits laitiers",
+  ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Caviste / Marchand de boissons", keywords: [
+    "caviste", "acheter du vin", "marchand de vin", "cave a vin",
+  ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Épicerie fine", keywords: [
+    "epicerie fine", "epicerie",
+  ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Poissonnerie", keywords: [
+    "poissonnerie", "poissonnier", "acheter du poisson",
+  ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Primeurs", keywords: [
+    "primeur", "fruits et legumes", "marchand de fruits et legumes",
+  ]},
+  { categorie: "Alimentation & Épicerie", sousCategorie: "Alimentation générale", keywords: [
+    "alimentation generale", "epicerie de quartier", "petite epicerie",
+  ]},
 ];
 
 /** Mots à ignorer lors de l'extraction de mots-clés bruts (stopwords français courants). */

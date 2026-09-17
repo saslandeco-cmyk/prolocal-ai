@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { parseNeedLocally } from "@/lib/ai/needParser";
 import { tryLlmFallback, mergeLlmExtraction } from "@/lib/ai/llmFallback";
 import { matchProfessionals } from "@/lib/matching/matchProfessionals";
+import { dbGetDistinctActiveCities } from "@/lib/db/professionals";
 import type { NeedSearchResponse } from "@/types/needs";
 
 const MAX_LENGTH = 500;
@@ -37,11 +38,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Votre message est trop long (${MAX_LENGTH} caractères maximum).` }, { status: 400 });
   }
 
-  let need = parseNeedLocally(text.trim());
+  // Communes réellement présentes en base, en complément de la liste éditorialisée
+  // CITY_META — sans ça, un besoin dans une commune non "vedette" (import SIRENE)
+  // ne serait jamais localisé, même avec des fiches actives à cet endroit.
+  const knownCities = await dbGetDistinctActiveCities();
+
+  let need = parseNeedLocally(text.trim(), knownCities);
 
   // Fallback LLM uniquement si l'interprétation locale est ambiguë — jamais systématique.
   if (need.categorieIncertaine || need.localisationManquante) {
-    const extraction = await tryLlmFallback(text.trim());
+    const extraction = await tryLlmFallback(text.trim(), knownCities);
     need = mergeLlmExtraction(need, extraction);
   }
 

@@ -28,11 +28,37 @@ function containsWholeWord(text: string, keyword: string): boolean {
   return pattern.test(text);
 }
 
-/** Cherche une commune des Landes mentionnée dans le texte (CITY_META). */
-function detectCommune(normalizedText: string): string | null {
+/** Met en forme un nom de commune importé en majuscules (ex: "SAINT-AVIT" → "Saint-Avit"). Laisse intact un nom déjà correctement casé. */
+const LOWERCASE_PARTICLES = new Set(["de", "du", "des", "la", "le", "les", "sur", "en", "et"]);
+function toDisplayCase(raw: string): string {
+  if (raw !== raw.toUpperCase()) return raw; // déjà bien casé (ex: valeurs de CITY_META)
+  return raw
+    .split(/([\s-])/)
+    .map(part => {
+      if (part === " " || part === "-") return part;
+      const lower = part.toLowerCase();
+      return LOWERCASE_PARTICLES.has(lower) ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join("");
+}
+
+/**
+ * Cherche une commune des Landes mentionnée dans le texte. Vérifie d'abord la
+ * liste éditorialisée CITY_META (contenu SEO/coordonnées GPS), puis, si aucune
+ * correspondance, les communes réellement présentes dans la base
+ * (`extraCities`, transmis par la route API) — pour ne jamais rater une
+ * commune où des professionnels sont effectivement enregistrés simplement
+ * parce qu'elle n'a pas encore de page SEO dédiée.
+ */
+function detectCommune(normalizedText: string, extraCities: string[] = []): string | null {
   for (const meta of Object.values(CITY_META)) {
     const normName = normalize(meta.name);
     if (containsWholeWord(normalizedText, normName)) return meta.name;
+  }
+  for (const raw of extraCities) {
+    if (!raw) continue;
+    const normName = normalize(raw);
+    if (containsWholeWord(normalizedText, normName)) return toDisplayCase(raw);
   }
   return null;
 }
@@ -82,9 +108,9 @@ function extractKeywords(normalizedText: string): string[] {
  * formulations courantes (voir needDictionary.ts). Le fallback LLM optionnel
  * (llmFallback.ts) n'est tenté qu'en cas d'ambiguïté, côté route API.
  */
-export function parseNeedLocally(rawText: string): NeedRequest {
+export function parseNeedLocally(rawText: string, extraCities: string[] = []): NeedRequest {
   const normalized = normalize(rawText);
-  const commune = detectCommune(normalized);
+  const commune = detectCommune(normalized, extraCities);
   const categoryMatch = detectCategory(normalized);
 
   return {

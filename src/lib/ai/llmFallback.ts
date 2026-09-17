@@ -25,10 +25,18 @@ interface LlmExtraction {
   commune: string | null;
 }
 
-const VALID_CITIES = Object.values(CITY_META).map((c) => c.name);
+const CURATED_CITIES = Object.values(CITY_META).map((c) => c.name);
 
-export async function tryLlmFallback(rawText: string): Promise<LlmExtraction | null> {
+/**
+ * @param knownCities Communes réellement présentes en base (voir
+ * dbGetDistinctActiveCities), en complément de la liste éditorialisée
+ * CITY_META — sans ça, le LLM rejetterait toute commune hors de cette
+ * liste, même avec des fiches actives à cet endroit.
+ */
+export async function tryLlmFallback(rawText: string, knownCities: string[] = []): Promise<LlmExtraction | null> {
   if (!isLlmFallbackConfigured) return null;
+
+  const validCities = Array.from(new Set([...CURATED_CITIES, ...knownCities]));
 
   try {
     const client = new Anthropic();
@@ -42,7 +50,7 @@ export async function tryLlmFallback(rawText: string): Promise<LlmExtraction | n
         `strict de la forme {"categorie": string|null, "sousCategorie": string|null, "commune": string|null}. ` +
         `"categorie" doit être exactement l'une de ces valeurs (ou null si aucune ne convient) : ${CATEGORIES.join(" | ")}. ` +
         `"sousCategorie" doit être une sous-catégorie valide de la catégorie choisie, parmi : ${JSON.stringify(SUBCATEGORIES)}, ou null. ` +
-        `"commune" doit être exactement l'une de ces communes des Landes (ou null si aucune n'est mentionnée) : ${VALID_CITIES.join(" | ")}. ` +
+        `"commune" doit être exactement l'une de ces communes des Landes (ou null si aucune n'est mentionnée) : ${validCities.join(" | ")}. ` +
         "N'invente aucune autre valeur. Aucun texte hors du JSON.",
       messages: [{ role: "user", content: rawText }],
     });
@@ -56,7 +64,7 @@ export async function tryLlmFallback(rawText: string): Promise<LlmExtraction | n
       categorie && typeof parsed.sousCategorie === "string" && SUBCATEGORIES[categorie]?.includes(parsed.sousCategorie)
         ? parsed.sousCategorie
         : null;
-    const commune = typeof parsed.commune === "string" && VALID_CITIES.includes(parsed.commune) ? parsed.commune : null;
+    const commune = typeof parsed.commune === "string" && validCities.includes(parsed.commune) ? parsed.commune : null;
 
     return { categorie, sousCategorie, commune };
   } catch {
