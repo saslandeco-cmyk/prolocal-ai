@@ -9,6 +9,12 @@ import type { Professional } from "@/types";
 
 export const DEFAULT_RADIUS_KM = 30;
 const KEYWORD_MATCH_WEIGHT = 4;
+// En dessous de ce score, une seule correspondance de mot-clé générique
+// (ex: "création", présent dans d'innombrables descriptions sans rapport —
+// fleuriste, céramiste...) ne suffit pas à retenir un professionnel dans un
+// repli mots-clés. Un score de service (voir SERVICES_MATCH_WEIGHT) ou au
+// moins deux mots-clés distincts dans la description passent ce seuil.
+const MIN_KEYWORD_FALLBACK_SCORE = 8;
 // Les intitulés de services sont explicitement choisis par le professionnel
 // pour décrire ce qu'il propose (jusqu'à 3, voir Professional.services) —
 // un mot-clé du besoin qui s'y retrouve est un signal bien plus fort qu'une
@@ -92,22 +98,31 @@ function locationScore(
  * (table `professionals`, statut actif) qui correspondent au besoin
  * structuré. Ne retourne QUE des fiches existantes — aucune donnée générée.
  *
- * Deux étapes :
+ * Trois étapes, de la plus précise à la plus large — on ne descend d'un
+ * niveau que si le précédent n'a rien donné, et on ne sort JAMAIS de la
+ * catégorie identifiée tant qu'une catégorie a pu être déterminée (un mot
+ * générique comme "création" ne doit pas faire remonter un fleuriste ou un
+ * céramiste pour une recherche de création de site internet) :
  *  1. Correspondance par SOUS-CATÉGORIE quand elle est identifiée
  *     (dbGetProfessionalsBySubcategory) — pas par la catégorie principale,
  *     pour ne pas noyer un besoin précis ("fromagerie") parmi tous les
  *     professionnels de la catégorie parente (toute l'Alimentation &
- *     Épicerie, boulangeries et boucheries comprises). Repli sur la
- *     catégorie entière seulement si aucune sous-catégorie n'a pu être
- *     déterminée. Affinée par localisation et par les mots-clés trouvés
- *     dans le descriptif du professionnel (description longue "à propos",
- *     titre d'activité, mots-clés SEO) — les intitulés de services
- *     (jusqu'à 3, choisis explicitement par le professionnel) constituent
- *     une cible prioritaire, pondérée plus fortement (voir servicesScore).
- *  2. Repli mots-clés seuls, sur TOUTES les fiches actives, uniquement si
- *     l'étape 1 n'a rien donné — pour ne pas laisser une recherche
- *     bredouille alors qu'un professionnel a justement écrit le bon mot
- *     dans sa fiche.
+ *     Épicerie, boulangeries et boucheries comprises).
+ *  2. Si la sous-catégorie précise n'a rien donné, repli mots-clés au sein
+ *     de la MÊME catégorie seulement (ex: un "Webmaster indépendant" pour
+ *     une recherche ayant identifié la sous-catégorie "Agence Web") — exige
+ *     un score minimal (MIN_KEYWORD_FALLBACK_SCORE) pour éviter qu'un mot
+ *     isolé et générique suffise.
+ *  3. Repli mots-clés réellement inter-catégories, sur TOUTES les fiches
+ *     actives, uniquement si AUCUNE catégorie n'a pu être identifiée du
+ *     tout — pour ne pas laisser une recherche bredouille alors qu'un
+ *     professionnel a justement écrit le bon mot dans sa fiche.
+ *
+ * Dans tous les cas, affinée par localisation et par les mots-clés trouvés
+ * dans le descriptif du professionnel (description longue "à propos", titre
+ * d'activité, mots-clés SEO) — les intitulés de services (jusqu'à 3, choisis
+ * explicitement par le professionnel) constituent une cible prioritaire,
+ * pondérée plus fortement (voir servicesScore).
  *
  * Stratégie volontairement simple (cohérente avec AnnuaireSearchClient /
  * CategoryPage) : filtre/tri en mémoire, le volume de fiches restant faible
@@ -135,6 +150,24 @@ export async function matchProfessionals(
     return { professional, distanceKm: loc.distanceKm, matchScore };
   };
 
+  const locationFilter = (r: MatchedProfessionalResult) => {
+    const exactCity = Boolean(need.commune) && r.professional.city?.toLowerCase() === need.commune!.toLowerCase();
+    const withinRadius = r.distanceKm !== null && r.distanceKm <= radiusKm;
+    return exactCity || withinRadius;
+  };
+
+  /** Repli mots-clés (services prioritaires) sur un ensemble de candidats déjà réduit. */
+  const keywordFallback = (candidates: Professional[]): MatchedProfessionalResult[] =>
+    candidates
+      .map((professional) => {
+        const kwScore = servicesScore(professional.services, need.motsCles) + keywordScore(proSearchableText(professional), need.motsCles);
+        if (kwScore < MIN_KEYWORD_FALLBACK_SCORE) return null;
+        const loc = locationScore(professional, need, refCoords, radiusKm);
+        if (hasLocationConstraint && !loc.withinReach) return null;
+        return { professional, distanceKm: loc.distanceKm, matchScore: kwScore + loc.score } as MatchedProfessionalResult;
+      })
+      .filter((r): r is MatchedProfessionalResult => r !== null);
+
   let results: MatchedProfessionalResult[] = [];
 
   if (need.categorie) {
@@ -142,31 +175,27 @@ export async function matchProfessionals(
       ? await dbGetProfessionalsBySubcategory(need.categorie, need.sousCategorie)
       : await dbGetProfessionalsByCategory(need.categorie);
     const scored = candidates.map(scoreCategoryCandidate);
-    results = hasLocationConstraint
-      ? scored.filter((r) => {
-          const exactCity = Boolean(need.commune) && r.professional.city?.toLowerCase() === need.commune!.toLowerCase();
-          const withinRadius = r.distanceKm !== null && r.distanceKm <= radiusKm;
-          return exactCity || withinRadius;
-        })
-      : scored;
+    results = hasLocationConstraint ? scored.filter(locationFilter) : scored;
+
+    // Si la sous-catégorie précise n'a rien donné, on cherche un mot-clé fort
+    // (service prioritaire ou plusieurs correspondances) au sein de la MÊME
+    // catégorie seulement — ex: un "Webmaster indépendant" pour "création
+    // site internet" alors que la sous-catégorie détectée était "Agence Web".
+    // On ne sort jamais de la catégorie identifiée : un mot générique comme
+    // "création" ne doit pas faire remonter un fleuriste ou un céramiste.
+    if (results.length === 0 && need.sousCategorie && need.motsCles.length > 0) {
+      const sameCategoryPros = await dbGetProfessionalsByCategory(need.categorie);
+      results = keywordFallback(sameCategoryPros);
+    }
   }
 
-  // Repli mots-clés inter-catégories : uniquement si la catégorie n'a pas
-  // permis de trouver de résultat, et qu'il y a effectivement des mots-clés
-  // exploitables (sinon rien de fiable à comparer).
-  if (results.length === 0 && need.motsCles.length > 0) {
+  // Repli mots-clés réellement inter-catégories : uniquement si AUCUNE
+  // catégorie n'a pu être identifiée du tout (categorieIncertaine) — jamais
+  // quand une catégorie précise est connue mais vide, pour ne pas laisser un
+  // mot générique faire apparaître des métiers sans rapport.
+  if (results.length === 0 && !need.categorie && need.motsCles.length > 0) {
     const all = (await dbGetAllProfessionals()).filter((p) => p.status === "active");
-    const scored = all
-      .map((professional) => {
-        const kwScore = servicesScore(professional.services, need.motsCles) + keywordScore(proSearchableText(professional), need.motsCles);
-        if (kwScore === 0) return null;
-        const loc = locationScore(professional, need, refCoords, radiusKm);
-        if (hasLocationConstraint && !loc.withinReach) return null;
-        const matchScore = kwScore + loc.score;
-        return { professional, distanceKm: loc.distanceKm, matchScore } as MatchedProfessionalResult;
-      })
-      .filter((r): r is MatchedProfessionalResult => r !== null);
-    results = scored;
+    results = keywordFallback(all);
   }
 
   // Ordre d'affichage : formule/coordonnées d'abord (voir getNeedResultsRank),
