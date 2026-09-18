@@ -22,14 +22,23 @@ function buildMessage(
   if (!hasSignal) {
     return "Nous n'avons pas réussi à identifier précisément le type de service recherché. Pouvez-vous préciser votre besoin (le métier ou le type de prestation) ?";
   }
-  if (!need.commune && !geoMode) {
-    return `Nous avons compris que vous recherchez : ${label}. Dans quelle ville ou commune des Landes recherchez-vous ce service ? Vous pouvez aussi utiliser « Autour de moi ».`;
-  }
-  const suffix = geoMode ? ` autour de votre position (rayon de ${radiusKm} km)` : ` à ${need.commune}`;
+
+  // L'affichage des résultats n'est plus conditionné par la localisation :
+  // on annonce ce qui a été trouvé dans tout le département si aucune ville
+  // ni géolocalisation n'a été précisée, et on invite à affiner ensuite.
+  const locationSuffix = geoMode
+    ? ` autour de votre position (rayon de ${radiusKm} km)`
+    : need.commune
+      ? ` à ${need.commune}`
+      : " dans les Landes";
+
   if (resultCount === 0) {
-    return `Nous avons compris que vous recherchez : ${label}${suffix}. Nous n'avons malheureusement aucun professionnel correspondant référencé pour le moment dans cette zone.`;
+    return `Nous avons compris que vous recherchez : ${label}${locationSuffix}. Nous n'avons malheureusement aucun professionnel correspondant référencé pour le moment.`;
   }
-  return `Nous avons compris que vous recherchez : ${label}${suffix}. Voici les professionnels correspondants près de chez vous.`;
+  const suffix = !need.commune && !geoMode
+    ? " Précisez votre ville ou utilisez « Autour de moi » pour affiner les résultats."
+    : "";
+  return `Nous avons compris que vous recherchez : ${label}${locationSuffix}. ${resultCount} professionnel${resultCount > 1 ? "s" : ""} trouvé${resultCount > 1 ? "s" : ""}.${suffix}`;
 }
 
 export async function POST(req: Request) {
@@ -85,15 +94,19 @@ export async function POST(req: Request) {
   // descriptif d'un professionnel) — pas seulement quand la catégorie est
   // connue, pour ne pas rater un professionnel dont la fiche correspond au
   // besoin sans que la taxonomie de catégories l'ait explicitement prévu.
+  //
+  // ⚠️ L'affichage des résultats n'est PAS conditionné par la localisation :
+  // sans ville ni géolocalisation, matchProfessionals renvoie tout le
+  // département (aucun filtre de distance appliqué faute de point de
+  // référence). La localisation ne sert plus qu'à affiner ensuite.
   const hasSignal = need.categorie !== null || need.motsCles.length > 0;
   const hasLocation = Boolean(need.commune) || geoMode;
-  const results =
-    hasLocation && hasSignal
-      ? await matchProfessionals(need, {
-          radiusKm,
-          originOverride: geoMode ? { lat: geoLat!, lng: geoLng! } : undefined,
-        })
-      : [];
+  const results = hasSignal
+    ? await matchProfessionals(need, {
+        radiusKm,
+        originOverride: geoMode ? { lat: geoLat!, lng: geoLng! } : undefined,
+      })
+    : [];
   const message = buildMessage(need, results.length, geoMode, radiusKm);
 
   const response: NeedSearchResponse = {
