@@ -135,7 +135,7 @@ function NeedResultsContent() {
   const hasSignal = response ? response.need.categorie !== null || response.need.motsCles.length > 0 : false;
 
   return (
-    <div className="w-[90%] mx-auto py-8 sm:py-12">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 scroll-mt-20">
       {loading && (
         <div className="flex items-center justify-center gap-2 text-gray-500 py-16">
           <Loader2 className="w-5 h-5 animate-spin" />
