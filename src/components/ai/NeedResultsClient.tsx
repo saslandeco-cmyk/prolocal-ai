@@ -149,7 +149,7 @@ function NeedResultsContent() {
 
       {/* Bandeau de recherche — état initial ou après "Réinitialiser" : ni carte, ni fiches. */}
       {!loading && !error && !response && (
-        <div className="max-w-2xl mx-auto text-center py-10">
+        <div className="w-full mx-auto text-center py-10">
           <h1 className="text-2xl sm:text-3xl font-bold text-landes-pine mb-2">De quoi avez-vous besoin ?</h1>
           <p className="text-gray-500 mb-6">Décrivez simplement votre besoin, nous trouvons le bon professionnel près de chez vous.</p>
           <NeedSearchBar onSearch={(q) => runSearch(q)} />
