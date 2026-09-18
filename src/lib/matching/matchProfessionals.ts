@@ -7,7 +7,7 @@ import type { NeedRequest } from "@/types/needs";
 import type { MatchedProfessionalResult } from "@/types/needs";
 import type { Professional } from "@/types";
 
-const DEFAULT_RADIUS_KM = 30;
+export const DEFAULT_RADIUS_KM = 30;
 const KEYWORD_MATCH_WEIGHT = 4;
 // Les intitulés de services sont explicitement choisis par le professionnel
 // pour décrire ce qu'il propose (jusqu'à 3, voir Professional.services) —
@@ -79,8 +79,12 @@ function locationScore(
     }
     return { score: 0, distanceKm, withinReach: false };
   }
-  // Pas de commune demandée : ne filtre pas par localisation.
-  return { score: 0, distanceKm: null, withinReach: !need.commune };
+  // Aucune contrainte de localisation exploitable pour cette fiche (ni ville
+  // exacte, ni coordonnées comparables au point de référence) : on ne
+  // l'exclut que si une contrainte de localisation existe réellement pour
+  // cette recherche (commune ou géolocalisation "Autour de moi").
+  const noConstraint = !need.commune && !refCoords;
+  return { score: 0, distanceKm: null, withinReach: noConstraint };
 }
 
 /**
@@ -111,10 +115,14 @@ function locationScore(
  */
 export async function matchProfessionals(
   need: NeedRequest,
-  opts: { radiusKm?: number } = {}
+  opts: { radiusKm?: number; originOverride?: { lat: number; lng: number } } = {}
 ): Promise<MatchedProfessionalResult[]> {
   const radiusKm = opts.radiusKm ?? DEFAULT_RADIUS_KM;
-  const refCoords = cityCoords(need.commune);
+  // originOverride : position "Autour de moi" (géolocalisation navigateur),
+  // prioritaire sur la commune détectée dans le texte — permet de chercher
+  // par rayon sans qu'aucune ville n'ait été identifiée dans la demande.
+  const refCoords = opts.originOverride ?? cityCoords(need.commune);
+  const hasLocationConstraint = Boolean(need.commune) || Boolean(refCoords);
 
   const scoreCategoryCandidate = (professional: Professional): MatchedProfessionalResult => {
     let matchScore = 10; // correspondance de base (catégorie ou sous-catégorie)
@@ -134,9 +142,9 @@ export async function matchProfessionals(
       ? await dbGetProfessionalsBySubcategory(need.categorie, need.sousCategorie)
       : await dbGetProfessionalsByCategory(need.categorie);
     const scored = candidates.map(scoreCategoryCandidate);
-    results = need.commune
+    results = hasLocationConstraint
       ? scored.filter((r) => {
-          const exactCity = r.professional.city?.toLowerCase() === need.commune!.toLowerCase();
+          const exactCity = Boolean(need.commune) && r.professional.city?.toLowerCase() === need.commune!.toLowerCase();
           const withinRadius = r.distanceKm !== null && r.distanceKm <= radiusKm;
           return exactCity || withinRadius;
         })
@@ -153,7 +161,7 @@ export async function matchProfessionals(
         const kwScore = servicesScore(professional.services, need.motsCles) + keywordScore(proSearchableText(professional), need.motsCles);
         if (kwScore === 0) return null;
         const loc = locationScore(professional, need, refCoords, radiusKm);
-        if (need.commune && !loc.withinReach) return null;
+        if (hasLocationConstraint && !loc.withinReach) return null;
         const matchScore = kwScore + loc.score;
         return { professional, distanceKm: loc.distanceKm, matchScore } as MatchedProfessionalResult;
       })
@@ -163,11 +171,11 @@ export async function matchProfessionals(
 
   // Ordre d'affichage : formule/coordonnées d'abord (voir getNeedResultsRank),
   // pertinence de la recherche en second critère au sein d'un même palier.
-  return results
-    .sort((a, b) => {
-      const rankDiff = getNeedResultsRank(a.professional) - getNeedResultsRank(b.professional);
-      if (rankDiff !== 0) return rankDiff;
-      return b.matchScore - a.matchScore;
-    })
-    .slice(0, 20);
+  // Toutes les fiches correspondantes sont retournées (pas de plafond
+  // artificiel) — le volume reste faible à l'échelle d'un département.
+  return results.sort((a, b) => {
+    const rankDiff = getNeedResultsRank(a.professional) - getNeedResultsRank(b.professional);
+    if (rankDiff !== 0) return rankDiff;
+    return b.matchScore - a.matchScore;
+  });
 }
