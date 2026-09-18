@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, Locate, Pencil, X } from "lucide-react";
+import { Loader2, MapPin, Locate, Pencil, X, RotateCcw } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import QuoteRequestForm from "@/components/ai/QuoteRequestForm";
@@ -22,9 +22,13 @@ interface GeoCoords {
 
 function NeedResultsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const texte = searchParams.get("texte") || "";
 
-  const [loading, setLoading] = useState(false);
+  // Démarre en chargement s'il y a déjà une demande dans l'URL, pour ne pas
+  // laisser apparaître un instant le bandeau de recherche vide avant que la
+  // requête initiale ne parte.
+  const [loading, setLoading] = useState(Boolean(texte));
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cityInput, setCityInput] = useState("");
@@ -120,6 +124,16 @@ function NeedResultsContent() {
     );
   };
 
+  const handleReset = () => {
+    setResponse(null);
+    setError(null);
+    setGeoCoords(null);
+    setCityInput("");
+    setRadiusKm(DEFAULT_RADIUS_KM);
+    setShowEditModal(false);
+    router.replace("/besoin");
+  };
+
   const hasSignal = response ? response.need.categorie !== null || response.need.motsCles.length > 0 : false;
 
   return (
@@ -133,6 +147,15 @@ function NeedResultsContent() {
 
       {!loading && error && (
         <div className="text-center py-12 text-red-600">{error}</div>
+      )}
+
+      {/* Bandeau de recherche — état initial ou après "Réinitialiser" : ni carte, ni fiches. */}
+      {!loading && !error && !response && (
+        <div className="max-w-2xl mx-auto text-center py-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-landes-pine mb-2">De quoi avez-vous besoin ?</h1>
+          <p className="text-gray-500 mb-6">Décrivez simplement votre besoin, nous trouvons le bon professionnel près de chez vous.</p>
+          <NeedSearchBar onSearch={(q) => runSearch(q)} />
+        </div>
       )}
 
       {!loading && !error && response && (
@@ -168,10 +191,18 @@ function NeedResultsContent() {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(true)}
-                  className="flex items-center justify-center gap-2 sm:ml-auto text-gray-500 font-medium px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors whitespace-nowrap"
+                  className="btn-primary flex items-center justify-center gap-2 sm:ml-auto px-5 py-3 rounded-xl whitespace-nowrap"
                 >
                   <Pencil className="w-4 h-4" />
                   Modifier ma demande
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex items-center justify-center gap-2 text-gray-500 font-medium px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors whitespace-nowrap"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Réinitialiser
                 </button>
               </div>
               {geoError && <p className="text-sm text-red-500">{geoError}</p>}
