@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, Sparkles, Locate } from "lucide-react";
+import { Loader2, MapPin, Locate, Pencil, X } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import QuoteRequestForm from "@/components/ai/QuoteRequestForm";
@@ -28,6 +28,7 @@ function NeedResultsContent() {
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cityInput, setCityInput] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Affinage par localisation — toujours proposé, jamais bloquant.
   const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
@@ -123,10 +124,6 @@ function NeedResultsContent() {
 
   return (
     <div className="w-[90%] mx-auto py-8 sm:py-12">
-      <div className="mb-6">
-        <NeedSearchBar initialValue={texte} compact onSearch={(q) => { setGeoCoords(null); runSearch(q); }} />
-      </div>
-
       {loading && (
         <div className="flex items-center justify-center gap-2 text-gray-500 py-16">
           <Loader2 className="w-5 h-5 animate-spin" />
@@ -140,11 +137,6 @@ function NeedResultsContent() {
 
       {!loading && !error && response && (
         <>
-          <div className="flex items-start gap-3 bg-landes-forest/5 border border-landes-forest/20 rounded-2xl p-4 sm:p-5 mb-6">
-            <Sparkles className="w-5 h-5 text-landes-forest flex-shrink-0 mt-0.5" />
-            <p className="text-sm sm:text-base text-landes-pine font-medium">{response.message}</p>
-          </div>
-
           {/* 1. Affinage par localisation — "Affiner par localisation" et "Autour de moi" sur la même ligne, juste sous la recherche */}
           {hasSignal && (
             <div className="mb-6 space-y-3">
@@ -172,6 +164,14 @@ function NeedResultsContent() {
                 >
                   {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Locate className="w-4 h-4" />}
                   Autour de moi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center justify-center gap-2 sm:ml-auto text-gray-500 font-medium px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors whitespace-nowrap"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Modifier ma demande
                 </button>
               </div>
               {geoError && <p className="text-sm text-red-500">{geoError}</p>}
@@ -220,6 +220,36 @@ function NeedResultsContent() {
             </div>
           ) : null}
         </>
+      )}
+
+      {showEditModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="bg-transparent w-full max-w-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              aria-label="Fermer"
+              className="absolute -top-10 right-0 text-white/80 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <NeedSearchBar
+              initialValue={texte}
+              compact
+              onSearch={(q) => {
+                setGeoCoords(null);
+                setShowEditModal(false);
+                runSearch(q);
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
