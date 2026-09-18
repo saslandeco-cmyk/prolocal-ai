@@ -145,58 +145,39 @@ function NeedResultsContent() {
             <p className="text-sm sm:text-base text-landes-pine font-medium">{response.message}</p>
           </div>
 
-          {/* 1. Toutes les fiches correspondantes — jamais conditionnées par la localisation */}
-          {response.results.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mb-8">
-              {response.results.map((r) => (
-                <div key={r.professional.id}>
-                  <ProfessionalCard pro={r.professional} />
-                  <QuoteRequestForm professionalId={r.professional.id} need={response.need} />
-                </div>
-              ))}
-            </div>
-          ) : hasSignal ? (
-            <div className="text-center py-10 text-gray-400 mb-8 border border-dashed border-gray-200 rounded-2xl">
-              Aucun professionnel correspondant référencé pour le moment.
-            </div>
-          ) : null}
-
-          {/* 2. Affinage par localisation — proposé, jamais bloquant */}
+          {/* 1. Affinage par localisation — "Affiner par localisation" et "Autour de moi" sur la même ligne, juste sous la recherche */}
           {hasSignal && (
-            <div className="mb-8 max-w-lg space-y-3">
+            <div className="mb-6 space-y-3">
               <p className="text-sm font-semibold text-landes-pine">Affiner par localisation</p>
-              <form onSubmit={handlePreciserVille} className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-white">
-                  <MapPin className="w-4 h-4 text-landes-sage flex-shrink-0" />
-                  <input
-                    value={cityInput}
-                    onChange={(e) => setCityInput(e.target.value)}
-                    placeholder="Ville ou code postal…"
-                    className="w-full text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent"
-                  />
-                </div>
-                <button type="submit" className="btn-primary px-6 py-3 rounded-xl whitespace-nowrap">
-                  Valider
+              <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handlePreciserVille} className="flex-1 flex gap-2 max-w-md">
+                  <div className="flex-1 flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-white">
+                    <MapPin className="w-4 h-4 text-landes-sage flex-shrink-0" />
+                    <input
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
+                      placeholder="Ville ou code postal…"
+                      className="w-full text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary px-5 py-3 rounded-xl whitespace-nowrap">
+                    Valider
+                  </button>
+                </form>
+                <button
+                  type="button"
+                  onClick={handleAutourDeMoi}
+                  disabled={geoLoading}
+                  className="flex items-center justify-center gap-2 border-2 border-landes-forest/30 text-landes-forest font-medium px-6 py-3 rounded-xl hover:bg-landes-forest/5 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Locate className="w-4 h-4" />}
+                  Autour de moi
                 </button>
-              </form>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">ou</span>
-                <div className="flex-1 h-px bg-gray-200" />
               </div>
-              <button
-                type="button"
-                onClick={handleAutourDeMoi}
-                disabled={geoLoading}
-                className="w-full flex items-center justify-center gap-2 border-2 border-landes-forest/30 text-landes-forest font-medium px-6 py-3 rounded-xl hover:bg-landes-forest/5 transition-colors disabled:opacity-50"
-              >
-                {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Locate className="w-4 h-4" />}
-                Autour de moi
-              </button>
               {geoError && <p className="text-sm text-red-500">{geoError}</p>}
 
               {geoCoords && (
-                <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 max-w-lg">
                   <Locate className="w-4 h-4 text-landes-forest flex-shrink-0" />
                   <span className="text-sm text-gray-600 whitespace-nowrap">Rayon : <strong className="text-landes-pine">{radiusKm} km</strong></span>
                   <input
@@ -213,15 +194,31 @@ function NeedResultsContent() {
             </div>
           )}
 
-          {/* 3. Carte des professionnels trouvés — toujours visible en complément, plus de bascule Liste/Carte */}
+          {/* 2. Carte des professionnels trouvés — juste sous l'affinage par localisation */}
           {response.results.length > 0 && (
-            <div>
+            <div className="mb-8">
               <p className="text-sm font-semibold text-landes-pine mb-3">Localisation des professionnels trouvés</p>
               <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: 480 }}>
                 <MultiMap professionals={response.results.map((r) => r.professional)} />
               </div>
             </div>
           )}
+
+          {/* 3. Fiches des professionnels — jamais conditionnées par la localisation */}
+          {response.results.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+              {response.results.map((r) => (
+                <div key={r.professional.id}>
+                  <ProfessionalCard pro={r.professional} />
+                  <QuoteRequestForm professionalId={r.professional.id} need={response.need} />
+                </div>
+              ))}
+            </div>
+          ) : hasSignal ? (
+            <div className="text-center py-10 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
+              Aucun professionnel correspondant référencé pour le moment.
+            </div>
+          ) : null}
         </>
       )}
     </div>
