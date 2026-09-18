@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, Locate, Pencil, X, RotateCcw } from "lucide-react";
+import { Loader2, MapPin, Locate, RotateCcw } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import QuoteRequestForm from "@/components/ai/QuoteRequestForm";
@@ -32,7 +32,6 @@ function NeedResultsContent() {
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cityInput, setCityInput] = useState("");
-  const [showEditModal, setShowEditModal] = useState(false);
 
   // Affinage par localisation — toujours proposé, jamais bloquant.
   const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
@@ -130,7 +129,6 @@ function NeedResultsContent() {
     setGeoCoords(null);
     setCityInput("");
     setRadiusKm(DEFAULT_RADIUS_KM);
-    setShowEditModal(false);
     router.replace("/besoin");
   };
 
@@ -190,19 +188,11 @@ function NeedResultsContent() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(true)}
+                  onClick={handleReset}
                   className="btn-primary flex items-center justify-center gap-2 sm:ml-auto px-5 py-3 rounded-xl whitespace-nowrap"
                 >
-                  <Pencil className="w-4 h-4" />
-                  Modifier ma demande
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex items-center justify-center gap-2 text-gray-500 font-medium px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors whitespace-nowrap"
-                >
                   <RotateCcw className="w-4 h-4" />
-                  Réinitialiser
+                  Nouvelle demande
                 </button>
               </div>
               {geoError && <p className="text-sm text-red-500">{geoError}</p>}
@@ -251,36 +241,6 @@ function NeedResultsContent() {
             </div>
           ) : null}
         </>
-      )}
-
-      {showEditModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowEditModal(false)}
-        >
-          <div
-            className="bg-transparent w-full max-w-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowEditModal(false)}
-              aria-label="Fermer"
-              className="absolute -top-10 right-0 text-white/80 hover:text-white transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <NeedSearchBar
-              initialValue={texte}
-              compact
-              onSearch={(q) => {
-                setGeoCoords(null);
-                setShowEditModal(false);
-                runSearch(q);
-              }}
-            />
-          </div>
-        </div>
       )}
     </div>
   );
