@@ -323,7 +323,7 @@ export default function FeaturedProfessionals() {
             href={`/annuaire?category=${encodeURIComponent(mergedTabs[activeTab].category)}`}
             className="inline-flex items-center gap-2 btn-secondary py-3 px-8"
           >
-            Voir tous en {mergedTabs[activeTab].label} <ArrowRight className="w-4 h-4" />
+            Voir tous les professionnels de la catégorie {mergedTabs[activeTab].label} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
