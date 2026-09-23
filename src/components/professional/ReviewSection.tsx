@@ -104,7 +104,7 @@ function ReviewCard({ review, onFlag }: { review: Review; onFlag: () => void }) 
 // ── Formulaire seul ──────────────────────────────────────────────
 function ReviewForm({ proId, companyName }: { proId: string; companyName: string }) {
   const [step, setStep] = useState<"form" | "verify" | "done">("form");
-  const [form, setForm]       = useState({ firstName: "", lastName: "", email: "", rating: 0, text: "" });
+  const [form, setForm]       = useState({ firstName: "", lastName: "", email: "", service: "", rating: 0, text: "" });
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
@@ -194,6 +194,7 @@ function ReviewForm({ proId, companyName }: { proId: string; companyName: string
       firstName: form.firstName.trim(),
       lastName:  form.lastName.trim(),
       email:     form.email.trim(),
+      service:   form.service.trim() || undefined,
       rating:    form.rating,
       text:      form.text.trim(),
       createdAt: new Date().toISOString(),
@@ -302,12 +303,19 @@ function ReviewForm({ proId, companyName }: { proId: string; companyName: string
             {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
           </div>
         </div>
-        <div>
-          <label className="label">Email *</label>
-          <input type="email" value={form.email} onChange={e => upd("email", e.target.value)}
-            className={`input-field ${errors.email ? "border-red-400" : ""}`} placeholder="jean@example.fr" />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-          <p className="text-xs text-gray-400 mt-1">Un code de vérification y sera envoyé. Votre email ne sera pas affiché publiquement.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Email *</label>
+            <input type="email" value={form.email} onChange={e => upd("email", e.target.value)}
+              className={`input-field ${errors.email ? "border-red-400" : ""}`} placeholder="jean@example.fr" />
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            <p className="text-xs text-gray-400 mt-1">Un code de vérification y sera envoyé. Votre email ne sera pas affiché publiquement.</p>
+          </div>
+          <div>
+            <label className="label">Prestation réalisée</label>
+            <input value={form.service} onChange={e => upd("service", e.target.value)}
+              className="input-field" placeholder="Ex : Rénovation de toiture" />
+          </div>
         </div>
         <div>
           <label className="label">Note *</label>
