@@ -11,7 +11,6 @@ const EXAMPLES = [
 
 interface NeedSearchBarProps {
   initialValue?: string;
-  compact?: boolean;
   onSearch?: (text: string) => void;
 }
 
@@ -21,7 +20,7 @@ interface NeedSearchBarProps {
  * de chat à plusieurs échanges) : l'utilisateur décrit son besoin une fois,
  * PROLOCAL AI comprend et affiche directement des professionnels réels.
  */
-export default function NeedSearchBar({ initialValue = "", compact = false, onSearch }: NeedSearchBarProps) {
+export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearchBarProps) {
   const router = useRouter();
   const [text, setText] = useState(initialValue);
 
@@ -44,7 +43,7 @@ export default function NeedSearchBar({ initialValue = "", compact = false, onSe
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Décrivez votre besoin en quelques mots…"
+            placeholder={`Décrivez votre besoin en quelques mots… (ex : ${EXAMPLES.join(", ")})`}
             className="w-full text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent"
             autoComplete="off"
             maxLength={500}
@@ -58,20 +57,6 @@ export default function NeedSearchBar({ initialValue = "", compact = false, onSe
           <span>Trouver un professionnel</span>
         </button>
       </div>
-      {!compact && (
-        <div className="flex flex-wrap gap-2 px-3 sm:px-4 pb-2 pt-1">
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              onClick={() => setText(ex)}
-              className="text-xs text-gray-500 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-full px-3 py-1.5 transition-colors"
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      )}
     </form>
   );
 }
