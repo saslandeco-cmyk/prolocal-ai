@@ -641,7 +641,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
             {/* Map — sous les horaires */}
             {pro.lat && pro.lng && (
               <div className="card-map" style={{ height: 260 }}>
-                <SingleMap lat={pro.lat} lng={pro.lng} name={pro.companyName} address={`${pro.address}, ${pro.city}`} />
+                <SingleMap lat={pro.lat} lng={pro.lng} name={pro.companyName} address={`${pro.address}, ${pro.city}`} logo={pro.logo} />
               </div>
             )}
 
