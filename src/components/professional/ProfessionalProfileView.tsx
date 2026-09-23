@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import {
   MapPin, Phone, Globe, Mail, ArrowLeft, Clock,
   Building2, Shield, ExternalLink, Share2, CheckCircle,
-  X, Images, ChevronLeft, ChevronRight, MessageCircle, Send, Loader2, Award, UserCheck,
+  X, ChevronLeft, ChevronRight, MessageCircle, Send, Loader2, Award, UserCheck,
 } from "lucide-react";
 import { getProfessionalById, recordVisit, rehydrateAsync } from "@/lib/storage";
 import { Professional, formatDayHours } from "@/types";
@@ -77,17 +77,8 @@ function PhotoGallery({ photos, companyName }: { photos: string[]; companyName: 
 
   return (
     <div className="card overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 flex items-center gap-2">
-        <Images className="w-4 h-4 text-landes-sage" />
-        <p className="font-bold text-landes-pine text-base">
-          Photos
-          <span className="text-xs font-normal text-gray-400 ml-1">({photos.length})</span>
-        </p>
-      </div>
-
       {/* Miniatures côte à côte */}
-      <div className="px-5 pb-5">
+      <div className="px-5 pt-5 pb-5">
         <div className="grid grid-cols-5 gap-2">
           {photos.map((src, i) => (
             <button
