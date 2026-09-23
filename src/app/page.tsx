@@ -87,16 +87,6 @@ export default function HomePage() {
               Ou parcourir l&apos;annuaire par catégorie
             </Link>
           </div>
-
-          {/* Bouton inscription pro */}
-          <div className="mt-5 flex justify-center">
-            <Link
-              href="/inscription"
-              className="btn-amber flex items-center justify-center gap-2 text-sm sm:text-base py-2.5 sm:py-3 px-5 sm:px-8 text-center w-full sm:w-auto"
-            >
-              <span>Référencer mon activité dans l&apos;annuaire</span> <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-            </Link>
-          </div>
         </div>
 
         {/* Wave */}
