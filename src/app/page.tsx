@@ -84,7 +84,7 @@ export default function HomePage() {
 
           <div className="mt-4 flex justify-center">
             <Link href="/annuaire" className="text-sm sm:text-base font-semibold text-white underline underline-offset-4 decoration-white/60 hover:decoration-white transition-colors">
-              Ou parcourir l&apos;annuaire par catégorie
+              Ou effectuer un recherche par métier
             </Link>
           </div>
         </div>
