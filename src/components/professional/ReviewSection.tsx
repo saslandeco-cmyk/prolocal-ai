@@ -131,6 +131,7 @@ function ReviewForm({ proId, companyName }: { proId: string; companyName: string
     if (!form.firstName.trim()) e.firstName = "Requis";
     if (!form.lastName.trim())  e.lastName  = "Requis";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Email invalide";
+    if (!form.service.trim())   e.service = "Requis";
     if (form.rating === 0)      e.rating = "Veuillez choisir une note";
     if (form.text.trim().length < 30)  e.text = "30 caractères minimum";
     if (form.text.trim().length > 300) e.text = "300 caractères maximum";
@@ -194,7 +195,7 @@ function ReviewForm({ proId, companyName }: { proId: string; companyName: string
       firstName: form.firstName.trim(),
       lastName:  form.lastName.trim(),
       email:     form.email.trim(),
-      service:   form.service.trim() || undefined,
+      service:   form.service.trim(),
       rating:    form.rating,
       text:      form.text.trim(),
       createdAt: new Date().toISOString(),
@@ -312,9 +313,10 @@ function ReviewForm({ proId, companyName }: { proId: string; companyName: string
             <p className="text-xs text-gray-400 mt-1">Un code de vérification y sera envoyé. Votre email ne sera pas affiché publiquement.</p>
           </div>
           <div>
-            <label className="label">Prestation réalisée</label>
+            <label className="label">Prestation réalisée *</label>
             <input value={form.service} onChange={e => upd("service", e.target.value)}
-              className="input-field" placeholder="Ex : Rénovation de toiture" />
+              className={`input-field ${errors.service ? "border-red-400" : ""}`} placeholder="Ex : Rénovation de toiture" />
+            {errors.service && <p className="text-red-500 text-xs mt-1">{errors.service}</p>}
           </div>
         </div>
         <div>

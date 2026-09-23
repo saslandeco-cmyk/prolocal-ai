@@ -113,7 +113,7 @@ export interface Review {
   firstName: string;
   lastName: string;
   email: string;
-  service?: string;     // prestation réalisée par le professionnel
+  service: string;      // prestation réalisée par le professionnel
   rating: number;       // 1–5
   text: string;
   createdAt: string;
