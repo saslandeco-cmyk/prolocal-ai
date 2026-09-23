@@ -17,6 +17,19 @@ const ReviewSection = dynamic(() => import("@/components/professional/ReviewSect
 import StarDisplay from "@/components/ui/StarDisplay";
 import { getApprovedReviewsByPro } from "@/lib/storage";
 
+/**
+ * Enregistre un clic de contact (Appeler/WhatsApp/Email) sans jamais
+ * bloquer ni retarder l'action native (tel:/wa.me/mailto:) — l'appel réseau
+ * part en tâche de fond et son échec éventuel est silencieux.
+ */
+function logContact(proId: string, canal: "appel" | "whatsapp" | "email") {
+  fetch("/api/demandes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ professionalId: proId, canal }),
+  }).catch(() => {});
+}
+
 const DAY_LABELS: Record<string, string> = {
   monday:"Lundi", tuesday:"Mardi", wednesday:"Mercredi",
   thursday:"Jeudi", friday:"Vendredi", saturday:"Samedi", sunday:"Dimanche",
@@ -480,6 +493,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
               {pro.phone && (
                 <a
                   href={`tel:${pro.phone}`}
+                  onClick={() => logContact(pro.id, "appel")}
                   className="flex items-center justify-center gap-2 w-full bg-landes-forest text-white font-semibold py-3 px-4 rounded-xl hover:bg-landes-pine transition-colors"
                 >
                   <Phone className="w-5 h-5" /> Appeler
@@ -491,6 +505,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
                   href={`https://wa.me/${pro.whatsapp.replace(/[^0-9]/g, "").replace(/^0/, "33")}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => logContact(pro.id, "whatsapp")}
                   className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-semibold py-3 px-4 rounded-xl hover:bg-[#1ea952] transition-colors"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.001 2C6.478 2 2.001 6.477 2.001 12c0 1.99.583 3.845 1.588 5.401L2 22l4.735-1.562A9.955 9.955 0 0 0 12.001 22C17.524 22 22 17.523 22 12S17.524 2 12.001 2zm0 18.116c-1.774 0-3.42-.523-4.804-1.421l-.345-.207-3.246 1.071 1.085-3.166-.225-.326A8.096 8.096 0 0 1 3.885 12c0-4.478 3.638-8.116 8.116-8.116 4.478 0 8.116 3.638 8.116 8.116 0 4.478-3.638 8.116-8.116 8.116z"/></svg>
@@ -500,6 +515,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
 
               <a
                 href={`mailto:${pro.email}`}
+                onClick={() => logContact(pro.id, "email")}
                 className="flex items-center justify-center gap-2 w-full bg-landes-ocean/10 text-landes-ocean font-semibold py-3 px-4 rounded-xl hover:bg-landes-ocean/20 transition-colors border border-landes-ocean/20"
               >
                 <Mail className="w-5 h-5" /> Envoyer un email
@@ -693,11 +709,27 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
                   if (questionForm.message.trim().length < 10) errs.message = "10 caractères minimum";
                   if (Object.keys(errs).length) { setQuestionErrors(errs); return; }
                   setQuestionLoading(true);
-                  await new Promise(r => setTimeout(r, 800));
-                  setQuestionLoading(false);
-                  setQuestionSent(true);
-                  setQuestionForm({ firstName: "", lastName: "", email: "", message: "" });
-                  setQuestionErrors({});
+                  try {
+                    const res = await fetch("/api/demandes", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        professionalId: pro.id,
+                        canal: "question",
+                        demandeurNom: `${questionForm.firstName.trim()} ${questionForm.lastName.trim()}`,
+                        demandeurEmail: questionForm.email.trim(),
+                        messageOriginal: questionForm.message.trim(),
+                      }),
+                    });
+                    if (!res.ok) throw new Error();
+                    setQuestionSent(true);
+                    setQuestionForm({ firstName: "", lastName: "", email: "", message: "" });
+                    setQuestionErrors({});
+                  } catch {
+                    setQuestionErrors({ message: "Erreur lors de l'envoi. Merci de réessayer." });
+                  } finally {
+                    setQuestionLoading(false);
+                  }
                 }}
                 className="space-y-4"
               >

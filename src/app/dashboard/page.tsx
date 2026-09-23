@@ -1319,9 +1319,9 @@ function DashboardContent() {
         <FacturationTab pro={pro} docsOnly />
       )}
 
-      {/* ── TAB DEMANDES REÇUES (PROLOCAL AI) ── */}
+      {/* ── TAB DEMANDES REÇUES (PROLOCAL AI + fiche pro) ── */}
       {activeTab === "demandes" && (
-        <DemandesTab proId={pro.id} />
+        <DemandesTab proId={pro.id} onUpgradeClick={() => setActiveTab("plan")} />
       )}
 
       {/* ── TAB CLIENTS (CRM) ── */}

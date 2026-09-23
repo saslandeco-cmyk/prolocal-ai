@@ -44,13 +44,23 @@ export interface NeedSearchResponse {
 export type DemandeStatus = "nouvelle" | "en_cours" | "repondue" | "acceptee" | "terminee" | "annulee";
 
 /**
- * Demande de devis/contact envoyée à un professionnel depuis le parcours
- * PROLOCAL AI, après confirmation explicite de l'utilisateur. Rattachée à un
- * `Professional.id` réel — jamais générée automatiquement.
+ * Origine de la demande. `appel`/`whatsapp`/`email` correspondent aux clics
+ * sur les boutons de contact de la fiche pro (aucun formulaire associé — pas
+ * d'identité visiteur à collecter). `question` = modale "Poser une question"
+ * de la fiche. `prolocal_ai` = recherche conversationnelle en page d'accueil.
+ */
+export type DemandeCanal = "prolocal_ai" | "question" | "appel" | "whatsapp" | "email";
+
+/**
+ * Demande de devis/contact envoyée à un professionnel — via le parcours
+ * PROLOCAL AI, le formulaire "Poser une question", ou un clic sur un bouton
+ * de contact de sa fiche. Rattachée à un `Professional.id` réel — jamais
+ * générée automatiquement.
  */
 export interface Demande {
   id: string;
   professionalId: string;
+  canal: DemandeCanal;
   besoin: string | null;
   categorie: string | null;
   sousCategorie: string | null;

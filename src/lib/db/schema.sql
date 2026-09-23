@@ -279,3 +279,10 @@ CREATE TABLE IF NOT EXISTS demandes (
 
 CREATE INDEX IF NOT EXISTS idx_demandes_pro_id ON demandes (pro_id);
 CREATE INDEX IF NOT EXISTS idx_demandes_status ON demandes (status);
+
+-- Origine de la demande : parcours PROLOCAL AI, "Poser une question" sur la
+-- fiche, ou clic sur Appeler/WhatsApp/Email (sans formulaire associé, voir
+-- src/app/api/demandes/route.ts). Sert au quota mensuel par formule
+-- (src/lib/contactQuota.ts).
+ALTER TABLE demandes ADD COLUMN IF NOT EXISTS canal TEXT NOT NULL DEFAULT 'prolocal_ai';
+CREATE INDEX IF NOT EXISTS idx_demandes_pro_id_created_at ON demandes (pro_id, created_at);
