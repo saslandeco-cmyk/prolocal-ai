@@ -14,7 +14,7 @@ export const DEFAULT_BANNERS: Record<string, string> = {
   "Restauration":                 "/banners/restauration.jpg",
   "Services à la personne":       "/banners/services.jpg",
   "Sport & Fitness":              "/banners/sport.jpg",
-  "Transport de personnes":       "/banners/transport.jpg",
+  "Transport de personnes":       "/banners/transport.png",
 };
 
 /**
