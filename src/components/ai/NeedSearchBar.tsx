@@ -44,7 +44,7 @@ export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearc
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={`Décrivez votre besoin en quelques mots… (ex : ${EXAMPLES.join(", ")})`}
-            className="w-full text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent"
+            className="w-full text-gray-800 placeholder-gray-400 text-[0.76rem] italic focus:outline-none bg-transparent"
             autoComplete="off"
             maxLength={500}
           />
