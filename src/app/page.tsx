@@ -11,6 +11,7 @@ import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import FeaturedProfessionals from "@/components/professional/FeaturedProfessionals";
 import FullWidthMap from "@/components/map/FullWidthMap";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
+import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 
 const STATS = [
   { value: "500+", label: "Professionnels référencés" },
@@ -127,15 +128,32 @@ export default function HomePage() {
           <p className="text-sm font-semibold text-landes-sage uppercase tracking-wider mb-1">Explorer</p>
           <h2 className="section-title">Toutes les catégories</h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {categories.map(cat => (
-            <Link key={cat.slug}
-              href={`/categories/${cat.slug}`}
-              className="card p-4 sm:p-5 hover:shadow-md hover:border-landes-sage/30 border border-transparent transition-all duration-200 group">
-              <div className="text-2xl sm:text-3xl mb-2">{cat.emoji}</div>
-              <h3 className="font-semibold text-gray-800 text-xs sm:text-sm group-hover:text-landes-forest transition-colors leading-tight">{cat.label}</h3>
-            </Link>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {categories.map(cat => {
+            const image = DEFAULT_BANNERS[cat.label] ?? null;
+            return (
+              <div key={cat.slug}
+                className="card overflow-hidden hover:shadow-md hover:border-landes-sage/30 border border-transparent transition-all duration-200 group flex flex-col">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-landes-pine/5">
+                  {image ? (
+                    <img src={image} alt={cat.label}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-5xl">{cat.emoji}</div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <h3 className="text-white font-semibold text-sm sm:text-base leading-tight">{cat.label}</h3>
+                  </div>
+                </div>
+                <div className="p-3 sm:p-4 mt-auto">
+                  <Link href={`/categories/${cat.slug}`}
+                    className="btn-primary w-full block text-center text-sm py-2.5">
+                    Voir la catégorie
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
