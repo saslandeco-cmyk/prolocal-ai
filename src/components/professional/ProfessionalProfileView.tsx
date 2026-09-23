@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   MapPin, Phone, Globe, Mail, ArrowLeft, Clock,
-  Building2, Shield, ExternalLink, Share2, CheckCircle,
+  Shield, ExternalLink, Share2, CheckCircle,
   X, ChevronLeft, ChevronRight, MessageCircle, Send, Loader2, Award, UserCheck,
 } from "lucide-react";
 import { getProfessionalById, recordVisit, rehydrateAsync } from "@/lib/storage";
@@ -420,9 +420,6 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
                 return (
                   <>
                     <div className="card p-6">
-                      <p className="font-bold text-landes-pine text-lg mb-3 flex items-center gap-2">
-                        <Building2 className="w-5 h-5 text-landes-sage" /> À propos
-                      </p>
                       <p className="pro-description leading-relaxed text-gray-600">
                         Ce professionnel n&apos;a pas encore revendiqué sa fiche.
                       </p>
@@ -448,9 +445,6 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
               }
               return (
                 <div className="card p-6">
-                  <p className="font-bold text-landes-pine text-lg mb-3 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-landes-sage" /> À propos
-                  </p>
                   <div
                     className="pro-description leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: pro.description }}
