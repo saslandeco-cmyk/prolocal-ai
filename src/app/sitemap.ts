@@ -12,7 +12,7 @@ import { isDbConfigured } from "@/lib/db/client";
  * la base est configurée et alimentée).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [

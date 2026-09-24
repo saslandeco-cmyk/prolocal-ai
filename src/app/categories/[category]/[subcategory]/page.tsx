@@ -4,7 +4,7 @@ import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUr
 import { dbGetCategories } from "@/lib/db/categories";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
 export const revalidate = 3600;
 

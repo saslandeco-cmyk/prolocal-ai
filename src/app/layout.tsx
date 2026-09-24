@@ -4,7 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),

@@ -4,7 +4,7 @@ import CategoryPage, { type CategoryMeta } from "@/components/category/CategoryP
 import { dbGetCategories } from "@/lib/db/categories";
 import type { CategoryRecord } from "@/lib/categories";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
 // Les catégories peuvent être ajoutées/modifiées depuis l'admin sans
 // redéploiement : les pages déjà générées sont revalidées régulièrement, et

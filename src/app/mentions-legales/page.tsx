@@ -26,7 +26,7 @@ export default function MentionsLegalesPage() {
             Le site Prolocal-landes.fr accessible à l&apos;adresse :
           </p>
           <p className="text-gray-700 leading-relaxed my-3">
-            <a href="https://prolocal-lande.fr" className="text-landes-forest hover:underline">https://prolocal-lande.fr</a>
+            <a href="https://www.prolocal-landes.fr" className="text-landes-forest hover:underline">https://www.prolocal-landes.fr</a>
           </p>
           <p className="text-gray-700 leading-relaxed my-3">est édité par :</p>
 

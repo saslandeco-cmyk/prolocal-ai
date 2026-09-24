@@ -5,7 +5,7 @@ import { Building2, MapPin, Phone, Mail, Globe, ChevronRight, Calendar, Users } 
 import { getEntrepriseBySiret, getEntreprisesBySiren } from "@/lib/sirene/db";
 import { buildEntrepriseUrl, extractSiretFromSlug } from "@/lib/sirene/url";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
 /**
  * Pages entreprises générées automatiquement — étape 5.

@@ -10,7 +10,7 @@ import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://prolocal-landes.fr";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
 /**
  * ÉTAPE 3 de la migration base de données : les pages fiches lisent
