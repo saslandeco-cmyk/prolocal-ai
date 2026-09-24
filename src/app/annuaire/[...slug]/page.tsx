@@ -9,6 +9,7 @@ import { isDbConfigured } from "@/lib/db/client";
 import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
+import { normalizeFrPhone } from "@/lib/phone";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -258,7 +259,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
             name: pro.companyName,
             url,
             image: pro.logo || pro.banner || undefined,
-            telephone: pro.phone || undefined,
+            telephone: normalizeFrPhone(pro.phone) || undefined,
             email: pro.email || undefined,
             category: pro.subcategory || pro.category,
             keywords: pro.seoKeywords?.length ? pro.seoKeywords.join(", ") : undefined,

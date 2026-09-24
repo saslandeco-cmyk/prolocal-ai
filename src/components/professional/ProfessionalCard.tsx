@@ -8,6 +8,7 @@ import { getProRating } from "@/lib/reviewUtils";
 import { getBanner } from "@/lib/defaultBanners";
 import { rehydrateAsync } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
+import { phoneHref } from "@/lib/phone";
 
 interface ProfessionalCardProps {
   pro: Professional;
@@ -124,7 +125,7 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
           {pro.phone && (
             <button
               type="button"
-              onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = `tel:${pro.phone}`; }}
+              onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = phoneHref(pro.phone); }}
               className="flex-1 flex items-center justify-center gap-1.5 bg-landes-forest text-white text-xs font-semibold py-2 rounded-lg hover:bg-landes-pine transition-colors"
             >
               <Phone className="w-3.5 h-3.5" /> Appeler

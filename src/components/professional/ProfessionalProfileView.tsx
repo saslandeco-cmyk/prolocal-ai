@@ -11,6 +11,7 @@ import {
 import { getProfessionalById, recordVisit, rehydrateAsync } from "@/lib/storage";
 import { Professional, formatDayHours } from "@/types";
 import { getBanner } from "@/lib/defaultBanners";
+import { phoneHref } from "@/lib/phone";
 
 const SingleMap     = dynamic(() => import("@/components/map/SingleMap"), { ssr: false });
 const ReviewSection = dynamic(() => import("@/components/professional/ReviewSection"), { ssr: false });
@@ -492,7 +493,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
 
               {pro.phone && (
                 <a
-                  href={`tel:${pro.phone}`}
+                  href={phoneHref(pro.phone)}
                   onClick={() => logContact(pro.id, "appel")}
                   className="flex items-center justify-center gap-2 w-full bg-landes-forest text-white font-semibold py-3 px-4 rounded-xl hover:bg-landes-pine transition-colors"
                 >

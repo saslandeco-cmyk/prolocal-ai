@@ -11,6 +11,7 @@ import OpeningHoursEditor from "@/components/ui/OpeningHoursEditor";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { REQUIRE_VALIDATION } from "@/lib/config";
 import { geocodeAddress } from "@/lib/geocode";
+import { formatFrPhoneDisplay } from "@/lib/phone";
 import type { OpeningHours } from "@/types";
 
 /**
@@ -569,7 +570,7 @@ function SireneManager() {
                         <p className="font-semibold text-sm text-gray-800 truncate">{e.denomination || e.enseigne || "—"}</p>
                         <p className="text-xs text-gray-400">{e.siret} · {e.codeApe} · {e.commune}</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {e.telephone || <span className="text-gray-300">Tél. non renseigné</span>}
+                          {formatFrPhoneDisplay(e.telephone) || <span className="text-gray-300">Tél. non renseigné</span>}
                           {" · "}
                           {e.email || <span className="text-gray-300">Email non renseigné</span>}
                           {" · "}
@@ -2396,7 +2397,7 @@ export default function AdminPage() {
                       ["Forme juridique", selectedPro.legalForm],
                       ["Catégorie", selectedPro.category],
                       ["Email", selectedPro.email],
-                      ["Téléphone", selectedPro.phone],
+                      ["Téléphone", formatFrPhoneDisplay(selectedPro.phone)],
                       ["Adresse", `${selectedPro.address}, ${selectedPro.city} ${selectedPro.postalCode}`],
                       ["Inscrit le", new Date(selectedPro.createdAt).toLocaleDateString("fr-FR")],
                     ].map(([k, v]) => (

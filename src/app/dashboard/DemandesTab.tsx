@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Inbox, Loader2, Mail, Phone, MapPin, Lock, MessageCircle, Sparkles, MessageSquareText } from "lucide-react";
 import type { Demande, DemandeStatus, DemandeCanal } from "@/types/needs";
+import { phoneHref, formatFrPhoneDisplay } from "@/lib/phone";
 
 const STATUS_LABELS: Record<DemandeStatus, string> = {
   nouvelle: "Nouvelle",
@@ -206,8 +207,8 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
                         </a>
                       )}
                       {d.demandeurTelephone && (
-                        <a href={`tel:${d.demandeurTelephone}`} className="flex items-center gap-1 hover:text-landes-forest">
-                          <Phone className="w-3.5 h-3.5" /> {d.demandeurTelephone}
+                        <a href={phoneHref(d.demandeurTelephone)} className="flex items-center gap-1 hover:text-landes-forest">
+                          <Phone className="w-3.5 h-3.5" /> {formatFrPhoneDisplay(d.demandeurTelephone)}
                         </a>
                       )}
                     </div>

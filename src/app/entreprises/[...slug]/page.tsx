@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Building2, MapPin, Phone, Mail, Globe, ChevronRight, Calendar, Users } from "lucide-react";
 import { getEntrepriseBySiret, getEntreprisesBySiren } from "@/lib/sirene/db";
 import { buildEntrepriseUrl, extractSiretFromSlug } from "@/lib/sirene/url";
+import { phoneHref, formatFrPhoneDisplay, normalizeFrPhone } from "@/lib/phone";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -75,7 +76,7 @@ export default async function EntreprisePage({ params }: { params: Promise<{ slu
         "@type": "LocalBusiness",
         name: nom,
         url,
-        telephone: entreprise.telephone || undefined,
+        telephone: normalizeFrPhone(entreprise.telephone) || undefined,
         email: entreprise.email || undefined,
         sameAs: entreprise.siteWeb || undefined,
         category: entreprise.libelleApe || undefined,
@@ -178,8 +179,8 @@ export default async function EntreprisePage({ params }: { params: Promise<{ slu
               <h2 className="font-bold text-landes-pine mb-4">Coordonnées</h2>
               <div className="space-y-3 text-sm">
                 {entreprise.telephone ? (
-                  <a href={`tel:${entreprise.telephone}`} className="flex items-center gap-2 text-gray-700 hover:text-landes-forest">
-                    <Phone className="w-4 h-4 text-landes-sage flex-shrink-0" /> {entreprise.telephone}
+                  <a href={phoneHref(entreprise.telephone)} className="flex items-center gap-2 text-gray-700 hover:text-landes-forest">
+                    <Phone className="w-4 h-4 text-landes-sage flex-shrink-0" /> {formatFrPhoneDisplay(entreprise.telephone)}
                   </a>
                 ) : (
                   <p className="flex items-center gap-2 text-gray-300"><Phone className="w-4 h-4 flex-shrink-0" /> Non renseigné</p>

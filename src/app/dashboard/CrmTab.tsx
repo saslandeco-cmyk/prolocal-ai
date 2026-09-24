@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getClientsByPro, saveClient, deleteClient, generateId, getDocumentsByPro } from "@/lib/storage";
 import type { Client, ClientNote, ClientStatus, BillingDocument } from "@/types";
+import { phoneHref, formatFrPhoneDisplay } from "@/lib/phone";
 import type { Professional } from "@/types";
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -124,8 +125,8 @@ function ClientDetail({
                 </a>
               )}
               {client.phone && (
-                <a href={`tel:${client.phone}`} className="flex items-center gap-2 text-gray-600 hover:text-landes-forest">
-                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />{client.phone}
+                <a href={phoneHref(client.phone)} className="flex items-center gap-2 text-gray-600 hover:text-landes-forest">
+                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />{formatFrPhoneDisplay(client.phone)}
                 </a>
               )}
               {(client.address || client.city) && (
@@ -668,7 +669,7 @@ export default function CrmTab({ pro }: { pro: Professional }) {
 
                       <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-2">
                         {client.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>}
-                        {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+                        {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{formatFrPhoneDisplay(client.phone)}</span>}
                         {client.city  && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{client.city}</span>}
                       </div>
 
