@@ -16,6 +16,8 @@ export interface SyncStats {
   totalGeocoded: number;
   codesApe: string[];
   durationMs: number;
+  /** Erreurs de récupération par code APE (échec partiel — les autres codes ont quand même été synchronisés). */
+  errors?: string[];
 }
 
 /**
@@ -51,7 +53,9 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
   }
 
   let logId: number | null = null;
+  let logFinished = false;
   let inserted = 0, updated = 0, unchanged = 0, geocoded = 0;
+  const fetchErrors: string[] = [];
 
   try {
     // Déplacé à l'intérieur du try : si l'ouverture du journal échoue
@@ -62,10 +66,14 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
 
     // Un appel paginé par code APE, pour rester dans des lots raisonnables
     // et pouvoir identifier facilement quel code APE pose problème en cas
-    // d'erreur partielle.
+    // d'erreur partielle. Un code en échec ne bloque pas les autres, mais
+    // l'erreur est conservée (au lieu d'être avalée) pour que le journal et
+    // l'admin la signalent au lieu d'afficher un faux succès à 0 résultat.
     for (const code of codes) {
       const etablissements = await fetchAllEtablissements([code], "40").catch((err) => {
+        const message = `${code}: ${err.message || "erreur inconnue"}`;
         console.error(`[sync] Échec de récupération pour le code APE ${code}:`, err);
+        fetchErrors.push(message);
         return [];
       });
 
@@ -95,6 +103,7 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
       }
     }
 
+    const errorMessage = fetchErrors.length > 0 ? fetchErrors.join(" | ") : undefined;
     const stats: SyncStats = {
       totalFetched: inserted + updated + unchanged,
       totalInserted: inserted,
@@ -103,6 +112,7 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
       totalGeocoded: geocoded,
       codesApe: codes,
       durationMs: Date.now() - start,
+      errors: fetchErrors.length > 0 ? fetchErrors : undefined,
     };
 
     await finishSyncLog(logId, {
@@ -110,10 +120,20 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
       totalInserted: inserted,
       totalUpdated: updated,
       totalUnchanged: unchanged,
+      error: errorMessage,
     });
+    logFinished = true;
+
+    // Échec total (tous les codes APE ont échoué) : on fait échouer l'appel
+    // pour de bon, plutôt que de renvoyer un succès à 0 résultat — sinon le
+    // cron Vercel et l'admin ne voient jamais qu'il y a eu un problème.
+    if (fetchErrors.length > 0 && fetchErrors.length === codes.length) {
+      throw new Error(errorMessage);
+    }
 
     return stats;
   } catch (err: any) {
+    if (logFinished) throw err; // déjà journalisé ci-dessus (échec total) — pas de double écriture
     await finishSyncLog(logId, {
       totalFetched: inserted + updated + unchanged,
       totalInserted: inserted,
