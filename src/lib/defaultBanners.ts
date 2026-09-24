@@ -4,7 +4,7 @@
  */
 export const DEFAULT_BANNERS: Record<string, string> = {
   "Alimentation & Épicerie":      "/banners/alimentation.jpg",
-  "Artisanat & Métiers d'art":    "/banners/artisanat.jpg",
+  "Artisanat & Métiers d'art":    "/banners/artisanat.png",
   "Bâtiment & Travaux":           "/banners/batiment.jpg",
   "Beauté & Bien-être":           "/banners/beaute.jpg",
   "Commerce & Vente":             "/banners/commerce.jpg",
