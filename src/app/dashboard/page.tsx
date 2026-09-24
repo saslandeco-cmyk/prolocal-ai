@@ -60,6 +60,7 @@ function DashboardContent() {
   const [proReviews, setProReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewsLoadError, setReviewsLoadError] = useState(false);
+  const [newDemandesCount, setNewDemandesCount] = useState(0);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [confirmAction, setConfirmAction] = useState<"suspend" | "delete" | null>(null);
   const [planChanging, setPlanChanging] = useState(false);
@@ -154,6 +155,7 @@ function DashboardContent() {
       setHours(data.openingHours || DEFAULT_HOURS);
       setPhotos(data.photos || []);
       loadReviews(data.id);
+      loadNewDemandesCount(data.id);
       // Charge les images depuis IndexedDB (complète les données si besoin)
       rehydrateAsync(data).then(full => {
         if (cancelled) return;
@@ -202,6 +204,21 @@ function DashboardContent() {
 
     setProReviews(reviews);
     setReviewsLoading(false);
+  };
+
+  // Nombre de demandes au statut "nouvelle" — affiché entre parenthèses à
+  // côté de l'onglet "Demandes reçues". Rafraîchi ici au chargement, puis
+  // tenu à jour par DemandesTab (onCountChange) une fois l'onglet visité.
+  const loadNewDemandesCount = async (proId: string) => {
+    try {
+      const res = await fetch(`/api/demandes?proId=${encodeURIComponent(proId)}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const demandes = Array.isArray(json.demandes) ? json.demandes : [];
+      setNewDemandesCount(demandes.filter((d: any) => d.status === "nouvelle").length);
+    } catch {
+      // Réseau indisponible ou base non configurée : le badge reste à 0
+    }
   };
 
   const handleLogout = () => { clearSession(); router.push("/"); };
@@ -606,7 +623,7 @@ function DashboardContent() {
                 { id: "horaires",         label: "Horaires",              emoji: "🕐", editable: true,  plans: ["premium","gold"] },
                 { id: "info-facturation", label: "Infos facturation",     emoji: "🏢", editable: true,  plans: ["gold"] },
                 { id: "facturation",      label: "Devis / Facture",       emoji: "🧾", editable: false, plans: ["gold"] },
-                { id: "demandes",         label: "Demandes reçues",       emoji: "📩", editable: false, plans: ["standard","premium","gold"] },
+                { id: "demandes",         label: `Demandes reçues${newDemandesCount > 0 ? ` (${newDemandesCount})` : ""}`, emoji: "📩", editable: false, plans: ["standard","premium","gold"] },
                 { id: "clients",          label: "Prospects / Clients",   emoji: "👥", editable: false, plans: ["gold"] },
                 { id: "revenue",          label: "Chiffre d'affaires",    emoji: "📈", editable: false, plans: ["gold"] },
                 { id: "stats",            label: "Statistiques",          emoji: "📊", editable: false, plans: ["gold"] },
@@ -1321,7 +1338,7 @@ function DashboardContent() {
 
       {/* ── TAB DEMANDES REÇUES (PROLOCAL AI + fiche pro) ── */}
       {activeTab === "demandes" && (
-        <DemandesTab proId={pro.id} onUpgradeClick={() => setActiveTab("plan")} />
+        <DemandesTab proId={pro.id} onUpgradeClick={() => setActiveTab("plan")} onCountChange={setNewDemandesCount} />
       )}
 
       {/* ── TAB CLIENTS (CRM) ── */}

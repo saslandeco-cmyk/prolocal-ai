@@ -50,7 +50,14 @@ interface Quota {
  * formule (src/lib/contactQuota.ts), les demandes les plus récentes restent
  * visibles (date, canal) mais leur contenu est masqué.
  */
-export default function DemandesTab({ proId, onUpgradeClick }: { proId: string; onUpgradeClick?: () => void }) {
+interface DemandesTabProps {
+  proId: string;
+  onUpgradeClick?: () => void;
+  /** Notifié à chaque chargement/mise à jour avec le nombre de demandes au statut "nouvelle". */
+  onCountChange?: (count: number) => void;
+}
+
+export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: DemandesTabProps) {
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [quota, setQuota] = useState<Quota | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +79,10 @@ export default function DemandesTab({ proId, onUpgradeClick }: { proId: string; 
   }, [proId]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    onCountChange?.(demandes.filter(d => d.status === "nouvelle").length);
+  }, [demandes, onCountChange]);
 
   const updateStatus = async (id: string, status: DemandeStatus) => {
     setUpdatingId(id);
