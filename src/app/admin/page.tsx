@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag } from "lucide-react";
-import { setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds } from "@/lib/storage";
+import { setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds, setAdminPanelPath } from "@/lib/storage";
 import { Professional, PLANS, StatusType, Review } from "@/types";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
 import PlanBadge from "@/components/ui/PlanBadge";
@@ -1392,6 +1392,7 @@ export default function AdminPage() {
     const session = getSession();
     if (session?.type === "admin") {
       setAuthenticated(true);
+      setAdminPanelPath(window.location.pathname);
       getProfessionalsWithImages().then(setPros);
       setReviews(getReviews());
     }
@@ -1411,7 +1412,8 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) { setLoginError(data.error || "Identifiants incorrects."); return; }
-      setSession("admin");
+      setSession("admin", loginUsername);
+      setAdminPanelPath(window.location.pathname);
       setAuthenticated(true);
       getProfessionalsWithImages().then(setPros);
     } catch {

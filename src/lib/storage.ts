@@ -2,6 +2,7 @@ import { Professional } from "@/types";
 
 const STORAGE_KEY         = "prolocal_professionals";
 const SESSION_KEY         = "prolocal_session";
+const ADMIN_PANEL_PATH_KEY = "prolocal_admin_panel_path";
 const IDB_DB_NAME         = "prolocal_images";
 const IDB_STORE           = "images";
 const IDB_VERSION         = 1;
@@ -341,6 +342,25 @@ export function clearSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SESSION_KEY);
   window.dispatchEvent(new Event("prolocal-session-changed"));
+}
+
+/**
+ * Mémorise, uniquement dans le navigateur de l'administrateur déjà
+ * authentifié, le chemin secret par lequel il accède à l'espace admin
+ * (voir ADMIN_SECRET_PATH / middleware.ts). Ce chemin n'est jamais codé en
+ * dur ni exposé côté client ailleurs — il n'est capturé qu'une fois
+ * l'admin effectivement connecté, depuis l'URL qu'il a lui-même utilisée,
+ * pour permettre au Navbar de proposer un lien direct vers son tableau de
+ * bord sans jamais révéler ce chemin à qui que ce soit d'autre.
+ */
+export function setAdminPanelPath(path: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ADMIN_PANEL_PATH_KEY, path);
+}
+
+export function getAdminPanelPath(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ADMIN_PANEL_PATH_KEY);
 }
 
 // ── Admin ─────────────────────────────────────────────────────

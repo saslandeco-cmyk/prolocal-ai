@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X, MapPin, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3 } from "lucide-react";
-import { getSession, clearSession, getProfessionalById } from "@/lib/storage";
+import { Menu, X, MapPin, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3, ShieldCheck } from "lucide-react";
+import { getSession, clearSession, getProfessionalById, getAdminPanelPath } from "@/lib/storage";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 interface ProSession {
@@ -13,16 +13,24 @@ interface ProSession {
   id: string;
 }
 
+interface AdminSession {
+  username: string;
+  panelPath: string | null;
+}
+
 export default function Navbar() {
   const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const router = useRouter();
   const [open,       setOpen]       = useState(false);
   const [proSession, setProSession] = useState<ProSession | null>(null);
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [dropOpen,   setDropOpen]   = useState(false);
+  const [adminDropOpen, setAdminDropOpen] = useState(false);
   const [catOpen,    setCatOpen]    = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [mobileSubOpen, setMobileSubOpen] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
+  const adminDropRef = useRef<HTMLDivElement>(null);
   const catRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
@@ -34,10 +42,17 @@ export default function Navbar() {
         const pro = getProfessionalById(session.id);
         if (pro) {
           setProSession({ firstName: pro.firstName, lastName: pro.lastName, companyName: pro.companyName, id: pro.id });
+          setAdminSession(null);
           return;
         }
       }
+      if (session?.type === "admin" && session.id) {
+        setAdminSession({ username: session.id, panelPath: getAdminPanelPath() });
+        setProSession(null);
+        return;
+      }
       setProSession(null);
+      setAdminSession(null);
     };
     load();
     window.addEventListener("storage", load);
@@ -52,6 +67,7 @@ export default function Navbar() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!dropRef.current?.contains(e.target as Node)) setDropOpen(false);
+      if (!adminDropRef.current?.contains(e.target as Node)) setAdminDropOpen(false);
       if (!catRef.current?.contains(e.target as Node))  setCatOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -59,7 +75,7 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    clearSession(); setProSession(null); setDropOpen(false); setOpen(false); router.push("/");
+    clearSession(); setProSession(null); setAdminSession(null); setDropOpen(false); setAdminDropOpen(false); setOpen(false); router.push("/");
   };
 
   const initials = proSession
@@ -204,6 +220,35 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+            ) : adminSession ? (
+              <div
+                className="relative"
+                ref={adminDropRef}
+                onMouseEnter={() => setAdminDropOpen(true)}
+                onMouseLeave={() => setAdminDropOpen(false)}
+              >
+                <button
+                  className="flex items-center gap-2 bg-landes-forest/8 hover:bg-landes-forest/15 border border-landes-sage/30 rounded-xl px-4 py-2 transition-colors"
+                >
+                  <ShieldCheck className="w-4 h-4 text-landes-forest flex-shrink-0" />
+                  <span className="text-sm font-semibold text-landes-pine">{adminSession.username}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${adminDropOpen ? "rotate-180" : ""}`} />
+                </button>
+                {adminDropOpen && (
+                  <div className="absolute right-0 top-full w-52 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                    {adminSession.panelPath && (
+                      <Link href={adminSession.panelPath} onClick={() => setAdminDropOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-landes-forest/5 hover:text-landes-forest transition-colors">
+                        <LayoutDashboard className="w-4 h-4" /> Tableau de bord
+                      </Link>
+                    )}
+                    <button onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                      <LogOut className="w-4 h-4" /> Se déconnecter
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Link href="/connexion" className="flex items-center gap-2 text-gray-600 hover:text-landes-forest font-medium transition-colors">
@@ -305,6 +350,23 @@ export default function Navbar() {
                 className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-gray-700 font-medium hover:bg-gray-50">
                 <User className="w-4 h-4" /> Ma fiche publique
               </Link>
+              <button onClick={handleLogout}
+                className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl text-red-600 font-medium hover:bg-red-50">
+                <LogOut className="w-4 h-4" /> Se déconnecter
+              </button>
+            </>
+          ) : adminSession ? (
+            <>
+              <div className="flex items-center gap-3 py-2 px-3 border-t border-gray-100 mt-2">
+                <ShieldCheck className="w-6 h-6 text-landes-forest flex-shrink-0" />
+                <p className="font-semibold text-landes-pine text-sm">{adminSession.username}</p>
+              </div>
+              {adminSession.panelPath && (
+                <Link href={adminSession.panelPath} onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-gray-700 font-medium hover:bg-gray-50">
+                  <LayoutDashboard className="w-4 h-4" /> Tableau de bord
+                </Link>
+              )}
               <button onClick={handleLogout}
                 className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl text-red-600 font-medium hover:bg-red-50">
                 <LogOut className="w-4 h-4" /> Se déconnecter
