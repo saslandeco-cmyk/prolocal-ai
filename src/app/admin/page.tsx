@@ -64,15 +64,21 @@ const ALL_COLUMN_LABELS = COLUMN_DEFS.map(c => c.label);
 
 // Bouton "Enregistrer" pour la photo hero — lit l'état depuis le storage
 // Petit composant d'upload d'image (base64) pour la modale d'édition complète
-function AdminImageUploader({ label, value, onChange, aspect = "square" }: {
-  label: string; value?: string; onChange: (v: string) => void; aspect?: "square" | "banner";
+// ⚠️ Compresse toujours l'image avant de la transmettre (mêmes fonctions que
+// le tableau de bord professionnel, voir imageUtils.ts) — un fichier brut
+// (photo de téléphone, souvent plusieurs Mo) peut faire dépasser la limite
+// de taille de la requête d'enregistrement et échouer silencieusement, ce
+// qui donnait l'impression que l'image "n'était pas toujours conservée".
+function AdminImageUploader({ label, value, onChange, kind }: {
+  label: string; value?: string; onChange: (v: string) => void; kind: "logo" | "banner" | "photo";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const handleFile = (file: File | undefined) => {
+  const aspect = kind === "banner" ? "banner" : "square";
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange(reader.result as string);
-    reader.readAsDataURL(file);
+    const { compressLogo, compressBanner, compressPhoto } = await import("@/lib/imageUtils");
+    const compress = kind === "logo" ? compressLogo : kind === "banner" ? compressBanner : compressPhoto;
+    onChange(await compress(file));
   };
   return (
     <div>
@@ -1530,11 +1536,17 @@ export default function AdminPage() {
     setSavingFullEdit(true);
     await new Promise(r => setTimeout(r, 400));
     const updated = await ensureGeocoded({ ...selectedPro, ...fullEditForm, updatedAt: new Date().toISOString() } as Professional);
-    saveProfessional(updated);
+    const synced = await saveProfessional(updated);
     refresh();
     setSelectedPro(updated);
     setSavingFullEdit(false);
     setShowFullEditModal(false);
+    if (!synced) {
+      // Enregistrée en local (visible dans cette session admin), mais la
+      // réplication en base a échoué — logo/bannière/photos resteraient
+      // invisibles côté front office et dans le dashboard du professionnel.
+      alert("La fiche a été enregistrée sur cet appareil, mais la synchronisation avec le serveur a échoué — logo, bannière et photos pourraient ne pas apparaître ailleurs. Réessayez dans un instant.");
+    }
   };
 
   const filtered = pros.filter((p) => {
@@ -2549,8 +2561,8 @@ export default function AdminPage() {
               <div>
                 <h3 className="text-sm font-bold text-landes-pine bg-landes-forest/8 border-l-4 border-landes-forest px-3 py-2 rounded-r-lg mb-3">Identité visuelle</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <AdminImageUploader label="Logo" value={fullEditForm.logo} onChange={v => updFull("logo", v)} aspect="square" />
-                  <AdminImageUploader label="Bannière" value={fullEditForm.banner} onChange={v => updFull("banner", v)} aspect="banner" />
+                  <AdminImageUploader label="Logo" value={fullEditForm.logo} onChange={v => updFull("logo", v)} kind="logo" />
+                  <AdminImageUploader label="Bannière" value={fullEditForm.banner} onChange={v => updFull("banner", v)} kind="banner" />
                 </div>
               </div>
 
@@ -2646,7 +2658,7 @@ export default function AdminPage() {
                           if (v) next[i] = v; else next.splice(i, 1);
                           updFull("photos", next.filter(Boolean));
                         }}
-                        aspect="square" />
+                        kind="photo" />
                     ))}
                   </div>
                 </div>
