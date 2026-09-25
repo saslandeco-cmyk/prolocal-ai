@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Building2, MapPin, Tags } from "lucide-react";
 import { getProfessionalsWithImages } from "@/lib/storage";
 import ProfessionalCard from "./ProfessionalCard";
 import type { Professional } from "@/types";
@@ -255,12 +255,18 @@ export default function FeaturedProfessionals() {
   const [activeTab, setActiveTab] = useState(0);
   const [mergedTabs, setMergedTabs] = useState<FeaturedTab[]>(FEATURED_TABS);
   const [loaded, setLoaded] = useState(false);
+  // Compteur dynamique (entreprises / communes / activités inscrites) —
+  // recalculé à chaque chargement à partir des professionnels actifs
+  // réels, pour refléter automatiquement chaque ajout ou suppression.
+  const [stats, setStats] = useState({ companies: 0, communes: 0, activities: 0 });
 
   // Charge uniquement les vrais professionnels Gold actifs — plus aucune
   // donnée de démonstration en repli.
   useEffect(() => {
     (async () => {
-      const realPros = (await getProfessionalsWithImages()).filter(p => p.status === "active" && p.plan === "gold");
+      const allPros = await getProfessionalsWithImages();
+      const activePros = allPros.filter(p => p.status === "active");
+      const realPros = activePros.filter(p => p.plan === "gold");
 
       const updated = FEATURED_TABS.map(tab => ({
         ...tab,
@@ -268,6 +274,11 @@ export default function FeaturedProfessionals() {
       }));
 
       setMergedTabs(updated);
+      setStats({
+        companies: activePros.length,
+        communes: new Set(activePros.map(p => p.city).filter(Boolean)).size,
+        activities: new Set(activePros.map(p => p.category).filter(Boolean)).size,
+      });
       setLoaded(true);
     })();
   }, [activeTab]); // recharge à chaque changement d'onglet
@@ -325,6 +336,37 @@ export default function FeaturedProfessionals() {
           >
             Voir tous les professionnels de la catégorie {mergedTabs[activeTab].label} <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+
+        {/* Compteur dynamique — entreprises / communes / activités inscrites */}
+        <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-8 pt-8 border-t border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-4 h-4 text-landes-forest" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-landes-pine leading-none">{stats.companies}</p>
+              <p className="text-xs text-gray-400 leading-none mt-1">entreprise{stats.companies > 1 ? "s" : ""} inscrite{stats.companies > 1 ? "s" : ""}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-4 h-4 text-landes-forest" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-landes-pine leading-none">{stats.communes}</p>
+              <p className="text-xs text-gray-400 leading-none mt-1">commune{stats.communes > 1 ? "s" : ""} représentée{stats.communes > 1 ? "s" : ""}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+              <Tags className="w-4 h-4 text-landes-forest" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-landes-pine leading-none">{stats.activities}</p>
+              <p className="text-xs text-gray-400 leading-none mt-1">activité{stats.activities > 1 ? "s" : ""} représentée{stats.activities > 1 ? "s" : ""}</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
