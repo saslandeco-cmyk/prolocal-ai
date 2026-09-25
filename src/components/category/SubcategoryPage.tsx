@@ -222,7 +222,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
                 }
               />
               <p className="text-xs text-white/50 text-center mt-3">
-                Pour afficher votre fiche professionnelle dans ce diaporama, choisissez l&apos;option « Encart publicitaire » dans votre tableau de bord.
+                Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
               </p>
             </div>
           </div>
