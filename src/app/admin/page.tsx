@@ -2583,7 +2583,7 @@ export default function AdminPage() {
                     <input type="email" value={fullEditForm.email || ""} onChange={e => updFull("email", e.target.value)} className="input-field" />
                   </div>
                   <div>
-                    <label className="label">Email professionnel (affiché)</label>
+                    <label className="label">Email professionnel (permet de recevoir les demandes faites depuis la plateforme)</label>
                     <input type="email" value={fullEditForm.professionalEmail || ""} onChange={e => updFull("professionalEmail", e.target.value)} className="input-field" />
                   </div>
                   <div>
