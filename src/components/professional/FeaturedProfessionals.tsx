@@ -289,7 +289,39 @@ export default function FeaturedProfessionals() {
   if (loaded && !hasAnyRealPro) return null;
 
   return (
-    <section className="bg-white py-10 sm:py-12 lg:py-16">
+    <>
+      {/* Compteur dynamique — entreprises / communes / activités inscrites */}
+      <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-8 pt-8 border-t border-gray-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+            <Building2 className="w-4 h-4 text-landes-forest" />
+          </div>
+          <div className="text-left">
+            <p className="text-lg font-bold text-landes-pine leading-none">{stats.companies}</p>
+            <p className="text-xs text-gray-400 leading-none mt-1">entreprise{stats.companies > 1 ? "s" : ""} inscrite{stats.companies > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-4 h-4 text-landes-forest" />
+          </div>
+          <div className="text-left">
+            <p className="text-lg font-bold text-landes-pine leading-none">{stats.communes}</p>
+            <p className="text-xs text-gray-400 leading-none mt-1">commune{stats.communes > 1 ? "s" : ""} représentée{stats.communes > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
+            <Tags className="w-4 h-4 text-landes-forest" />
+          </div>
+          <div className="text-left">
+            <p className="text-lg font-bold text-landes-pine leading-none">{stats.activities}</p>
+            <p className="text-xs text-gray-400 leading-none mt-1">activité{stats.activities > 1 ? "s" : ""} représentée{stats.activities > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+      </div>
+
+      <section className="bg-white py-10 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
@@ -337,38 +369,8 @@ export default function FeaturedProfessionals() {
             Voir tous les professionnels de la catégorie {mergedTabs[activeTab].label} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-
-        {/* Compteur dynamique — entreprises / communes / activités inscrites */}
-        <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-8 pt-8 border-t border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-4 h-4 text-landes-forest" />
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold text-landes-pine leading-none">{stats.companies}</p>
-              <p className="text-xs text-gray-400 leading-none mt-1">entreprise{stats.companies > 1 ? "s" : ""} inscrite{stats.companies > 1 ? "s" : ""}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-4 h-4 text-landes-forest" />
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold text-landes-pine leading-none">{stats.communes}</p>
-              <p className="text-xs text-gray-400 leading-none mt-1">commune{stats.communes > 1 ? "s" : ""} représentée{stats.communes > 1 ? "s" : ""}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-              <Tags className="w-4 h-4 text-landes-forest" />
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-bold text-landes-pine leading-none">{stats.activities}</p>
-              <p className="text-xs text-gray-400 leading-none mt-1">activité{stats.activities > 1 ? "s" : ""} représentée{stats.activities > 1 ? "s" : ""}</p>
-            </div>
-          </div>
-        </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
