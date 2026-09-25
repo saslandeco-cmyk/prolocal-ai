@@ -2654,9 +2654,19 @@ export default function AdminPage() {
                       <AdminImageUploader key={i} label={`Photo ${i + 1}`}
                         value={(fullEditForm.photos || [])[i]}
                         onChange={v => {
-                          const next = [...(fullEditForm.photos || [])];
-                          if (v) next[i] = v; else next.splice(i, 1);
-                          updFull("photos", next.filter(Boolean));
+                          // Mise à jour fonctionnelle (à partir de l'état le
+                          // plus récent, pas d'une variable capturée au
+                          // moment du rendu) — indispensable ici car chaque
+                          // compression d'image est asynchrone : sans ça,
+                          // importer plusieurs photos rapprochées fait
+                          // perdre les précédentes (la dernière à se
+                          // terminer écrase les autres avec une liste
+                          // obsolète).
+                          setFullEditForm(prev => {
+                            const next = [...(prev.photos || [])];
+                            if (v) next[i] = v; else next.splice(i, 1);
+                            return { ...prev, photos: next.filter(Boolean) };
+                          });
                         }}
                         kind="photo" />
                     ))}
