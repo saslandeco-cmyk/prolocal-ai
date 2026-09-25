@@ -291,7 +291,7 @@ export default function FeaturedProfessionals() {
   return (
     <>
       {/* Compteur dynamique — entreprises / communes / activités inscrites */}
-      <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-8 pt-8 border-t border-gray-100">
+      <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-0 pt-8 border-t border-gray-100">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
             <Building2 className="w-4 h-4 text-landes-forest" />
