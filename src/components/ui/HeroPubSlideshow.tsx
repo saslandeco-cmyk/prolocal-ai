@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ImageIcon, Star, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import { getHeroSlideshowIds, getProfessionalById, getProfessionals, rehydrateAsync } from "@/lib/storage";
+import { getHeroSlideshowIds, getProfessionalsWithImages } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import { getProRating } from "@/lib/reviewUtils";
 import type { Professional } from "@/types";
@@ -37,16 +37,18 @@ export default function HeroPubSlideshow({ category, subcategory, fallback }: Pr
 
   useEffect(() => {
     (async () => {
+      // Base commune en base de données (cross-appareil), avec repli local
+      // — comme FeaturedProfessionals — pour ne jamais dépendre uniquement
+      // du localStorage du visiteur, quasiment toujours vide pour lui.
+      const allPros = await getProfessionalsWithImages();
+      const hasPub = (p: Professional) => p.status === "active" && (p.complementaryOptions || []).includes("pub");
+
       // ── Page catégorie / sous-catégorie : filtrage automatique uniquement ──
       if (category) {
-        const candidates = getProfessionals().filter(p =>
-          p.status === "active" &&
-          (p.complementaryOptions || []).includes("pub") &&
-          p.category === category &&
-          (!subcategory || p.subcategory === subcategory)
+        const candidates = allPros.filter(p =>
+          hasPub(p) && p.category === category && (!subcategory || p.subcategory === subcategory)
         );
-        const resolved = await Promise.all(candidates.map(p => rehydrateAsync(p)));
-        setPros(resolved);
+        setPros(candidates);
         setLoaded(true);
         return;
       }
@@ -54,26 +56,19 @@ export default function HeroPubSlideshow({ category, subcategory, fallback }: Pr
       // ── Page d'accueil : sélection manuelle de l'admin si renseignée ──
       const ids = getHeroSlideshowIds();
       if (ids.length > 0) {
-        const resolved = (
-          await Promise.all(
-            ids.map(async id => {
-              const pro = getProfessionalById(id);
-              if (!pro || pro.status !== "active") return null;
-              return rehydrateAsync(pro);
-            })
-          )
-        ).filter((p): p is Professional => Boolean(p));
-        setPros(resolved);
-        setLoaded(true);
-        return;
+        const byId = new Map(allPros.map(p => [p.id, p]));
+        const resolved = ids
+          .map(id => byId.get(id))
+          .filter((p): p is Professional => Boolean(p && p.status === "active"));
+        if (resolved.length > 0) {
+          setPros(resolved);
+          setLoaded(true);
+          return;
+        }
       }
 
       // Repli automatique : tous les professionnels actifs ayant l'option active
-      const candidates = getProfessionals().filter(
-        p => p.status === "active" && (p.complementaryOptions || []).includes("pub")
-      );
-      const resolved = await Promise.all(candidates.map(p => rehydrateAsync(p)));
-      setPros(resolved);
+      setPros(allPros.filter(hasPub));
       setLoaded(true);
     })();
   }, [category, subcategory]);

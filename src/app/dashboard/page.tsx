@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   LogOut, Edit3, CheckCircle, Clock, Save, Loader2, Eye, EyeOff,
   Calendar, Trash2, CalendarCheck, CalendarX, Settings, Ban, Plus, X,
-  ImagePlus, Images, Star, Shield, Info, CreditCard, RefreshCw,
+  ImagePlus, Images, Star, Shield, Info, CreditCard, RefreshCw, AlertTriangle,
 } from "lucide-react";
 import {
   getSession, clearSession, getProfessionalById, saveProfessional, rehydrateAsync,
@@ -55,6 +55,7 @@ function DashboardContent() {
   const [savedSection,  setSavedSection]  = useState<string | null>(null);
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
+  const [saveSyncWarning, setSaveSyncWarning] = useState(false);
   const [activeTab, setActiveTab] = useState<"fiche" | "photos" | "horaires" | "avis" | "stats" | "info-facturation" | "facturation" | "clients" | "demandes" | "revenue" | "plan" | "subscriptions">("fiche");
   const [photos, setPhotos] = useState<string[]>([]);
   const [proReviews, setProReviews] = useState<Review[]>([]);
@@ -392,12 +393,19 @@ function DashboardContent() {
     }
 
     const updated = { ...pro, ...form, lat, lng, updatedAt: new Date().toISOString() };
-    saveProfessional(updated);
+    const synced = await saveProfessional(updated);
     setPro(updated);
     setSaving(false);
     setEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (synced) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } else {
+      // Enregistrée en local, mais la réplication vers la base a échoué —
+      // le professionnel doit le savoir plutôt que croire sa fiche à jour
+      // partout (logo/bannière notamment, invisibles ailleurs sinon).
+      setSaveSyncWarning(true);
+    }
   };
 
   // Save a specific section
@@ -559,6 +567,19 @@ function DashboardContent() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-green-600" />
           <p className="text-green-700 font-medium">Modifications enregistrées avec succès</p>
+        </div>
+      )}
+      {/* Enregistrée en local mais pas répliquée en base — logo/bannière
+          notamment resteraient invisibles ailleurs que sur cet appareil. */}
+      {saveSyncWarning && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <p className="text-amber-700 font-medium">
+            Modifications enregistrées sur cet appareil, mais la synchronisation avec le serveur a échoué — elles pourraient ne pas être visibles ailleurs. Réessayez dans un instant.
+          </p>
+          <button onClick={() => setSaveSyncWarning(false)} className="ml-auto text-amber-400 hover:text-amber-600 flex-shrink-0">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

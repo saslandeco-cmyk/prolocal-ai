@@ -187,12 +187,12 @@ export async function getProfessionalsWithImages(): Promise<Professional[]> {
 
 /**
  * Enregistre une fiche professionnelle en localStorage puis en base (si
- * configurée). Retourne une promesse résolue une fois la réplication en
- * base tentée — à `await`er avant de rafraîchir une liste dépendante de la
- * base (voir getProfessionalsWithImages), pour éviter qu'un rechargement
- * trop rapide ne rate encore la mise à jour côté serveur.
+ * configurée). Retourne `true` si la réplication en base a réussi (`false`
+ * sinon) — à `await`er avant de rafraîchir une liste dépendante de la base
+ * (voir getProfessionalsWithImages), ou pour avertir l'utilisateur en cas
+ * d'échec plutôt que de le laisser croire à tort que tout est enregistré.
  */
-export async function saveProfessional(pro: Professional): Promise<void> {
+export async function saveProfessional(pro: Professional): Promise<boolean> {
   // Séparer les images du reste
   const { logo, banner, photos, ...rest } = pro;
 
@@ -217,21 +217,26 @@ export async function saveProfessional(pro: Professional): Promise<void> {
   // Un échec (base non configurée, hors-ligne, etc.) n'affecte jamais le
   // fonctionnement normal du site pour les appelants qui n'attendent pas
   // cette promesse.
-  await mirrorProfessionalToDb(pro);
+  return mirrorProfessionalToDb(pro);
 }
 
 /**
  * Réplique une fiche professionnelle vers la base. Peut être utilisée en
  * fire-and-forget (sans `await`, comportement historique) ou attendue par
  * l'appelant lorsqu'il a besoin de la garantie que la tentative est
- * terminée avant de continuer (ex: rafraîchir une liste juste après).
+ * terminée avant de continuer (ex: rafraîchir une liste juste après, ou
+ * avertir l'utilisateur en cas d'échec — voir la valeur de retour).
  * Exportée pour être réutilisable en dehors de saveProfessional() —
  * notamment pour la synchronisation à la connexion (étape 4) et la
  * migration en masse depuis l'admin, sans avoir besoin de réécrire dans
  * localStorage ni de retoucher les images à chaque fois.
+ *
+ * Retourne `true` si la réplication a réussi, `false` sinon — les
+ * appelants historiques qui n'attendent pas cette promesse (fire-and-forget)
+ * ne sont pas affectés par ce changement de signature.
  */
-export async function mirrorProfessionalToDb(pro: Professional): Promise<void> {
-  if (typeof window === "undefined") return;
+export async function mirrorProfessionalToDb(pro: Professional): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   try {
     const res = await fetch("/api/db/professionals", {
       method: "POST",
@@ -246,9 +251,12 @@ export async function mirrorProfessionalToDb(pro: Professional): Promise<void> {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       console.error(`[db-mirror] Échec de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, body.error || res.status);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`[db-mirror] Erreur réseau lors de la réplication en base pour "${pro.companyName}" (${pro.id}) :`, err);
+    return false;
   }
 }
 
