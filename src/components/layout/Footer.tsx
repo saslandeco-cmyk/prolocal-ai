@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -9,9 +9,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-white" />
-              </div>
+              <img src="/logo.jpg" alt="Prolocal-landes.fr" className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
               <span className="text-xl font-bold">Prolocal-landes.fr</span>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs">

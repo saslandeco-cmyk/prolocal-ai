@@ -38,7 +38,7 @@ const organizationJsonLd = {
   name: "Prolocal-Landes",
   legalName: "Landeco SAS",
   url: baseUrl,
-  logo: `${baseUrl}/favicon.ico`,
+  logo: `${baseUrl}/logo.jpg`,
   description: "Annuaire des professionnels et commerçants du département des Landes (40).",
   address: {
     "@type": "PostalAddress",

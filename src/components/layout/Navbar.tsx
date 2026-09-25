@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X, MapPin, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3, ShieldCheck } from "lucide-react";
+import { Menu, X, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3, ShieldCheck } from "lucide-react";
 import { getSession, clearSession, getProfessionalById, getAdminPanelPath } from "@/lib/storage";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
@@ -89,9 +89,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-landes-forest to-landes-ocean rounded-lg flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-white" />
-            </div>
+            <img src="/logo.jpg" alt="Prolocal-landes.fr" className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
             <div>
               <span className="text-lg font-bold text-landes-pine">Prolocal</span>
               <span className="text-lg font-bold text-landes-sage">-landes</span>
