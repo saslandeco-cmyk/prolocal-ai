@@ -69,7 +69,13 @@ export async function runSync(codesApe?: string[]): Promise<SyncStats> {
     // d'erreur partielle. Un code en échec ne bloque pas les autres, mais
     // l'erreur est conservée (au lieu d'être avalée) pour que le journal et
     // l'admin la signalent au lieu d'afficher un faux succès à 0 résultat.
-    for (const code of codes) {
+    for (const [index, code] of codes.entries()) {
+      // Pause entre deux codes APE (en plus de la pause déjà appliquée entre
+      // les pages d'un même code) : sans elle, un enchaînement de codes à
+      // une seule page part en rafale et peut déclencher un 429 même en
+      // restant sous la limite documentée de 7 req/s.
+      if (index > 0) await new Promise(r => setTimeout(r, 300));
+
       const etablissements = await fetchAllEtablissements([code], "40").catch((err) => {
         const message = `${code}: ${err.message || "erreur inconnue"}`;
         console.error(`[sync] Échec de récupération pour le code APE ${code}:`, err);

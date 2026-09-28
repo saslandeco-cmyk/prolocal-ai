@@ -97,6 +97,31 @@ function cleanAdresse(rawAdresse: string | null | undefined, codePostal: string 
   return cleaned || null;
 }
 
+/**
+ * Récupère une URL en réessayant automatiquement sur erreur 429 (quota
+ * dépassé), avec un backoff exponentiel. Respecte l'en-tête `Retry-After`
+ * renvoyé par l'API quand présent, sinon double le délai à chaque tentative
+ * (1s, 2s, 4s, 8s). Nécessaire car cette API n'annonce pas de limite stricte
+ * mais peut renvoyer 429 en cas de pics de trafic, y compris en restant sous
+ * les 7 req/s documentées (ex: plusieurs codes APE synchronisés d'affilée).
+ */
+async function fetchWithRetry(url: string, maxRetries = 4): Promise<Response> {
+  let attempt = 0;
+  for (;;) {
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (res.status !== 429 || attempt >= maxRetries) return res;
+
+    const retryAfterHeader = res.headers.get("Retry-After");
+    const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : NaN;
+    const delayMs = Number.isFinite(retryAfterMs) && retryAfterMs > 0
+      ? retryAfterMs
+      : 1000 * 2 ** attempt;
+
+    await new Promise(r => setTimeout(r, delayMs));
+    attempt++;
+  }
+}
+
 export async function searchEtablissements(opts: SearchOptions): Promise<SearchResult> {
   const { codesApe, departement = "40", page = 1, perPage = 25 } = opts;
 
@@ -112,9 +137,7 @@ export async function searchEtablissements(opts: SearchOptions): Promise<SearchR
     per_page: String(Math.min(perPage, 25)),
   });
 
-  const res = await fetch(`${BASE_URL}?${params.toString()}`, {
-    headers: { Accept: "application/json" },
-  });
+  const res = await fetchWithRetry(`${BASE_URL}?${params.toString()}`);
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
