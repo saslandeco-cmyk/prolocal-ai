@@ -742,7 +742,7 @@ function DashboardContent() {
                       (BannerCropper, 1400×500), pour un aperçu fidèle. */}
                   <div className="aspect-[2.8/1] w-full rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
                     {(() => {
-                      const src = getBanner(form.banner as string | undefined, pro.category);
+                      const src = getBanner(form.banner as string | undefined, pro.category, (form.subcategory as string | undefined) || pro.subcategory);
                       return src
                         ? <img src={src} alt="Bannière" className="w-full h-full object-cover" />
                         : <div className="w-full h-full bg-gradient-to-br from-landes-pine to-landes-forest opacity-60 flex items-center justify-center">

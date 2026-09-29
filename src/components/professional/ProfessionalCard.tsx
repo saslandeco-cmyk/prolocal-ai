@@ -19,7 +19,7 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
   const [pro, setPro] = useState<Professional>(propPro);
   const initials = pro.companyName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
-  const bannerSrc = getBanner(pro.banner, pro.category);
+  const bannerSrc = getBanner(pro.banner, pro.category, pro.subcategory);
 
   useEffect(() => {
     setRating(getProRating(pro.id));

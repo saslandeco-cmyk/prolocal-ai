@@ -316,7 +316,7 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
       <div className="relative mt-4 max-w-6xl mx-auto px-4 sm:px-6">
         <div className={`w-full rounded-2xl overflow-hidden h-44 sm:h-56 relative ${pro.plan === "gold" ? "ring-4 ring-amber-400/70" : ""}`}>
           {(() => {
-            const src = getBanner(pro.banner, pro.category);
+            const src = getBanner(pro.banner, pro.category, pro.subcategory);
             return src
               ? <img src={src} alt="Bannière" className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-landes-pine via-landes-forest to-landes-ocean" />;

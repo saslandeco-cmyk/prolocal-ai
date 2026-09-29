@@ -9,7 +9,7 @@ import { categorySlug } from "@/lib/profileUrl";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
-import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
+import { DEFAULT_BANNERS, DEFAULT_SUBCATEGORY_BANNERS } from "@/lib/defaultBanners";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
@@ -140,6 +140,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
 
   const mapPros = pros.filter(p => p.lat && p.lng);
   const catMeta = categories.find(c => c.label === categoryLabel);
+  const bannerSrc = DEFAULT_SUBCATEGORY_BANNERS[subcategoryLabel] || DEFAULT_BANNERS[categoryLabel];
 
   return (
     <div className="bg-landes-cream min-h-screen">
@@ -196,9 +197,9 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
                 category={categoryLabel}
                 subcategory={subcategoryLabel}
                 fallback={
-                  DEFAULT_BANNERS[categoryLabel] ? (
+                  bannerSrc ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[400px]">
-                      <img src={DEFAULT_BANNERS[categoryLabel]} alt={categoryLabel} className="w-full h-full object-cover absolute inset-0" />
+                      <img src={bannerSrc} alt={subcategoryLabel} className="w-full h-full object-cover absolute inset-0" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       {loaded && pros.length > 0 && (
                         <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
