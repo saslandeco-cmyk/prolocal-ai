@@ -25,6 +25,7 @@ export const DEFAULT_BANNERS: Record<string, string> = {
 export const DEFAULT_SUBCATEGORY_BANNERS: Record<string, string> = {
   "Alimentation générale":     "/banners/alimentation-generale.png",
   "Boucherie / Charcuterie":   "/banners/boucherie-charcuterie.png",
+  "Boulangerie / Pâtisserie":  "/banners/boulangerie-patisserie.png",
 };
 
 /**
