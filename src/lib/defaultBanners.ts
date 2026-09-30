@@ -10,7 +10,7 @@ export const DEFAULT_BANNERS: Record<string, string> = {
   "Commerce & Vente":             "/banners/commerce.jpg",
   "Culture & Élevage":            "/banners/culture-et-elevage.png",
   "Immobilier":                   "/banners/immobilier.png",
-  "Informatique & Numérique":     "/banners/informatique.jpg",
+  "Informatique & Numérique":     "/banners/informatique-et-numerique.png",
   "Restauration":                 "/banners/restauration.jpg",
   "Services à la personne":       "/banners/services.jpg",
   "Sport & Fitness":              "/banners/sport.png",
