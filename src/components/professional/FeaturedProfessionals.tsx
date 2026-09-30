@@ -291,33 +291,21 @@ export default function FeaturedProfessionals() {
   return (
     <>
       {/* Compteur dynamique — entreprises / communes / activités inscrites */}
-      <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 mt-0 pt-8 border-t border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-4 h-4 text-landes-forest" />
-          </div>
-          <div className="text-left">
-            <p className="text-lg font-bold text-landes-pine leading-none">{stats.companies}</p>
-            <p className="text-xs text-gray-400 leading-none mt-1">entreprise{stats.companies > 1 ? "s" : ""} inscrite{stats.companies > 1 ? "s" : ""}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-            <MapPin className="w-4 h-4 text-landes-forest" />
-          </div>
-          <div className="text-left">
-            <p className="text-lg font-bold text-landes-pine leading-none">{stats.communes}</p>
-            <p className="text-xs text-gray-400 leading-none mt-1">commune{stats.communes > 1 ? "s" : ""} représentée{stats.communes > 1 ? "s" : ""}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-landes-forest/8 flex items-center justify-center flex-shrink-0">
-            <Tags className="w-4 h-4 text-landes-forest" />
-          </div>
-          <div className="text-left">
-            <p className="text-lg font-bold text-landes-pine leading-none">{stats.activities}</p>
-            <p className="text-xs text-gray-400 leading-none mt-1">activité{stats.activities > 1 ? "s" : ""} représentée{stats.activities > 1 ? "s" : ""}</p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="grid grid-cols-3 gap-6 sm:gap-8 border-t border-gray-100 pt-8">
+          {[
+            { icon: Building2, value: stats.companies, label: `entreprise${stats.companies > 1 ? "s" : ""} inscrite${stats.companies > 1 ? "s" : ""}` },
+            { icon: MapPin,    value: stats.communes,   label: `commune${stats.communes > 1 ? "s" : ""} représentée${stats.communes > 1 ? "s" : ""}` },
+            { icon: Tags,      value: stats.activities, label: `activité${stats.activities > 1 ? "s" : ""} représentée${stats.activities > 1 ? "s" : ""}` },
+          ].map(stat => (
+            <div key={stat.label} className="text-center p-4 sm:p-6">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-landes-forest/10 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 text-landes-forest" />
+              </div>
+              <p className="font-bold text-landes-pine text-xl sm:text-2xl mb-1">{stat.value}</p>
+              <p className="text-gray-500 text-sm leading-relaxed">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
