@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag } from "lucide-react";
+import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag, MapPin } from "lucide-react";
 import { setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds, setAdminPanelPath } from "@/lib/storage";
 import { Professional, PLANS, StatusType, Review } from "@/types";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
@@ -19,13 +19,17 @@ import type { OpeningHours } from "@/types";
  * GPS (lat/lng), pour que son marker apparaisse sur la carte dès son
  * enregistrement — sans attendre qu'un visiteur consulte sa fiche
  * publique (seul moment où la géolocalisation se déclenchait auparavant).
- * Retourne la fiche telle quelle si déjà géolocalisée ou si l'adresse est
- * introuvable (échec silencieux, n'empêche jamais l'enregistrement).
+ * Ne requiert que ville + code postal (l'adresse précise est optionnelle :
+ * geocodeAddress() se rabat déjà sur "code postal + ville" quand l'adresse
+ * exacte est introuvable) — un import CSV en gros volume (ex. sous-catégorie
+ * sans colonne "Adresse" renseignée) ne doit pas rester sans marker pour
+ * autant. Retourne la fiche telle quelle si déjà géolocalisée ou si le
+ * géocodage échoue (échec silencieux, n'empêche jamais l'enregistrement).
  */
 async function ensureGeocoded(pro: Professional): Promise<Professional> {
   if (pro.lat && pro.lng) return pro;
-  if (!pro.address || !pro.city || !pro.postalCode) return pro;
-  const coords = await geocodeAddress(pro.address, pro.city, pro.postalCode).catch(() => null);
+  if (!pro.city || !pro.postalCode) return pro;
+  const coords = await geocodeAddress(pro.address || "", pro.city, pro.postalCode).catch(() => null);
   return coords ? { ...pro, lat: coords.lat, lng: coords.lng } : pro;
 }
 
@@ -1376,6 +1380,8 @@ export default function AdminPage() {
   const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(ALL_COLUMN_LABELS));
   const [migrating, setMigrating] = useState(false);
   const [migrationSummary, setMigrationSummary] = useState<string | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodingSummary, setGeocodingSummary] = useState<string | null>(null);
   const [adminSection, setAdminSection] = useState<"pros" | "reviews" | "site" | "options" | "sirene" | "categories">("pros");
   const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [editReview, setEditReview] = useState<Review | null>(null);
@@ -1502,6 +1508,42 @@ export default function AdminPage() {
       );
     } finally {
       setMigrating(false);
+    }
+  };
+
+  // ── Géocodage de rattrapage ──
+  // Corrige les fiches déjà enregistrées sans coordonnées GPS (ex. import
+  // CSV en masse sans colonne "Adresse" renseignée, avant le correctif de
+  // ensureGeocoded) : sans lat/lng, un professionnel n'apparaît jamais sur
+  // aucune carte (voir MultiMap.tsx), même actif et bien catégorisé. Appels
+  // séquentiels (et non en parallèle) pour respecter la limite de l'API
+  // Nominatim (1 req/s, gratuite et sans clé).
+  const handleGeocodeMissing = async () => {
+    setGeocoding(true);
+    setGeocodingSummary(null);
+    try {
+      const all = await getProfessionalsWithImages();
+      const missing = all.filter(p => (!p.lat || !p.lng) && p.city && p.postalCode);
+      let fixed = 0, stillMissing = 0;
+      for (const pro of missing) {
+        const geocoded = await ensureGeocoded(pro);
+        if (geocoded.lat && geocoded.lng) {
+          await saveProfessional(geocoded);
+          fixed++;
+        } else {
+          stillMissing++;
+        }
+        await new Promise(r => setTimeout(r, 1100));
+      }
+      setGeocodingSummary(
+        missing.length === 0
+          ? "✅ Toutes les fiches ont déjà des coordonnées GPS."
+          : `✅ ${fixed}/${missing.length} fiche(s) géolocalisée(s) et corrigée(s).` +
+            (stillMissing ? ` ⚠️ ${stillMissing} adresse(s) introuvable(s) sur la carte (à vérifier manuellement).` : "")
+      );
+      refresh();
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -2118,11 +2160,26 @@ export default function AdminPage() {
             {migrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
             {migrating ? "Migration…" : "Migrer vers la base de données"}
           </button>
+
+          {/* Rattrapage géocodage : corrige les fiches sans coordonnées GPS (markers absents des cartes) */}
+          <button
+            onClick={handleGeocodeMissing}
+            disabled={geocoding}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-landes-ocean/40 text-landes-ocean rounded-xl text-sm font-medium hover:bg-landes-ocean hover:text-white transition-colors disabled:opacity-50"
+          >
+            {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+            {geocoding ? "Géocodage…" : "Corriger les fiches sans coordonnées GPS"}
+          </button>
         </div>
 
         {migrationSummary && (
           <p className="text-xs text-landes-ocean bg-landes-ocean/5 border border-landes-ocean/20 rounded-lg px-3 py-2 mb-4">
             {migrationSummary}
+          </p>
+        )}
+        {geocodingSummary && (
+          <p className="text-xs text-landes-ocean bg-landes-ocean/5 border border-landes-ocean/20 rounded-lg px-3 py-2 mb-4">
+            {geocodingSummary}
           </p>
         )}
       </div>
