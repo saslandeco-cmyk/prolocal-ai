@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const page = params.get("page") ? parseInt(params.get("page")!, 10) : 1;
 
     const [result, totalGlobal] = await Promise.all([
-      searchEntreprises({ q, codesApe, page, perPage: 500 }),
+      searchEntreprises({ q, codesApe, page, perPage: 1000 }),
       getEntreprisesCount(),
     ]);
 

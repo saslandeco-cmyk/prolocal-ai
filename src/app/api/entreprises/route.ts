@@ -34,7 +34,12 @@ export async function GET(req: NextRequest) {
     const commune = params.get("commune") || undefined;
     const codePostal = params.get("codePostal") || undefined;
     const page = params.get("page") ? parseInt(params.get("page")!, 10) : 1;
-    const perPage = params.get("perPage") ? parseInt(params.get("perPage")!, 10) : 25;
+    // Plafond documenté ci-dessus (100) propre à cette route publique, pour
+    // qu'une élévation future de la limite interne de searchEntreprises()
+    // (ex. pour la liste de sélection en masse de l'admin) n'augmente pas
+    // d'elle-même le volume exposé sans authentification.
+    const rawPerPage = params.get("perPage") ? parseInt(params.get("perPage")!, 10) : 25;
+    const perPage = Math.min(100, Math.max(1, Number.isFinite(rawPerPage) ? rawPerPage : 25));
 
     const result = await searchEntreprises({ q, codesApe, commune, codePostal, page, perPage });
     return NextResponse.json(result);

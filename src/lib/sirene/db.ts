@@ -226,7 +226,7 @@ export async function searchEntreprises(params: SearchEntreprisesParams): Promis
   if (!isDbConfigured) return { entreprises: [], total: 0, page: 1, totalPages: 0 };
 
   const page = Math.max(1, params.page || 1);
-  const perPage = Math.min(500, Math.max(1, params.perPage || 25));
+  const perPage = Math.min(1000, Math.max(1, params.perPage || 25));
   const offset = (page - 1) * perPage;
 
   const q = params.q?.trim() || null;
