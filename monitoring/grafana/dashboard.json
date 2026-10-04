@@ -1,0 +1,136 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRES",
+      "label": "Postgres (neon_usage_history)",
+      "description": "Source de données Postgres pointant vers la même base que le site (table neon_usage_history)",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "postgres", "name": "PostgreSQL", "version": "1.0.0" }
+  ],
+  "title": "Consommation Neon — Prolocal-Landes",
+  "uid": "neon-usage-prolocal-landes",
+  "tags": ["neon", "coûts", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15m",
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Coût estimé — mois en cours ($)",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 10 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(SUM(estimated_cost_usd), 0) AS \"Coût du mois ($)\" FROM neon_usage_history WHERE timeframe_start >= date_trunc('month', now());"
+        }
+      ],
+      "description": "⚠️ Ajustez les paliers de couleur (10 $ / 20 $) et comparez-les à ALERT_THRESHOLD_USD configuré côté GitHub Actions."
+    },
+    {
+      "id": 2,
+      "title": "Dernière collecte",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": { "unit": "dateTimeFromNow" },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT MAX(collected_at) AS \"Dernière collecte\" FROM neon_usage_history;"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Coût estimé cumulé du mois ($)",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT timeframe_start AS \"time\", SUM(estimated_cost_usd) OVER (PARTITION BY date_trunc('month', timeframe_start) ORDER BY timeframe_start) AS \"Coût cumulé\" FROM neon_usage_history WHERE $__timeFilter(timeframe_start) ORDER BY timeframe_start;"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Compute (CU-heures par heure)",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT timeframe_start AS \"time\", compute_unit_seconds / 3600.0 AS \"CU-heures\" FROM neon_usage_history WHERE $__timeFilter(timeframe_start) ORDER BY timeframe_start;"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Stockage (Go)",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "decgbytes" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT timeframe_start AS \"time\", storage_byte_hours / POWER(1024, 3) AS \"Stockage (Go)\" FROM neon_usage_history WHERE $__timeFilter(timeframe_start) ORDER BY timeframe_start;"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Transfert réseau (Go par heure)",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "decgbytes" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT timeframe_start AS \"time\", data_transfer_bytes / POWER(1024, 3) AS \"Transfert (Go)\" FROM neon_usage_history WHERE $__timeFilter(timeframe_start) ORDER BY timeframe_start;"
+        }
+      ]
+    }
+  ]
+}

@@ -100,3 +100,9 @@ En production, remplacez `src/lib/storage.ts` par des appels API vers votre base
 Le numéro SIREN est validé via l'**algorithme de Luhn** côté client.
 En production, connectez `src/lib/siren.ts` à l'API SIRENE de l'INSEE :
 `https://api.insee.fr/entreprises/sirene/V3/siret/{siren}`
+
+## Monitoring de la consommation Neon
+
+Voir [`monitoring/README.md`](monitoring/README.md) : pipeline Neon → Python
+(GitHub Actions) → PostgreSQL → Grafana, avec historique, coût estimé et
+alerte email en cas de dépassement de seuil.
