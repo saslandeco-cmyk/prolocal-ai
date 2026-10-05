@@ -4,18 +4,23 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
 import { buildProfileUrl } from "@/lib/profileUrl";
+import { useInView } from "@/lib/useInView";
 import { Professional } from "@/types";
 
-const MultiMap = dynamic(() => import("@/components/map/MultiMap"), {
-  ssr: false,
-  loading: () => (
+function MapPlaceholder() {
+  return (
     <div className="w-full h-full flex items-center justify-center bg-gray-100">
       <div className="text-center space-y-2">
         <MapPin className="w-8 h-8 text-gray-300 mx-auto animate-pulse" />
         <p className="text-sm text-gray-400">Chargement de la carte…</p>
       </div>
     </div>
-  ),
+  );
+}
+
+const MultiMap = dynamic(() => import("@/components/map/MultiMap"), {
+  ssr: false,
+  loading: () => <MapPlaceholder />,
 });
 
 interface Props {
@@ -27,6 +32,11 @@ interface Props {
 export default function FullWidthMap({ initialPros }: Props) {
   const router = useRouter();
   const pros = useMemo(() => initialPros.filter(p => p.lat && p.lng), [initialPros]);
+  // La carte (Leaflet, ~480ms de script sur mobile — voir l'audit Lighthouse
+  // "bootup-time") n'est montée qu'à l'approche du viewport : cette section
+  // est tout en bas de la page d'accueil, systématiquement hors écran au
+  // premier affichage, inutile de l'exécuter immédiatement.
+  const [mapRef, mapInView] = useInView<HTMLDivElement>();
 
   return (
     <section className="w-full bg-landes-hero">
@@ -80,14 +90,18 @@ export default function FullWidthMap({ initialPros }: Props) {
           </div>
 
           {/* ── Colonne droite — carte ── */}
-          <div className="relative min-h-[280px] sm:min-h-[360px] lg:min-h-[480px]">
-            <MultiMap
-              professionals={pros}
-              onSelectPro={id => {
-                const p = pros.find(pr => pr.id === id);
-                router.push(p ? buildProfileUrl(p) : `/annuaire/${id}`);
-              }}
-            />
+          <div ref={mapRef} className="relative min-h-[280px] sm:min-h-[360px] lg:min-h-[480px]">
+            {mapInView ? (
+              <MultiMap
+                professionals={pros}
+                onSelectPro={id => {
+                  const p = pros.find(pr => pr.id === id);
+                  router.push(p ? buildProfileUrl(p) : `/annuaire/${id}`);
+                }}
+              />
+            ) : (
+              <MapPlaceholder />
+            )}
           </div>
 
         </div>

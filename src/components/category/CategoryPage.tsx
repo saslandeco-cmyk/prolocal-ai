@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Search, MapPin, ArrowRight, ChevronRight, X, TrendingUp, Loader2, LocateFixed } from "lucide-react";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 import { getListingRank } from "@/lib/listingOrder";
+import { useInView } from "@/lib/useInView";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
@@ -189,6 +190,10 @@ export default function CategoryPage({ meta, initialPros }: Props) {
   }, [applyFilter, query, location, activeSub]);
 
   const mapPros = pros.filter(p => p.lat && p.lng);
+  // La carte (Leaflet, ~480ms de script sur mobile — voir l'audit Lighthouse
+  // "bootup-time") n'est montée qu'à l'approche du viewport, pour ne pas
+  // bloquer le fil principal dès le chargement de la page.
+  const [mapRef, mapInView] = useInView<HTMLDivElement>();
 
   return (
     <div className="bg-landes-cream min-h-screen">
@@ -289,8 +294,8 @@ export default function CategoryPage({ meta, initialPros }: Props) {
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
           </div>
-          <div className="card-map h-72 sm:h-96 lg:h-[460px]">
-            {mapPros.length > 0 ? (
+          <div ref={mapRef} className="card-map h-72 sm:h-96 lg:h-[460px]">
+            {mapInView && mapPros.length > 0 ? (
               <MultiMap
                 professionals={mapPros}
                 onSelectPro={id =>

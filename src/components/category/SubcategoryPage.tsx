@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight } from "lucide-react";
 import { getListingRank } from "@/lib/listingOrder";
+import { useInView } from "@/lib/useInView";
 import { categorySlug } from "@/lib/profileUrl";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
@@ -134,6 +135,10 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
     : citiesWithPros.slice(0, 5);
 
   const mapPros = pros.filter(p => p.lat && p.lng);
+  // La carte (Leaflet, ~480ms de script sur mobile — voir l'audit Lighthouse
+  // "bootup-time") n'est montée qu'à l'approche du viewport, pour ne pas
+  // bloquer le fil principal dès le chargement de la page.
+  const [mapRef, mapInView] = useInView<HTMLDivElement>();
   const catMeta = categories.find(c => c.label === categoryLabel);
   const bannerSrc = DEFAULT_SUBCATEGORY_BANNERS[subcategoryLabel] || DEFAULT_BANNERS[categoryLabel];
 
@@ -242,8 +247,8 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
           </div>
-          <div className="card-map h-72 sm:h-96 lg:h-[460px]">
-            {mapPros.length > 0 ? (
+          <div ref={mapRef} className="card-map h-72 sm:h-96 lg:h-[460px]">
+            {mapInView && mapPros.length > 0 ? (
               <MultiMap
                 professionals={mapPros}
                 onSelectPro={id =>
