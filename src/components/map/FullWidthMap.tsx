@@ -1,25 +1,32 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
-import { getProfessionalsWithImages } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import { Professional } from "@/types";
 
-const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
+const MultiMap = dynamic(() => import("@/components/map/MultiMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+      <div className="text-center space-y-2">
+        <MapPin className="w-8 h-8 text-gray-300 mx-auto animate-pulse" />
+        <p className="text-sm text-gray-400">Chargement de la carte…</p>
+      </div>
+    </div>
+  ),
+});
 
-export default function FullWidthMap() {
+interface Props {
+  /** Professionnels actifs, fournis par le serveur (page d'accueil) — évite
+   *  un nouvel aller-retour réseau ici vers /api/db/professionals. */
+  initialPros: Professional[];
+}
+
+export default function FullWidthMap({ initialPros }: Props) {
   const router = useRouter();
-  const [pros, setPros]   = useState<Professional[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    getProfessionalsWithImages().then(all => {
-      setPros(all.filter(p => p.status === "active" && p.lat && p.lng));
-      setLoaded(true);
-    });
-  }, []);
+  const pros = useMemo(() => initialPros.filter(p => p.lat && p.lng), [initialPros]);
 
   return (
     <section className="w-full bg-landes-hero">
@@ -74,22 +81,13 @@ export default function FullWidthMap() {
 
           {/* ── Colonne droite — carte ── */}
           <div className="relative min-h-[280px] sm:min-h-[360px] lg:min-h-[480px]">
-            {loaded ? (
-              <MultiMap
-                professionals={pros}
-                onSelectPro={id => {
-                  const p = pros.find(pr => pr.id === id);
-                  router.push(p ? buildProfileUrl(p) : `/annuaire/${id}`);
-                }}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <div className="text-center space-y-2">
-                  <MapPin className="w-8 h-8 text-gray-300 mx-auto animate-pulse" />
-                  <p className="text-sm text-gray-400">Chargement de la carte…</p>
-                </div>
-              </div>
-            )}
+            <MultiMap
+              professionals={pros}
+              onSelectPro={id => {
+                const p = pros.find(pr => pr.id === id);
+                router.push(p ? buildProfileUrl(p) : `/annuaire/${id}`);
+              }}
+            />
           </div>
 
         </div>

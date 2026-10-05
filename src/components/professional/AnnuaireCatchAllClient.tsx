@@ -27,7 +27,7 @@ import type { CategoryRecord } from "@/lib/categories";
  * c'est une page ville ; sinon, on retombe sur l'ancien comportement
  * (identifiant de fiche legacy, avec redirection automatique).
  */
-export default function AnnuaireCatchAllClient({ initialData, categories }: { initialData?: Professional | null; categories?: CategoryRecord[] }) {
+export default function AnnuaireCatchAllClient({ initialData, categories, initialPros }: { initialData?: Professional | null; categories?: CategoryRecord[]; initialPros?: Professional[] }) {
   const params = useParams<{ slug: string[] }>();
   const router = useRouter();
   const [notFound, setNotFound] = useState(false);
@@ -62,10 +62,10 @@ export default function AnnuaireCatchAllClient({ initialData, categories }: { in
 
   // ── Page ville (avec ou sans catégorie croisée) ──
   if (cityMetaSingle) {
-    return <CityPage meta={cityMetaSingle} />;
+    return <CityPage meta={cityMetaSingle} initialPros={initialPros || []} />;
   }
   if (cityMetaCombo && comboCategoryLabel) {
-    return <CityPage meta={cityMetaCombo} categoryFilter={comboCategoryLabel} />;
+    return <CityPage meta={cityMetaCombo} categoryFilter={comboCategoryLabel} initialPros={initialPros || []} />;
   }
 
   // ── Aucun format reconnu ──

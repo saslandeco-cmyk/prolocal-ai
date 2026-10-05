@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { categoryLabelFromSlug, unslugify, extractIdFromSlug } from "@/lib/profileUrl";
 import { cityMetaFromSlug } from "@/lib/cityData";
-import { dbGetProfessionalById } from "@/lib/db/professionals";
+import { dbGetProfessionalById, dbGetProfessionalsByCity } from "@/lib/db/professionals";
 import { dbGetReviewsByPro } from "@/lib/db/reviews";
 import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
@@ -12,6 +12,11 @@ import type { Professional } from "@/types";
 import { normalizeFrPhone } from "@/lib/phone";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
+
+// Pages ville (/annuaire/[ville], /annuaire/[ville]/[categorie]) : la liste
+// des professionnels est désormais récupérée côté serveur (voir plus bas) et
+// mise en cache ISR au lieu d'un fetch client non filtré à chaque visite.
+export const revalidate = 3600;
 
 /**
  * ÉTAPE 3 de la migration base de données : les pages fiches lisent
@@ -146,6 +151,9 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
       const categoryLabel = segments.length === 2 ? categoryLabelFromSlug(segments[1], categories) : null;
       const url = `${baseUrl}/annuaire/${segments.join("/")}`;
 
+      const cityPros = await dbGetProfessionalsByCity(cityMeta.name);
+      const initialPros = categoryLabel ? cityPros.filter(p => p.category === categoryLabel) : cityPros;
+
       const cityJsonLd = {
         "@context": "https://schema.org",
         "@graph": [
@@ -171,17 +179,15 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
             },
           },
           {
-            // Questions génériques, cohérentes avec le contenu affiché avant
-            // hydratation côté client (la page ville liste les professionnels
-            // en JavaScript, donc le nombre exact n'est pas connu ici côté
-            // serveur — on évite d'afficher un chiffre qui ne correspondrait
-            // pas au contenu visible initial).
             "@type": "FAQPage",
             mainEntity: [
               {
                 "@type": "Question",
                 name: `Combien y a-t-il de professionnels référencés à ${cityMeta.name} ?`,
-                acceptedAnswer: { "@type": "Answer", text: `Retrouvez le nombre exact de professionnels référencés à ${cityMeta.name} directement sur cette page.` },
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: `${initialPros.length} professionnel${initialPros.length > 1 ? "s" : ""}${categoryLabel ? ` dans la catégorie ${categoryLabel}` : ""} ${initialPros.length > 1 ? "sont" : "est"} actuellement référencé${initialPros.length > 1 ? "s" : ""} à ${cityMeta.name} sur Prolocal-Landes.`,
+                },
               },
               {
                 "@type": "Question",
@@ -201,7 +207,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
       return (
         <>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cityJsonLd) }} />
-          <AnnuaireCatchAllClient initialData={null} categories={categories} />
+          <AnnuaireCatchAllClient initialData={null} categories={categories} initialPros={initialPros} />
         </>
       );
     }

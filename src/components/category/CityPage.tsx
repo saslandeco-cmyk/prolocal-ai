@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, ChevronRight, Award, ChevronDown } from "lucide-react";
-import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
 import { categorySlug } from "@/lib/profileUrl";
 import { CITY_META } from "@/lib/cityData";
@@ -15,6 +14,11 @@ interface Props {
   meta: CityMeta;
   /** Libellé exact de la catégorie si la page croise ville + catégorie (ex: /annuaire/dax/beaute) */
   categoryFilter?: string;
+  /** Professionnels actifs de cette ville (toutes catégories confondues),
+   *  déjà récupérés côté serveur — voir app/annuaire/[...slug]/page.tsx.
+   *  Le filtrage par catégorie se fait ensuite ici, côté client, sans
+   *  nouvel aller-retour réseau. */
+  initialPros: Professional[];
 }
 
 /** Formate une liste de catégories en énumération française naturelle ("A, B et C"). */
@@ -23,43 +27,30 @@ function joinCategories(cats: string[]): string {
   return `${cats.slice(0, -1).join(", ")} et ${cats[cats.length - 1]}`;
 }
 
-export default function CityPage({ meta, categoryFilter }: Props) {
+export default function CityPage({ meta, categoryFilter, initialPros }: Props) {
   const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
-  const [pros, setPros] = useState<Professional[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
-  useEffect(() => {
-    (async () => {
-      const all = (await getProfessionalsWithImages()).filter(
-        p => p.status === "active" && (p.city || "").toLowerCase() === meta.name.toLowerCase()
-      );
-      const filtered = categoryFilter
-        ? all.filter(p => p.category === categoryFilter)
-        : all;
-      filtered.sort((a, b) => getListingRank(a) - getListingRank(b));
-      setPros(filtered);
-      setLoaded(true);
+  const pros = useMemo(() => {
+    const filtered = categoryFilter
+      ? initialPros.filter(p => p.category === categoryFilter)
+      : initialPros;
+    return [...filtered].sort((a, b) => getListingRank(a) - getListingRank(b));
+  }, [initialPros, categoryFilter]);
 
-      const present = new Set(all.map(p => p.category));
-      setAvailableCategories(categories.map(c => c.label).filter(c => present.has(c)));
+  const availableCategories = useMemo(() => {
+    const present = new Set(initialPros.map(p => p.category));
+    return categories.map(c => c.label).filter(c => present.has(c));
+  }, [initialPros, categories]);
 
-      // Sous-catégories réellement présentes, pour la page ville + catégorie
-      if (categoryFilter) {
-        const presentSubs = new Set(
-          filtered.map(p => p.subcategory).filter((s): s is string => Boolean(s))
-        );
-        const allSubsForCategory = categories.find(c => c.label === categoryFilter)?.subcategories.map(s => s.label) || [];
-        setAvailableSubcategories(allSubsForCategory.filter(s => presentSubs.has(s)));
-      } else {
-        setAvailableSubcategories([]);
-      }
-    })();
-  }, [meta.name, categoryFilter, categories]);
+  const availableSubcategories = useMemo(() => {
+    if (!categoryFilter) return [];
+    const presentSubs = new Set(pros.map(p => p.subcategory).filter((s): s is string => Boolean(s)));
+    const allSubsForCategory = categories.find(c => c.label === categoryFilter)?.subcategories.map(s => s.label) || [];
+    return allSubsForCategory.filter(s => presentSubs.has(s));
+  }, [categoryFilter, pros, categories]);
 
   const title = categoryFilter
     ? `${categoryFilter} à ${meta.name}`
@@ -75,9 +66,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
   const faqItems = [
     {
       q: `Combien y a-t-il de professionnels référencés à ${meta.name} ?`,
-      a: loaded
-        ? `${pros.length} professionnel${pros.length > 1 ? "s" : ""}${categoryFilter ? ` dans la catégorie ${categoryFilter}` : ""} ${pros.length > 1 ? "sont" : "est"} actuellement référencé${pros.length > 1 ? "s" : ""} à ${meta.name} sur Prolocal-Landes${!categoryFilter && availableCategories.length > 0 ? `, répartis dans ${availableCategories.length} catégorie${availableCategories.length > 1 ? "s" : ""}` : ""}.`
-        : `Retrouvez le nombre exact de professionnels référencés à ${meta.name} directement sur cette page.`,
+      a: `${pros.length} professionnel${pros.length > 1 ? "s" : ""}${categoryFilter ? ` dans la catégorie ${categoryFilter}` : ""} ${pros.length > 1 ? "sont" : "est"} actuellement référencé${pros.length > 1 ? "s" : ""} à ${meta.name} sur Prolocal-Landes${!categoryFilter && availableCategories.length > 0 ? `, répartis dans ${availableCategories.length} catégorie${availableCategories.length > 1 ? "s" : ""}` : ""}.`,
     },
     {
       q: `Comment trouver un professionnel de confiance à ${meta.name} ?`,
@@ -112,7 +101,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
           </h1>
           <p className="text-white/80 max-w-2xl">{meta.seoTitle}</p>
           {/* Statistique dynamique */}
-          {loaded && pros.length > 0 && (
+          {pros.length > 0 && (
             <p className="text-white/70 text-sm mt-3">
               {pros.length} professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}
               {!categoryFilter && availableCategories.length > 0
@@ -130,7 +119,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
         {!categoryFilter && (
           <div className="card p-6 mb-8 space-y-3 text-gray-700 leading-relaxed">
             {meta.intro.map((p, i) => <p key={i}>{p}</p>)}
-            {loaded && availableCategories.length > 0 && (
+            {availableCategories.length > 0 && (
               <p>
                 Vous cherchez un professionnel à {meta.name} ? Prolocal-Landes référence notamment
                 des professionnels en {joinCategories(availableCategories)} à {meta.name}.
@@ -145,7 +134,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
         {/* Texte d'introduction — page ville + catégorie : paragraphe dynamique
             ciblé par SOUS-catégorie (les vraies spécialités présentes), pour
             capter des recherches encore plus précises type "coiffeur à Dax" */}
-        {categoryFilter && loaded && (
+        {categoryFilter && (
           <div className="card p-6 mb-8 text-gray-700 leading-relaxed">
             <p>
               {availableSubcategories.length > 0 ? (
@@ -195,7 +184,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
         )}
 
         {/* Mis en avant (professionnels Gold de la ville) */}
-        {loaded && goldPros.length > 0 && (
+        {goldPros.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-bold text-landes-pine mb-3 flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-500" /> Mis en avant à {meta.name}
@@ -207,9 +196,7 @@ export default function CityPage({ meta, categoryFilter }: Props) {
         )}
 
         {/* Résultats */}
-        {!loaded ? (
-          <div className="text-center py-16 text-gray-400">Chargement…</div>
-        ) : pros.length === 0 ? (
+        {pros.length === 0 ? (
           <div className="text-center py-16 card">
             <div className="text-5xl mb-4">🔍</div>
             <h3 className="font-bold text-landes-pine text-lg mb-2">Aucun professionnel trouvé</h3>

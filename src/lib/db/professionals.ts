@@ -62,6 +62,33 @@ export async function dbGetProfessionalsBySubcategory(category: string, subcateg
   return rows.map(rowToProfessional);
 }
 
+/**
+ * Tous les professionnels actifs, toutes catégories confondues — utilisée
+ * par la page d'accueil (carte pleine largeur, carrousel "à la une",
+ * diaporama hero) pour un unique aller-retour serveur au lieu de trois
+ * appels client indépendants et non filtrés vers /api/db/professionals.
+ */
+export async function dbGetAllActiveProfessionals(): Promise<Professional[]> {
+  if (!isDbConfigured) return [];
+  const { rows } = await sql`
+    SELECT data FROM professionals
+    WHERE status = 'active'
+    ORDER BY plan = 'gold' DESC, plan = 'premium' DESC, updated_at DESC
+  `;
+  return rows.map(rowToProfessional);
+}
+
+/** Recherche par ville (insensible à la casse) — pages /annuaire/[ville]. */
+export async function dbGetProfessionalsByCity(city: string): Promise<Professional[]> {
+  if (!isDbConfigured) return [];
+  const { rows } = await sql`
+    SELECT data FROM professionals
+    WHERE status = 'active' AND LOWER(city) = LOWER(${city})
+    ORDER BY plan = 'gold' DESC, plan = 'premium' DESC, updated_at DESC
+  `;
+  return rows.map(rowToProfessional);
+}
+
 /** Crée ou met à jour une fiche professionnelle (upsert par id). */
 export async function dbSaveProfessional(pro: Professional): Promise<void> {
   if (!isDbConfigured) return;

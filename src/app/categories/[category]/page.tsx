@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CategoryPage, { type CategoryMeta } from "@/components/category/CategoryPage";
 import { dbGetCategories } from "@/lib/db/categories";
+import { dbGetProfessionalsByCategory } from "@/lib/db/professionals";
 import type { CategoryRecord } from "@/lib/categories";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
@@ -68,6 +69,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
   if (!cat) notFound();
 
   const meta = toMeta(cat);
+  const initialPros = await dbGetProfessionalsByCategory(cat.label);
   const url = `${baseUrl}/categories/${cat.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -96,7 +98,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <CategoryPage meta={meta} />
+      <CategoryPage meta={meta} initialPros={initialPros} />
     </>
   );
 }

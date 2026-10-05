@@ -1,9 +1,8 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight } from "lucide-react";
-import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
 import { categorySlug } from "@/lib/profileUrl";
 import { Professional } from "@/types";
@@ -17,6 +16,10 @@ const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false
 interface Props {
   categoryLabel: string;
   subcategoryLabel: string;
+  /** Professionnels actifs de cette sous-catégorie, déjà récupérés côté
+   *  serveur (voir app/categories/[category]/[subcategory]/page.tsx) —
+   *  évite un aller-retour réseau non filtré vers /api/db/professionals. */
+  initialPros: Professional[];
 }
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -27,13 +30,18 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Props) {
+export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initialPros }: Props) {
   const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
-  const [pros, setPros] = useState<Professional[]>([]);
-  const [filtered, setFiltered] = useState<Professional[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [citiesWithPros, setCitiesWithPros] = useState<string[]>([]);
+  const pros = useMemo(
+    () => [...initialPros].sort((a, b) => getListingRank(a) - getListingRank(b)),
+    [initialPros]
+  );
+  const [filtered, setFiltered] = useState<Professional[]>(pros);
+  const citiesWithPros = useMemo(() => {
+    const cities = Array.from(new Set(pros.map(p => p.city).filter(Boolean)));
+    cities.sort((a, b) => a.localeCompare(b, "fr"));
+    return cities;
+  }, [pros]);
 
   // Formulaire de recherche
   const [query, setQuery] = useState("");
@@ -52,22 +60,9 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
 
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
-  useEffect(() => {
-    (async () => {
-      const all = (await getProfessionalsWithImages()).filter(
-        p => p.status === "active" && p.category === categoryLabel && p.subcategory === subcategoryLabel
-      );
-      all.sort((a, b) => getListingRank(a) - getListingRank(b));
-      setPros(all);
-      setFiltered(all);
-      setLoaded(true);
-      setMapLoaded(true);
-
-      const cities = Array.from(new Set(all.map(p => p.city).filter(Boolean)));
-      cities.sort((a, b) => a.localeCompare(b, "fr"));
-      setCitiesWithPros(cities);
-    })();
-  }, [categoryLabel, subcategoryLabel]);
+  // Resynchronise le filtre affiché si les professionnels fournis par le
+  // serveur changent (navigation vers une autre sous-catégorie).
+  useEffect(() => { setFiltered(pros); }, [pros]);
 
   // Ferme le menu du rayon au clic extérieur
   useEffect(() => {
@@ -177,7 +172,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
               <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-2">
                 Tous les professionnels référencés en {subcategoryLabel} ({categoryLabel}) sur Prolocal-Landes.
               </p>
-              {loaded && pros.length > 0 && (
+              {pros.length > 0 && (
                 <p className="text-white/70 text-sm mb-5 sm:mb-6">
                   {pros.length} professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}
                   {citiesWithPros.length > 0 ? `, dans ${citiesWithPros.length} commune${citiesWithPros.length > 1 ? "s" : ""}` : ""}
@@ -196,12 +191,13 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
               <HeroPubSlideshow
                 category={categoryLabel}
                 subcategory={subcategoryLabel}
+                initialPros={initialPros}
                 fallback={
                   bannerSrc ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[400px]">
                       <img src={bannerSrc} alt={subcategoryLabel} className="w-full h-full object-cover absolute inset-0" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      {loaded && pros.length > 0 && (
+                      {pros.length > 0 && (
                         <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
                           <p className="text-2xl font-bold">{pros.length}</p>
                           <p className="text-xs text-white/70">professionnel{pros.length > 1 ? "s" : ""}</p>
@@ -247,7 +243,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
             <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
           </div>
           <div className="card-map h-72 sm:h-96 lg:h-[460px]">
-            {mapLoaded && mapPros.length > 0 ? (
+            {mapPros.length > 0 ? (
               <MultiMap
                 professionals={mapPros}
                 onSelectPro={id =>
@@ -259,7 +255,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
                 <div className="text-center space-y-2">
                   <MapPin className="w-8 h-8 text-gray-300 mx-auto animate-pulse" />
                   <p className="text-sm text-gray-400">
-                    {mapLoaded ? "Aucun professionnel géolocalisé pour le moment" : "Chargement de la carte…"}
+                    Aucun professionnel géolocalisé pour le moment
                   </p>
                 </div>
               </div>
@@ -267,7 +263,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
           </div>
 
           {/* Formulaire de recherche — juste sous la carte */}
-          {loaded && pros.length > 0 && (
+          {pros.length > 0 && (
             <div className="mt-4 sm:mt-6">
               <form
                 onSubmit={e => { e.preventDefault(); runSearch(); }}
@@ -388,9 +384,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel }: Pro
 
       <section id="resultats" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 scroll-mt-20">
         {/* Résultats */}
-        {!loaded ? (
-          <div className="text-center py-16 text-gray-400">Chargement…</div>
-        ) : pros.length === 0 ? (
+        {pros.length === 0 ? (
           <div className="text-center py-16 card">
             <div className="text-5xl mb-4">🔍</div>
             <h3 className="font-bold text-landes-pine text-lg mb-2">Aucun professionnel trouvé</h3>

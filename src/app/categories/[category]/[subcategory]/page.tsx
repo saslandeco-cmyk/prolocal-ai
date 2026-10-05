@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUrl";
 import { dbGetCategories } from "@/lib/db/categories";
+import { dbGetProfessionalsBySubcategory } from "@/lib/db/professionals";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
@@ -17,6 +18,13 @@ export const revalidate = 3600;
  * dynamique en complément d'un autre dossier dynamique de même nom
  * ([category]) à un niveau donné — voir ../page.tsx.
  */
+export async function generateStaticParams() {
+  const categories = await dbGetCategories();
+  return categories.flatMap(c =>
+    c.subcategories.map(s => ({ category: c.slug, subcategory: s.slug }))
+  );
+}
+
 async function resolve(categorySlug: string, subcategorySlug: string) {
   const categories = await dbGetCategories();
   const categoryLabel = categoryLabelFromSlug(categorySlug, categories);
@@ -50,6 +58,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
   if (!resolved) notFound();
 
   const { categoryLabel, subcategoryLabel } = resolved;
+  const initialPros = await dbGetProfessionalsBySubcategory(categoryLabel, subcategoryLabel);
   const url = `${baseUrl}/categories/${category}/${subcategory}`;
 
   const jsonLd = {
@@ -76,7 +85,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <SubcategoryPage categoryLabel={categoryLabel} subcategoryLabel={subcategoryLabel} />
+      <SubcategoryPage categoryLabel={categoryLabel} subcategoryLabel={subcategoryLabel} initialPros={initialPros} />
     </>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ImageIcon, Star, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import { getHeroSlideshowIds, getProfessionalsWithImages } from "@/lib/storage";
+import { getHeroSlideshowIds } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import { getProRating } from "@/lib/reviewUtils";
 import type { Professional } from "@/types";
@@ -16,6 +16,9 @@ interface Props {
   subcategory?: string;
   /** Contenu affiché si aucun encart ne correspond (repli). Par défaut : message générique. */
   fallback?: React.ReactNode;
+  /** Professionnels déjà récupérés côté serveur par la page appelante — évite
+   *  un nouvel aller-retour réseau ici vers /api/db/professionals. */
+  initialPros: Professional[];
 }
 
 /**
@@ -30,58 +33,41 @@ interface Props {
  *   l'option active — toujours automatique, jamais de sélection manuelle
  *   (celle-ci est réservée à la page d'accueil).
  */
-export default function HeroPubSlideshow({ category, subcategory, fallback }: Props) {
-  const [pros, setPros] = useState<Professional[]>([]);
+export default function HeroPubSlideshow({ category, subcategory, fallback, initialPros }: Props) {
   const [index, setIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      // Base commune en base de données (cross-appareil), avec repli local
-      // — comme FeaturedProfessionals — pour ne jamais dépendre uniquement
-      // du localStorage du visiteur, quasiment toujours vide pour lui.
-      const allPros = await getProfessionalsWithImages();
-      const hasPub = (p: Professional) => p.status === "active" && (p.complementaryOptions || []).includes("pub");
+  // Dérivé synchrone de initialPros (fourni par la page serveur) — plus
+  // aucun aller-retour réseau ici, ni au montage ni au changement de
+  // catégorie/sous-catégorie.
+  const pros = useMemo(() => {
+    const hasPub = (p: Professional) => p.status === "active" && (p.complementaryOptions || []).includes("pub");
 
-      // ── Page catégorie / sous-catégorie : filtrage automatique uniquement ──
-      if (category) {
-        const candidates = allPros.filter(p =>
-          hasPub(p) && p.category === category && (!subcategory || p.subcategory === subcategory)
-        );
-        setPros(candidates);
-        setLoaded(true);
-        return;
-      }
+    // ── Page catégorie / sous-catégorie : filtrage automatique uniquement ──
+    if (category) {
+      return initialPros.filter(p =>
+        hasPub(p) && p.category === category && (!subcategory || p.subcategory === subcategory)
+      );
+    }
 
-      // ── Page d'accueil : sélection manuelle de l'admin si renseignée ──
-      const ids = getHeroSlideshowIds();
-      if (ids.length > 0) {
-        const byId = new Map(allPros.map(p => [p.id, p]));
-        const resolved = ids
-          .map(id => byId.get(id))
-          .filter((p): p is Professional => Boolean(p && p.status === "active"));
-        if (resolved.length > 0) {
-          setPros(resolved);
-          setLoaded(true);
-          return;
-        }
-      }
+    // ── Page d'accueil : sélection manuelle de l'admin si renseignée ──
+    const ids = getHeroSlideshowIds();
+    if (ids.length > 0) {
+      const byId = new Map(initialPros.map(p => [p.id, p]));
+      const resolved = ids
+        .map(id => byId.get(id))
+        .filter((p): p is Professional => Boolean(p && p.status === "active"));
+      if (resolved.length > 0) return resolved;
+    }
 
-      // Repli automatique : tous les professionnels actifs ayant l'option active
-      setPros(allPros.filter(hasPub));
-      setLoaded(true);
-    })();
-  }, [category, subcategory]);
+    // Repli automatique : tous les professionnels actifs ayant l'option active
+    return initialPros.filter(hasPub);
+  }, [initialPros, category, subcategory]);
 
   useEffect(() => {
     if (pros.length <= 1) return;
     const timer = setInterval(() => setIndex(i => (i + 1) % pros.length), SLIDE_DURATION_MS);
     return () => clearInterval(timer);
   }, [pros.length]);
-
-  if (!loaded) {
-    return <div className="w-full h-[400px] rounded-2xl bg-white/5 animate-pulse" />;
-  }
 
   if (pros.length === 0) {
     if (fallback) return <>{fallback}</>;

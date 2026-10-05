@@ -1,8 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight, Building2, MapPin, Tags } from "lucide-react";
-import { getProfessionalsWithImages } from "@/lib/storage";
 import ProfessionalCard from "./ProfessionalCard";
 import type { Professional } from "@/types";
 
@@ -250,43 +249,40 @@ function ProCarousel({ pros, tabKey }: { pros: Professional[]; tabKey: number })
   );
 }
 
+interface Props {
+  /** Professionnels actifs, fournis par le serveur (page d'accueil) — évite
+   *  un nouvel aller-retour réseau ici, et surtout son renouvellement à
+   *  chaque changement d'onglet (les pros ne dépendent pas de l'onglet actif,
+   *  seul le filtrage par catégorie ci-dessous en dépend). */
+  initialPros: Professional[];
+}
+
 // ── Section principale ─────────────────────────────────────────
-export default function FeaturedProfessionals() {
+export default function FeaturedProfessionals({ initialPros }: Props) {
   const [activeTab, setActiveTab] = useState(0);
-  const [mergedTabs, setMergedTabs] = useState<FeaturedTab[]>(FEATURED_TABS);
-  const [loaded, setLoaded] = useState(false);
-  // Compteur dynamique (entreprises / communes / activités inscrites) —
-  // recalculé à chaque chargement à partir des professionnels actifs
-  // réels, pour refléter automatiquement chaque ajout ou suppression.
-  const [stats, setStats] = useState({ companies: 0, communes: 0, activities: 0 });
 
-  // Charge uniquement les vrais professionnels Gold actifs — plus aucune
-  // donnée de démonstration en repli.
-  useEffect(() => {
-    (async () => {
-      const allPros = await getProfessionalsWithImages();
-      const activePros = allPros.filter(p => p.status === "active");
-      const realPros = activePros.filter(p => p.plan === "gold");
+  // Compteur dynamique (entreprises / communes / activités inscrites) et
+  // onglets Gold par catégorie — dérivés une seule fois de initialPros
+  // (déjà filtrés "actifs" côté serveur), jamais recalculés via le réseau.
+  const activePros = initialPros;
+  const stats = useMemo(() => ({
+    companies: activePros.length,
+    communes: new Set(activePros.map(p => p.city).filter(Boolean)).size,
+    activities: new Set(activePros.map(p => p.category).filter(Boolean)).size,
+  }), [activePros]);
 
-      const updated = FEATURED_TABS.map(tab => ({
-        ...tab,
-        pros: realPros.filter(p => p.category === tab.category),
-      }));
-
-      setMergedTabs(updated);
-      setStats({
-        companies: activePros.length,
-        communes: new Set(activePros.map(p => p.city).filter(Boolean)).size,
-        activities: new Set(activePros.map(p => p.category).filter(Boolean)).size,
-      });
-      setLoaded(true);
-    })();
-  }, [activeTab]); // recharge à chaque changement d'onglet
+  const mergedTabs = useMemo(() => {
+    const realPros = activePros.filter(p => p.plan === "gold");
+    return FEATURED_TABS.map(tab => ({
+      ...tab,
+      pros: realPros.filter(p => p.category === tab.category),
+    }));
+  }, [activePros]);
 
   // N'affiche la section que s'il existe au moins un vrai professionnel
   // Gold à mettre en avant, sur au moins une catégorie.
   const hasAnyRealPro = mergedTabs.some(tab => tab.pros.length > 0);
-  if (loaded && !hasAnyRealPro) return null;
+  if (!hasAnyRealPro) return null;
 
   return (
     <>

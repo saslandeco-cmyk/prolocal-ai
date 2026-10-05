@@ -1,5 +1,3 @@
-"use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, MapPin, ArrowRight,
@@ -10,8 +8,18 @@ import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import FeaturedProfessionals from "@/components/professional/FeaturedProfessionals";
 import FullWidthMap from "@/components/map/FullWidthMap";
-import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
+import { dbGetCategories } from "@/lib/db/categories";
+import { dbGetAllActiveProfessionals } from "@/lib/db/professionals";
+import { getEffectiveOptionPrices } from "@/lib/db/options";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
+
+// Rendue côté serveur et mise en cache (ISR) : les données (catégories,
+// tarifs des options, professionnels actifs) sont récupérées une seule fois
+// ici — plus aucun aller-retour client vers /api/db/* à chaque visite, et le
+// HTML généré est réutilisé par tous les visiteurs pendant 1h avant
+// régénération. Voir monitoring/README.md pour le contexte (réduction du
+// Fast Origin/Data Transfer Vercel).
+export const revalidate = 3600;
 
 const STATS = [
   { value: "500+", label: "Professionnels référencés" },
@@ -20,18 +28,12 @@ const STATS = [
   { value: "4.8/5",label: "Note moyenne" },
 ];
 
-export default function HomePage() {
-  const [optionsCatalog, setOptionsCatalog] = useState<Record<string, { unitAmount: number; cadence: string }>>({});
-  const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
-
-  useEffect(() => {
-    fetch("/api/db/options")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.options) setOptionsCatalog(data.options); })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
+export default async function HomePage() {
+  const [categories, optionsCatalog, initialPros] = await Promise.all([
+    dbGetCategories(),
+    getEffectiveOptionPrices(),
+    dbGetAllActiveProfessionals(),
+  ]);
 
   const priceOf = (id: string, fallbackAmount: number, fallbackCadence: "month" | "once") => {
     const opt = optionsCatalog[id];
@@ -72,7 +74,7 @@ export default function HomePage() {
 
             {/* RIGHT — diaporama des encarts publicitaires ciblés */}
             <div className="hidden lg:block">
-              <HeroPubSlideshow />
+              <HeroPubSlideshow initialPros={initialPros} />
               <p className="text-xs text-white/50 text-center mt-3">
                 Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
               </p>
@@ -98,7 +100,7 @@ export default function HomePage() {
       </section>
 
       {/* FEATURED PROFESSIONALS */}
-      <FeaturedProfessionals />
+      <FeaturedProfessionals initialPros={initialPros} />
 
       {/* STATS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style={{ display: "none" }}>
@@ -324,7 +326,7 @@ export default function HomePage() {
       </section>
 
       {/* MAP FULL WIDTH — avant le footer */}
-      <FullWidthMap />
+      <FullWidthMap initialPros={initialPros} />
 
     </div>
   );

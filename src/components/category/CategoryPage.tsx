@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Search, MapPin, ArrowRight, ChevronRight, X, TrendingUp, Loader2, LocateFixed } from "lucide-react";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
-import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
@@ -27,11 +26,19 @@ export interface CategoryMeta {
 
 interface Props {
   meta: CategoryMeta;
+  /** Professionnels actifs de cette catégorie, déjà récupérés côté serveur
+   *  (voir app/categories/[category]/page.tsx) — évite un aller-retour
+   *  réseau non filtré vers /api/db/professionals à chaque visite. */
+  initialPros: Professional[];
 }
 
-export default function CategoryPage({ meta }: Props) {
-  const [pros, setPros]           = useState<Professional[]>([]);
-  const [filtered, setFiltered]   = useState<Professional[]>([]);
+export default function CategoryPage({ meta, initialPros }: Props) {
+  // Triés une seule fois à partir des données déjà filtrées côté serveur.
+  const pros = useMemo(
+    () => [...initialPros].sort((a, b) => getListingRank(a) - getListingRank(b)),
+    [initialPros]
+  );
+  const [filtered, setFiltered]   = useState<Professional[]>(pros);
   const [query, setQuery]         = useState("");
   const [location, setLocation]   = useState("");
   const [suggestions, setSuggestions]         = useState<string[]>([]);
@@ -39,7 +46,6 @@ export default function CategoryPage({ meta }: Props) {
   const [showSug,  setShowSug]    = useState(false);
   const [showCity, setShowCity]   = useState(false);
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const queryRef = useRef<HTMLDivElement>(null);
   const cityRef  = useRef<HTMLDivElement>(null);
 
@@ -95,18 +101,9 @@ export default function CategoryPage({ meta }: Props) {
     "Saint-Paul-lès-Dax","Tyrosse","Ondres","Soorts-Hossegor","Vieux-Boucau-les-Bains",
   ];
 
-  useEffect(() => {
-    (async () => {
-      const real = (await getProfessionalsWithImages()).filter(
-        p => p.status === "active" && p.category === meta.category
-      );
-      const merged = [...real].sort((a, b) => getListingRank(a) - getListingRank(b));
-      setPros(merged);
-      setFiltered(merged);
-      setMapLoaded(true);
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta.category]);
+  // Resynchronise le filtre affiché si les professionnels fournis par le
+  // serveur changent (navigation vers une autre catégorie).
+  useEffect(() => { setFiltered(pros); }, [pros]);
 
   // Suggestions mots-clés
   useEffect(() => {
@@ -241,6 +238,7 @@ export default function CategoryPage({ meta }: Props) {
             <div className="hidden lg:block">
               <HeroPubSlideshow
                 category={meta.category}
+                initialPros={initialPros}
                 fallback={
                   DEFAULT_BANNERS[meta.category] ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[400px]">
@@ -292,7 +290,7 @@ export default function CategoryPage({ meta }: Props) {
             <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
           </div>
           <div className="card-map h-72 sm:h-96 lg:h-[460px]">
-            {mapLoaded && mapPros.length > 0 ? (
+            {mapPros.length > 0 ? (
               <MultiMap
                 professionals={mapPros}
                 onSelectPro={id =>
