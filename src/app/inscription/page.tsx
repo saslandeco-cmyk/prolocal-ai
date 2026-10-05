@@ -1084,142 +1084,30 @@ function InscriptionForm() {
               </div>
             </div>
 
-            {/* Choix de la méthode de paiement */}
-            <div>
-              <p className="label mb-2">Méthode de paiement</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button type="button" onClick={() => setPaymentChoice("card")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${paymentChoice === "card" ? "border-landes-forest bg-landes-forest/5" : "border-gray-200 hover:border-landes-sage"}`}>
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentChoice === "card" ? "bg-landes-forest text-white" : "bg-gray-100 text-gray-500"}`}>
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-landes-pine text-sm">Carte bancaire</p>
-                    <p className="text-xs text-gray-500">Paiement sécurisé via Stripe</p>
-                  </div>
-                  {paymentChoice === "card" && <CheckCircle className="w-5 h-5 text-landes-forest ml-auto flex-shrink-0" />}
-                </button>
-                <button type="button" onClick={() => setPaymentChoice("cheque")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${paymentChoice === "cheque" ? "border-landes-forest bg-landes-forest/5" : "border-gray-200 hover:border-landes-sage"}`}>
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentChoice === "cheque" ? "bg-landes-forest text-white" : "bg-gray-100 text-gray-500"}`}>
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-landes-pine text-sm">Chèque</p>
-                    <p className="text-xs text-gray-500">Envoi postal à Prolocal-Landes</p>
-                  </div>
-                  {paymentChoice === "cheque" && <CheckCircle className="w-5 h-5 text-landes-forest ml-auto flex-shrink-0" />}
-                </button>
-              </div>
-            </div>
-
-            {/* ── Détail : Carte bancaire (Stripe Elements, embarqué, mode test) ── */}
-            {paymentChoice === "card" && (
-              <div className="border-2 border-landes-forest bg-landes-forest/5 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-amber-500 px-2 py-0.5 rounded-full">MODE TEST</span>
-                  <p className="font-semibold text-landes-pine text-sm">Paiement par carte, directement sur le site</p>
-                </div>
-
-                <div className="bg-white rounded-lg border border-gray-100 p-3 space-y-2">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Récapitulatif</p>
-                  <ul className="space-y-1">
-                    {selectedPlan !== "standard" && (
-                      <li className="flex items-center justify-between text-sm">
-                        <span className="text-gray-700">Formule {PLANS.find(p => p.id === selectedPlan)?.name}</span>
-                        <span className="text-gray-500">{PLANS.find(p => p.id === selectedPlan)?.price}€/mois</span>
-                      </li>
-                    )}
-                    {selectedOptions.map(id => {
-                      const opt = COMPLEMENTARY_OPTIONS.find(o => o.id === id);
-                      if (!opt) return null;
-                      return (
-                        <li key={id} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700">{opt.label}</span>
-                          <span className="text-gray-500">{opt.price} {opt.unit}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-
-                {stripePaid ? (
-                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <p className="text-sm text-green-700 font-medium">Paiement confirmé — finalisation en cours…</p>
-                  </div>
-                ) : preparingPayment ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-4 justify-center">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Préparation du paiement sécurisé…
-                  </div>
-                ) : !stripeClientSecret ? (
-                  <button
-                    type="button"
-                    onClick={() => preparePayment()}
-                    className="w-full flex items-center justify-center gap-2 bg-landes-forest text-white font-semibold py-3 rounded-xl hover:bg-landes-pine transition-colors"
-                  >
-                    Continuer vers le paiement sécurisé <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <StripePaymentForm
-                    clientSecret={stripeClientSecret}
-                    intentType="setup"
-                    submitLabel="Payer et activer mon abonnement"
-                    onSuccess={handleStripeSuccess}
-                  />
-                )}
-
-                <p className="text-[11px] text-gray-400 pt-1">
-                  Utilisez une carte de test Stripe (ex : 4242 4242 4242 4242, date future, CVC quelconque) — aucun débit réel n&apos;est effectué en mode test. Vous restez sur ce site du début à la fin.
+            {/* Les méthodes de paiement sont temporairement masquées : les
+                inscriptions ne sont pas encore ouvertes au public. Le choix
+                de méthode (carte/chèque) et les flux Stripe/chèque associés
+                restent dans le code (voir git) pour réactivation ultérieure. */}
+            <div className="border-2 border-amber-300 bg-amber-50 rounded-xl p-5 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-landes-pine text-sm">Les inscriptions ne sont pas encore ouvertes</p>
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  Si vous souhaitez inscrire votre entreprise sur la plateforme, envoyez-nous votre
+                  demande à{" "}
+                  <a href="mailto:contact@prolocal-landes.fr" className="font-semibold text-landes-forest hover:underline">
+                    contact@prolocal-landes.fr
+                  </a>.
                 </p>
               </div>
-            )}
-
-            {/* ── Détail : Chèque ── */}
-            {paymentChoice === "cheque" && (
-              <div className="border-2 border-landes-forest bg-landes-forest/5 rounded-xl p-4 flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-landes-forest flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-landes-pine text-sm">Paiement par chèque</p>
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                    Réglez votre commande par chèque à l&apos;ordre de <strong>Prolocal-Landes</strong>, à envoyer à l&apos;adresse suivante :
-                  </p>
-                  <p className="text-sm text-gray-700 mt-2 bg-white rounded-lg border border-gray-100 px-3 py-2">
-                    Prolocal-Landes<br />
-                    12 rue de la Forêt<br />
-                    40000 Mont-de-Marsan
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Merci d&apos;indiquer le nom de votre entreprise au dos du chèque. Votre fiche sera activée dès réception du règlement.
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* Le bouton de validation manuelle ne s'affiche que pour le chèque :
-              pour la carte, le paiement Stripe Elements avance automatiquement à l'étape suivante. */}
-          {paymentChoice === "cheque" && (
-            <div className="flex justify-between">
-              <button type="button" onClick={() => goPrevFromSequence(3)} className="btn-secondary flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" /> Retour
-              </button>
-              <button type="button" onClick={() => goNextFromSequence(3)} disabled={loading}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50">
-                {loading
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Finalisation…</>
-                  : <>Valider le paiement <ArrowRight className="w-4 h-4" /></>
-                }
-              </button>
-            </div>
-          )}
-          {paymentChoice === "card" && (
-            <div className="flex justify-start">
-              <button type="button" onClick={() => goPrevFromSequence(3)} className="btn-secondary flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" /> Retour
-              </button>
-            </div>
-          )}
+          <div className="flex justify-start">
+            <button type="button" onClick={() => goPrevFromSequence(3)} className="btn-secondary flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" /> Retour
+            </button>
+          </div>
         </div>
       )}
 
