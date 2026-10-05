@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag, MapPin } from "lucide-react";
+import { LogOut, Users, CheckCircle, Clock, XCircle, Trash2, Eye, EyeOff, Search, Filter, Edit3, Save, X, Loader2, Shield, Star, Flag, MessageSquare, Info, Download, Upload, Settings2, UserX, UserCheck, Database, CreditCard, Plus, Building2, RefreshCw, ChevronDown, ChevronUp, Tag, MapPin, ImageIcon } from "lucide-react";
 import { setSession, getSession, clearSession, getProfessionals, getProfessionalsWithImages, saveProfessional, deleteProfessional, getReviews, saveReview, deleteReview, generateId, getHeroSlideshowIds, saveHeroSlideshowIds, setAdminPanelPath } from "@/lib/storage";
 import { Professional, PLANS, StatusType, Review } from "@/types";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, compareLabelsFr, type CategoryRecord, type SubcategoryRecord } from "@/lib/categories";
@@ -1382,6 +1382,8 @@ export default function AdminPage() {
   const [migrationSummary, setMigrationSummary] = useState<string | null>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodingSummary, setGeocodingSummary] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [convertingSummary, setConvertingSummary] = useState<string | null>(null);
   const [adminSection, setAdminSection] = useState<"pros" | "reviews" | "site" | "options" | "sirene" | "categories">("pros");
   const [categories, setCategories] = useState<CategoryRecord[]>(DEFAULT_CATEGORIES);
   const [editReview, setEditReview] = useState<Review | null>(null);
@@ -1544,6 +1546,35 @@ export default function AdminPage() {
       refresh();
     } finally {
       setGeocoding(false);
+    }
+  };
+
+  // ── Conversion de rattrapage des images en URL Vercel Blob ──
+  // Les fiches enregistrées avant la mise en place du store Vercel Blob (voir
+  // src/lib/blob.ts) ont leur logo/bannière/photos stockés en base64
+  // directement dans la base — ce qui alourdit la réponse de TOUTES les
+  // pages publiques qui lisent la table professionals. Resauvegarder chaque
+  // fiche concernée déclenche l'upload automatique (même logique que
+  // POST /api/db/professionals) et remplace ces base64 par de simples URLs.
+  const handleConvertImages = async () => {
+    setConverting(true);
+    setConvertingSummary(null);
+    try {
+      const all = await getProfessionalsWithImages();
+      const isBase64 = (v?: string) => Boolean(v?.startsWith("data:"));
+      const toConvert = all.filter(p => isBase64(p.logo) || isBase64(p.banner) || (p.photos || []).some(isBase64));
+      let fixed = 0;
+      for (const pro of toConvert) {
+        if (await saveProfessional(pro)) fixed++;
+      }
+      setConvertingSummary(
+        toConvert.length === 0
+          ? "✅ Aucune image en base64 à convertir — tout est déjà sous forme d'URL."
+          : `✅ ${fixed}/${toConvert.length} fiche(s) retraitée(s). La conversion effective en URL n'a lieu que si BLOB_READ_WRITE_TOKEN est configuré (sinon les images restent inchangées, sans erreur).`
+      );
+      refresh();
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -2170,6 +2201,16 @@ export default function AdminPage() {
             {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
             {geocoding ? "Géocodage…" : "Corriger les fiches sans coordonnées GPS"}
           </button>
+
+          {/* Rattrapage images : convertit les logos/bannières/photos encore en base64 en URLs Vercel Blob */}
+          <button
+            onClick={handleConvertImages}
+            disabled={converting}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-landes-ocean/40 text-landes-ocean rounded-xl text-sm font-medium hover:bg-landes-ocean hover:text-white transition-colors disabled:opacity-50"
+          >
+            {converting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            {converting ? "Conversion…" : "Convertir les images en URL"}
+          </button>
         </div>
 
         {migrationSummary && (
@@ -2180,6 +2221,11 @@ export default function AdminPage() {
         {geocodingSummary && (
           <p className="text-xs text-landes-ocean bg-landes-ocean/5 border border-landes-ocean/20 rounded-lg px-3 py-2 mb-4">
             {geocodingSummary}
+          </p>
+        )}
+        {convertingSummary && (
+          <p className="text-xs text-landes-ocean bg-landes-ocean/5 border border-landes-ocean/20 rounded-lg px-3 py-2 mb-4">
+            {convertingSummary}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDbConfigured } from "@/lib/db/client";
 import { dbGetAllProfessionals, dbSaveProfessional, dbGetProfessionalsByCategory, dbMarkMigrated } from "@/lib/db/professionals";
+import { uploadProfessionalImages } from "@/lib/blob";
 
 /**
  * GET  /api/db/professionals            → liste tous les professionnels
@@ -35,7 +36,10 @@ export async function POST(req: NextRequest) {
     if (!pro?.id || !pro?.companyName) {
       return NextResponse.json({ error: "Objet Professional invalide (id et companyName requis)." }, { status: 400 });
     }
-    await dbSaveProfessional(pro);
+    // Remplace toute image encore en base64 (logo/bannière/photos) par son
+    // URL Vercel Blob avant écriture — évite d'alourdir durablement la
+    // colonne JSONB lue par toutes les pages publiques (voir src/lib/blob.ts).
+    await dbSaveProfessional(await uploadProfessionalImages(pro));
     await dbMarkMigrated(pro.id);
     return NextResponse.json({ ok: true });
   } catch (err: any) {
