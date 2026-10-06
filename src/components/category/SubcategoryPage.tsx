@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight } from "lucide-react";
 import { getListingRank } from "@/lib/listingOrder";
@@ -200,7 +201,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
                 fallback={
                   bannerSrc ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[400px]">
-                      <img src={bannerSrc} alt={subcategoryLabel} fetchPriority="high" className="w-full h-full object-cover absolute inset-0" />
+                      <Image src={bannerSrc} alt={subcategoryLabel} fill priority fetchPriority="high" sizes="600px" className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       {pros.length > 0 && (
                         <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">

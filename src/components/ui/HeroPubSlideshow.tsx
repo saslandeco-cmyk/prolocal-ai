@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ImageIcon, Star, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { getHeroSlideshowIds } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
@@ -105,15 +106,30 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
       <Link href={buildProfileUrl(pro)} className="flex flex-col h-full">
         {/* Image limitée à la zone du haut de la card — c'est systématiquement
             le plus grand élément visible au chargement (LCP, confirmé par
-            Lighthouse sur l'accueil et les pages catégorie) : fetchPriority
-            indique au navigateur de la récupérer en priorité plutôt que de
-            la découvrir au fil du parsing, comme n'importe quelle autre image. */}
-        <img
-          src={pro.banner || pro.logo || "/placeholder-banner.jpg"}
-          alt={pro.companyName}
-          fetchPriority="high"
-          className="w-full flex-1 min-h-0 object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+            Lighthouse sur l'accueil et les pages catégorie). `priority`
+            précharge l'image (<link rel="preload"> dans le <head>) et
+            next/image la sert optimisée (redimensionnée, WebP/AVIF) au lieu
+            du fichier brut potentiellement bien plus lourd que l'espace
+            affiché (~580px de large ici) — le wrapper relative+flex-1
+            reproduit exactement le dimensionnement qu'avait l'<img>
+            d'origine, pour que `fill` sache quelle taille remplir.
+            Note : Next.js précharge aussi ces mêmes images sur les pages qui
+            lient vers celle où elles sont le LCP (ex. l'accueil précharge
+            l'image de chaque page catégorie listée) — comportement du
+            prefetch des <Link>, déjà présent avant ce composant et
+            indépendant de `priority` (vérifié : identique avec un <img>
+            classique). Non traité ici, hors du périmètre de cette image. */}
+        <div className="relative w-full flex-1 min-h-0 overflow-hidden">
+          <Image
+            src={pro.banner || pro.logo || "/placeholder-banner.jpg"}
+            alt={pro.companyName}
+            fill
+            priority
+            fetchPriority="high"
+            sizes="600px"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        </div>
 
         {/* Badge "Encart sponsorisé" */}
         <span className="absolute top-4 right-4 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
