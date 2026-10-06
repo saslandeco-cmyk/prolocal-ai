@@ -104,28 +104,28 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
   return (
     <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl group flex flex-col">
       <Link href={buildProfileUrl(pro)} className="flex flex-col h-full">
-        {/* Image limitée à la zone du haut de la card — c'est systématiquement
-            le plus grand élément visible au chargement (LCP, confirmé par
-            Lighthouse sur l'accueil et les pages catégorie). `priority`
-            précharge l'image (<link rel="preload"> dans le <head>) et
-            next/image la sert optimisée (redimensionnée, WebP/AVIF) au lieu
-            du fichier brut potentiellement bien plus lourd que l'espace
-            affiché (~580px de large ici) — le wrapper relative+flex-1
-            reproduit exactement le dimensionnement qu'avait l'<img>
-            d'origine, pour que `fill` sache quelle taille remplir.
-            Note : Next.js précharge aussi ces mêmes images sur les pages qui
-            lient vers celle où elles sont le LCP (ex. l'accueil précharge
-            l'image de chaque page catégorie listée) — comportement du
-            prefetch des <Link>, déjà présent avant ce composant et
-            indépendant de `priority` (vérifié : identique avec un <img>
-            classique). Non traité ici, hors du périmètre de cette image. */}
+        {/* Image limitée à la zone du haut de la card. next/image la sert
+            optimisée (redimensionnée, WebP/AVIF) au lieu du fichier brut
+            potentiellement bien plus lourd que l'espace affiché (~580px de
+            large ici) — le wrapper relative+flex-1 reproduit exactement le
+            dimensionnement qu'avait l'<img> d'origine, pour que `fill` sache
+            quelle taille remplir.
+            ⚠️ Pas de `priority` ici volontairement : ce composant est
+            masqué en CSS (`hidden lg:block` posé par la page appelante) sur
+            mobile, où le sous-titre du hero devient le LCP à la place. Or
+            `priority` force un fetch immédiat en priorité "High" même pour
+            un élément display:none (vérifié via le réseau capturé par
+            Lighthouse) — gaspillant de la bande passante mobile et
+            retardant le téléchargement d'éléments réellement visibles. Sans
+            `priority`, next/image utilise le chargement différé natif du
+            navigateur, qui ne déclenche jamais le téléchargement tant que
+            l'élément reste display:none — et charge toujours aussi vite sur
+            desktop/tablette, où il est visible dès le premier écran. */}
         <div className="relative w-full flex-1 min-h-0 overflow-hidden">
           <Image
             src={pro.banner || pro.logo || "/placeholder-banner.jpg"}
             alt={pro.companyName}
             fill
-            priority
-            fetchPriority="high"
             sizes="600px"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
           />

@@ -248,7 +248,10 @@ export default function CategoryPage({ meta, initialPros }: Props) {
                 fallback={
                   DEFAULT_BANNERS[meta.category] ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[400px]">
-                      <Image src={DEFAULT_BANNERS[meta.category]} alt={meta.category} fill priority fetchPriority="high" sizes="600px" className="object-cover" />
+                      {/* Pas de `priority` : masqué en CSS (hidden lg:block)
+                          sur mobile — voir le commentaire détaillé dans
+                          HeroPubSlideshow.tsx. */}
+                      <Image src={DEFAULT_BANNERS[meta.category]} alt={meta.category} fill sizes="600px" className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
                         <p className="text-2xl font-bold">{pros.length}</p>

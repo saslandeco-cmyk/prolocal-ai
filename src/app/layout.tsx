@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+
+// Remplace l'ancien `@import url(fonts.googleapis.com/...)` dans globals.css
+// (chaîne de requêtes bloquant le rendu : HTML → CSS → CSS distant → police
+// distante — identifiée comme la cause principale du retard de peinture du
+// texte, plus grand élément visible sur mobile où le diaporama hero est
+// masqué par `hidden lg:block`). next/font télécharge la police au build et
+// l'auto-héberge sur le même domaine, sans aucune requête réseau externe au
+// chargement — voir aussi tailwind.config.ts (fontFamily.sans) et
+// globals.css (body) qui référencent désormais var(--font-inter) au lieu du
+// nom littéral "Inter".
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -72,7 +89,7 @@ const websiteJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={inter.variable}>
       <body className="bg-landes-cream min-h-screen flex flex-col">
         <script
           type="application/ld+json"
