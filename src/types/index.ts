@@ -189,7 +189,7 @@ export const PLANS: Plan[] = [
       "Coordonnées et adresse (téléphone, WhatsApp et email)",
       "1 catégorie",
       "Logo et bannière",
-      "3 mises en contact par mois",
+      "1 mise en contact par mois",
     ],
   },
   {

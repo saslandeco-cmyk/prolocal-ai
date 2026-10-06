@@ -222,8 +222,8 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
   // Quota de mises en contact (voir src/lib/contactQuota.ts) : calculé côté
   // serveur pour que les boutons Poser une question/Appeler/Envoyer un
   // email se désactivent dès l'affichage une fois le plafond mensuel du
-  // plan atteint (ex: formule Standard — 3/mois), sans aller-retour client
-  // supplémentaire vers /api/demandes.
+  // plan atteint (voir CONTACT_QUOTAS pour le détail par formule), sans
+  // aller-retour client supplémentaire vers /api/demandes.
   let contactQuota: { limit: number | null; used: number } | null = null;
 
   if (parsed) {

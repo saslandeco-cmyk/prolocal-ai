@@ -12,7 +12,7 @@ import type { PlanType } from "@/types";
  * concerné.
  */
 export const CONTACT_QUOTAS: Record<PlanType, number | null> = {
-  standard: 3,
+  standard: 1,
   premium: 3,
   gold: null,
 };
