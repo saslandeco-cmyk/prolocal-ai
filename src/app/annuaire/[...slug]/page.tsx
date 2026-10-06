@@ -4,8 +4,10 @@ import { categoryLabelFromSlug, unslugify, extractIdFromSlug } from "@/lib/profi
 import { cityMetaFromSlug } from "@/lib/cityData";
 import { dbGetProfessionalById, dbGetProfessionalsByCity } from "@/lib/db/professionals";
 import { dbGetReviewsByPro } from "@/lib/db/reviews";
+import { dbCountDemandesThisMonth } from "@/lib/db/demandes";
 import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
+import { CONTACT_QUOTAS } from "@/lib/contactQuota";
 import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
@@ -217,12 +219,21 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
 
   let jsonLd: Record<string, unknown> | null = null;
   let initialData: Professional | null = null;
+  // Quota de mises en contact (voir src/lib/contactQuota.ts) : calculé côté
+  // serveur pour que les boutons Poser une question/Appeler/Envoyer un
+  // email se désactivent dès l'affichage une fois le plafond mensuel du
+  // plan atteint (ex: formule Standard — 3/mois), sans aller-retour client
+  // supplémentaire vers /api/demandes.
+  let contactQuota: { limit: number | null; used: number } | null = null;
 
   if (parsed) {
     const { categorySlugSeg, categoryLabel, subcategoryLabel, id, fallbackName } = parsed;
     const url = `${baseUrl}/annuaire/${segments.join("/")}`;
     const pro = await resolveProfessional(id);
     initialData = pro;
+    if (pro) {
+      contactQuota = { limit: CONTACT_QUOTAS[pro.plan], used: await dbCountDemandesThisMonth(pro.id) };
+    }
 
     if (pro) {
       // ── Fiche trouvée en base : JSON-LD complet avec vraies données ──
@@ -341,7 +352,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <AnnuaireCatchAllClient initialData={initialData} />
+      <AnnuaireCatchAllClient initialData={initialData} contactQuota={contactQuota} />
     </>
   );
 }

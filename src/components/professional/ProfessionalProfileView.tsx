@@ -204,7 +204,17 @@ function PhotoGallery({ photos, companyName }: { photos: string[]; companyName: 
   );
 }
 
-export default function ProfessionalProfileView({ id, initialData }: { id: string; initialData?: Professional | null }) {
+interface ContactQuota {
+  limit: number | null;
+  used: number;
+}
+
+export default function ProfessionalProfileView({ id, initialData, contactQuota }: { id: string; initialData?: Professional | null; contactQuota?: ContactQuota | null }) {
+  // Formule Standard (gratuite) : 3 mises en contact par mois via Poser une
+  // question/Appeler/Envoyer un email (voir src/lib/contactQuota.ts) — au-delà,
+  // ces trois actions se désactivent jusqu'au mois suivant. Le WhatsApp n'est
+  // volontairement pas concerné par ce plafond.
+  const contactLimitReached = Boolean(contactQuota && contactQuota.limit != null && contactQuota.used >= contactQuota.limit);
   const [pro, setPro]       = useState<Professional | null>(initialData ?? null);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -481,10 +491,21 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
             <div className="card p-6 space-y-4">
               <p className="font-bold text-landes-pine text-lg">Contacter</p>
 
+              {contactLimitReached && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Ce professionnel a atteint son nombre maximum de mises en contact pour ce mois-ci. Réessayez le mois prochain.
+                </p>
+              )}
+
               {/* Bouton Poser une question */}
               <button
-                onClick={() => { setShowQuestion(true); setQuestionSent(false); }}
-                className="w-full flex items-center justify-center gap-2 bg-white text-landes-forest font-semibold py-3 px-4 rounded-xl border-2 border-landes-forest hover:bg-landes-forest hover:text-white transition-colors"
+                onClick={() => { if (contactLimitReached) return; setShowQuestion(true); setQuestionSent(false); }}
+                disabled={contactLimitReached}
+                className={`w-full flex items-center justify-center gap-2 font-semibold py-3 px-4 rounded-xl border-2 transition-colors ${
+                  contactLimitReached
+                    ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "bg-white text-landes-forest border-landes-forest hover:bg-landes-forest hover:text-white"
+                }`}
               >
                 <MessageCircle className="w-5 h-5" />
                 Poser une question
@@ -492,13 +513,22 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
 
 
               {pro.phone && (
-                <a
-                  href={phoneHref(pro.phone)}
-                  onClick={() => logContact(pro.id, "appel")}
-                  className="flex items-center justify-center gap-2 w-full bg-landes-forest text-white font-semibold py-3 px-4 rounded-xl hover:bg-landes-pine transition-colors"
-                >
-                  <Phone className="w-5 h-5" /> Appeler
-                </a>
+                contactLimitReached ? (
+                  <span
+                    aria-disabled="true"
+                    className="flex items-center justify-center gap-2 w-full bg-gray-50 text-gray-400 font-semibold py-3 px-4 rounded-xl cursor-not-allowed"
+                  >
+                    <Phone className="w-5 h-5" /> Appeler
+                  </span>
+                ) : (
+                  <a
+                    href={phoneHref(pro.phone)}
+                    onClick={() => logContact(pro.id, "appel")}
+                    className="flex items-center justify-center gap-2 w-full bg-landes-forest text-white font-semibold py-3 px-4 rounded-xl hover:bg-landes-pine transition-colors"
+                  >
+                    <Phone className="w-5 h-5" /> Appeler
+                  </a>
+                )
               )}
 
               {pro.whatsapp && (
@@ -514,13 +544,22 @@ export default function ProfessionalProfileView({ id, initialData }: { id: strin
                 </a>
               )}
 
-              <a
-                href={`mailto:${pro.email}`}
-                onClick={() => logContact(pro.id, "email")}
-                className="flex items-center justify-center gap-2 w-full bg-landes-ocean/10 text-landes-ocean font-semibold py-3 px-4 rounded-xl hover:bg-landes-ocean/20 transition-colors border border-landes-ocean/20"
-              >
-                <Mail className="w-5 h-5" /> Envoyer un email
-              </a>
+              {contactLimitReached ? (
+                <span
+                  aria-disabled="true"
+                  className="flex items-center justify-center gap-2 w-full bg-gray-50 text-gray-400 font-semibold py-3 px-4 rounded-xl border border-gray-200 cursor-not-allowed"
+                >
+                  <Mail className="w-5 h-5" /> Envoyer un email
+                </span>
+              ) : (
+                <a
+                  href={`mailto:${pro.email}`}
+                  onClick={() => logContact(pro.id, "email")}
+                  className="flex items-center justify-center gap-2 w-full bg-landes-ocean/10 text-landes-ocean font-semibold py-3 px-4 rounded-xl hover:bg-landes-ocean/20 transition-colors border border-landes-ocean/20"
+                >
+                  <Mail className="w-5 h-5" /> Envoyer un email
+                </a>
+              )}
 
               {pro.website && (
                 <a href={pro.website} target="_blank" rel="noopener noreferrer"

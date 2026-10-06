@@ -27,7 +27,12 @@ import type { CategoryRecord } from "@/lib/categories";
  * c'est une page ville ; sinon, on retombe sur l'ancien comportement
  * (identifiant de fiche legacy, avec redirection automatique).
  */
-export default function AnnuaireCatchAllClient({ initialData, categories, initialPros }: { initialData?: Professional | null; categories?: CategoryRecord[]; initialPros?: Professional[] }) {
+interface ContactQuota {
+  limit: number | null;
+  used: number;
+}
+
+export default function AnnuaireCatchAllClient({ initialData, categories, initialPros, contactQuota }: { initialData?: Professional | null; categories?: CategoryRecord[]; initialPros?: Professional[]; contactQuota?: ContactQuota | null }) {
   const params = useParams<{ slug: string[] }>();
   const router = useRouter();
   const [notFound, setNotFound] = useState(false);
@@ -96,5 +101,5 @@ export default function AnnuaireCatchAllClient({ initialData, categories, initia
   }
 
   // ── Format SEO fiche pro : affiche directement la fiche ──
-  return <ProfessionalProfileView id={resolvedId} initialData={initialData} />;
+  return <ProfessionalProfileView id={resolvedId} initialData={initialData} contactQuota={contactQuota} />;
 }
