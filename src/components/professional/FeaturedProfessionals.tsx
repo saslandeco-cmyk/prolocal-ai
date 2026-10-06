@@ -8,7 +8,8 @@ import type { Professional } from "@/types";
 interface FeaturedTab {
   label: string;
   icon: string;
-  category: string;
+  /** `null` pour l'onglet "Tous" (toutes catégories confondues). */
+  category: string | null;
   pros: Professional[];
 }
 
@@ -259,6 +260,9 @@ interface Props {
 
 // ── Section principale ─────────────────────────────────────────
 export default function FeaturedProfessionals({ initialPros }: Props) {
+  // 0 = onglet "Tous", sélectionné par défaut : dès l'arrivée sur l'accueil,
+  // le visiteur voit tous les professionnels à la une, toutes catégories
+  // confondues, avant de pouvoir filtrer par catégorie s'il le souhaite.
   const [activeTab, setActiveTab] = useState(0);
 
   // Compteur dynamique (entreprises / communes / activités inscrites) et
@@ -273,10 +277,12 @@ export default function FeaturedProfessionals({ initialPros }: Props) {
 
   const mergedTabs = useMemo(() => {
     const realPros = activePros.filter(p => p.plan === "gold");
-    return FEATURED_TABS.map(tab => ({
+    const categoryTabs = FEATURED_TABS.map(tab => ({
       ...tab,
       pros: realPros.filter(p => p.category === tab.category),
     }));
+    const allTab: FeaturedTab = { label: "Tous", icon: "⭐", category: null, pros: realPros };
+    return [allTab, ...categoryTabs];
   }, [activePros]);
 
   // N'affiche la section que s'il existe au moins un vrai professionnel
@@ -337,7 +343,7 @@ export default function FeaturedProfessionals({ initialPros }: Props) {
         <div className="px-3 sm:px-6">
           {mergedTabs[activeTab].pros.length === 0 ? (
             <p className="text-center text-gray-400 py-10 text-sm">
-              Aucun professionnel Gold à la une pour le moment dans cette catégorie.
+              Aucun professionnel Gold à la une pour le moment{mergedTabs[activeTab].category ? " dans cette catégorie" : ""}.
             </p>
           ) : (
             <ProCarousel key={activeTab} pros={mergedTabs[activeTab].pros} tabKey={activeTab} />
@@ -347,10 +353,12 @@ export default function FeaturedProfessionals({ initialPros }: Props) {
         {/* CTA */}
         <div className="text-center mt-10">
           <Link
-            href={`/annuaire?category=${encodeURIComponent(mergedTabs[activeTab].category)}`}
+            href={mergedTabs[activeTab].category ? `/annuaire?category=${encodeURIComponent(mergedTabs[activeTab].category)}` : "/annuaire"}
             className="inline-flex items-center gap-2 btn-secondary py-3 px-8"
           >
-            Voir tous les professionnels de la catégorie {mergedTabs[activeTab].label} <ArrowRight className="w-4 h-4" />
+            {mergedTabs[activeTab].category
+              ? <>Voir tous les professionnels de la catégorie {mergedTabs[activeTab].label}</>
+              : <>Voir tous les professionnels</>} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
