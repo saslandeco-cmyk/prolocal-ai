@@ -208,7 +208,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
                               : "border-gray-200 text-gray-600 hover:border-landes-forest/40"
                           }`}
                         >
-                          {pack.quantity} · {(pack.unitAmount / 100).toFixed(0)}€
+                          Pack {pack.quantity} contacts : {(pack.unitAmount / 100).toFixed(0)}€
                         </button>
                       ))}
                     </div>
