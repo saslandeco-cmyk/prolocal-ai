@@ -5,9 +5,14 @@ import type { PlanType } from "@/types";
  * chaque mois calendaire dans son tableau de bord — au-delà, les demandes
  * les plus récentes du mois restent visibles (date, canal) mais masquées
  * (voir DemandesTab.tsx). `null` = illimité.
+ *
+ * Ce même plafond désactive aussi, côté fiche publique, les boutons "Poser
+ * une question"/"Appeler"/"Envoyer un email" une fois atteint (voir
+ * ProfessionalProfileView.tsx) — le WhatsApp n'est volontairement pas
+ * concerné.
  */
 export const CONTACT_QUOTAS: Record<PlanType, number | null> = {
   standard: 3,
-  premium: 15,
+  premium: 3,
   gold: null,
 };

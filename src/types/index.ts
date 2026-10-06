@@ -208,6 +208,7 @@ export const PLANS: Plan[] = [
       "Affichage d'1 service",
       "Lien vers 1 réseau social",
       "Collecte d'avis clients",
+      "3 mises en contact par mois",
     ],
   },
   {
