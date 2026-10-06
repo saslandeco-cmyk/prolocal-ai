@@ -291,7 +291,17 @@ export default async function HomePage() {
           <h2 className="section-title">Options complémentaires</h2>
           <p className="text-gray-500 mt-2">Vous pourrez choisir ces options lors de l&apos;enregistrement de votre entreprise. Sans engagement.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+          <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
+            <h3 className="text-xl font-bold mb-1 text-landes-forest">Mises en contact</h3>
+            <div className="flex items-baseline gap-1 mb-6 flex-wrap">
+              <span className="text-4xl font-bold text-gray-900">À partir de 10€</span>
+              <span className="text-gray-400">les 5 mises en contact</span>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Achetez et rechargez vos crédits de mises en contact. Prix dégressifs selon la quantité.
+            </p>
+          </div>
           <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
             <h3 className="text-xl font-bold mb-1 text-landes-forest">Encart publicitaire ciblé</h3>
             <div className="flex items-baseline gap-1 mb-6">
