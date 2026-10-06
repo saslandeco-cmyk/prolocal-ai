@@ -31,12 +31,31 @@ export const PLAN_PRICES: Record<string, CheckoutItem> = {
   gold:    { id: "gold",    name: "Formule Gold",     unitAmount: 2900, cadence: "month", stripeProductId: "prolocal_plan_gold" },
 };
 
+/**
+ * Packs de l'option "Mises en contact" — tarif dégressif selon la quantité.
+ * Le premier pack sert de prix "à partir de" affiché dans le catalogue
+ * (OPTION_PRICES.contact ci-dessous) ; le pack réellement commandé est
+ * choisi par le professionnel puis validé côté serveur (jamais confiance
+ * au montant envoyé par le client).
+ */
+export interface ContactPack {
+  quantity: number;
+  /** Montant en centimes d'euro */
+  unitAmount: number;
+}
+export const CONTACT_PACKS: ContactPack[] = [
+  { quantity: 5, unitAmount: 1000 },
+  { quantity: 10, unitAmount: 1800 },
+  { quantity: 20, unitAmount: 3000 },
+  { quantity: 50, unitAmount: 6000 },
+];
+
 // Options complémentaires — catalogue par défaut / de secours (voir
 // src/lib/db/options.ts : un catalogue géré depuis l'admin peut le remplacer).
 export const OPTION_PRICES: Record<string, CheckoutItem> = {
   contact: {
-    id: "contact", name: "Mises en contact", unitAmount: 1000, cadence: "once",
-    description: "Pack de 5 mises en contact pour 10€. Rechargez vos crédits à tout moment — prix dégressifs selon la quantité achetée.",
+    id: "contact", name: "Mises en contact", unitAmount: CONTACT_PACKS[0].unitAmount, cadence: "once",
+    description: "Rechargez vos crédits de mises en contact à tout moment — prix dégressifs selon la quantité achetée.",
     stripeProductId: "prolocal_opt_contact",
   },
   pub: {

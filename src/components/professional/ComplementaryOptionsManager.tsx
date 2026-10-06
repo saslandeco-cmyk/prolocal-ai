@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { CheckCircle, CreditCard, Loader2, X } from "lucide-react";
-import { OPTION_PRICES as DEFAULT_OPTION_PRICES, type CheckoutItem } from "@/lib/pricing";
+import { OPTION_PRICES as DEFAULT_OPTION_PRICES, CONTACT_PACKS, type CheckoutItem } from "@/lib/pricing";
 import StripePaymentForm from "./StripePaymentForm";
 
 interface Props {
@@ -26,7 +26,9 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const [contactQty, setContactQty] = useState<number>(CONTACT_PACKS[0].quantity);
   const [orderingId, setOrderingId] = useState<string | null>(null);
+  const [orderingQuantity, setOrderingQuantity] = useState<number | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(null);
@@ -75,8 +77,20 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
 
   const isActive = (optionId: string) => activeNames.has(optionsCatalog[optionId]?.name || "");
 
-  const startOrder = async (optionId: string) => {
+  /** Montant réellement facturé pour une option, en tenant compte du pack choisi pour "Mises en contact". */
+  const getOrderAmount = (optionId: string, quantity: number | null): number => {
+    const opt = optionsCatalog[optionId];
+    if (!opt) return 0;
+    if (optionId === "contact" && quantity) {
+      return CONTACT_PACKS.find(p => p.quantity === quantity)?.unitAmount ?? opt.unitAmount;
+    }
+    return opt.unitAmount;
+  };
+
+  const startOrder = async (optionId: string, quantity?: number) => {
+    const qty = optionId === "contact" ? (quantity ?? contactQty) : null;
     setOrderingId(optionId);
+    setOrderingQuantity(qty);
     setPreparing(true);
     setClientSecret(null);
     setOrdered(null);
@@ -86,6 +100,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           optionIds: [optionId],
+          contactQuantity: qty ?? undefined,
           email,
           companyName,
           siren,
@@ -122,6 +137,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
           customerId: effectiveCustomerId,
           paymentMethodId,
           optionIds: [orderingId], // jamais de planId ici : les options sont des produits à part
+          contactQuantity: orderingQuantity ?? undefined,
         }),
       });
       const data = await res.json();
@@ -144,6 +160,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
 
   const closeModal = () => {
     setOrderingId(null);
+    setOrderingQuantity(null);
     setClientSecret(null);
     setOrdered(null);
   };
@@ -177,18 +194,50 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
                     </span>
                   )}
                 </div>
-                <p className="text-lg font-bold text-gray-900 mb-1">
-                  {(opt.unitAmount / 100).toFixed(0)}€
-                  <span className="text-xs font-normal text-gray-400 ml-1">{opt.cadence === "once" ? "(frais uniques)" : "/mois"}</span>
-                </p>
-                <p className="text-xs text-gray-500 mb-4 flex-1">{opt.description}</p>
-                {!active && (
-                  <button
-                    onClick={() => startOrder(opt.id)}
-                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-landes-forest border-2 border-landes-forest px-4 py-2 rounded-xl hover:bg-landes-forest hover:text-white transition-colors"
-                  >
-                    <CreditCard className="w-4 h-4" /> Commander cette option
-                  </button>
+                {opt.id === "contact" ? (
+                  <>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {CONTACT_PACKS.map(pack => (
+                        <button
+                          key={pack.quantity}
+                          type="button"
+                          onClick={() => setContactQty(pack.quantity)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border-2 transition-colors ${
+                            contactQty === pack.quantity
+                              ? "border-landes-forest bg-landes-forest text-white"
+                              : "border-gray-200 text-gray-600 hover:border-landes-forest/40"
+                          }`}
+                        >
+                          {pack.quantity} · {(pack.unitAmount / 100).toFixed(0)}€
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4 flex-1">{opt.description}</p>
+                    {!active && (
+                      <button
+                        onClick={() => startOrder(opt.id, contactQty)}
+                        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-landes-forest border-2 border-landes-forest px-4 py-2 rounded-xl hover:bg-landes-forest hover:text-white transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4" /> Commander cette option
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-gray-900 mb-1">
+                      {(opt.unitAmount / 100).toFixed(0)}€
+                      <span className="text-xs font-normal text-gray-400 ml-1">{opt.cadence === "once" ? "(frais uniques)" : "/mois"}</span>
+                    </p>
+                    <p className="text-xs text-gray-500 mb-4 flex-1">{opt.description}</p>
+                    {!active && (
+                      <button
+                        onClick={() => startOrder(opt.id)}
+                        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-landes-forest border-2 border-landes-forest px-4 py-2 rounded-xl hover:bg-landes-forest hover:text-white transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4" /> Commander cette option
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             );
@@ -202,7 +251,10 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
         <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4" onClick={closeModal}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <p className="font-bold text-landes-pine">Commander « {optionsCatalog[orderingId].name} »</p>
+              <p className="font-bold text-landes-pine">
+                Commander « {optionsCatalog[orderingId].name}
+                {orderingId === "contact" && orderingQuantity ? ` — pack de ${orderingQuantity}` : ""} »
+              </p>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -224,9 +276,12 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
             ) : (
               <>
                 <div className="bg-gray-50 rounded-lg p-3 mb-4 flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{optionsCatalog[orderingId].name}</span>
+                  <span className="text-gray-700">
+                    {optionsCatalog[orderingId].name}
+                    {orderingId === "contact" && orderingQuantity ? ` — pack de ${orderingQuantity}` : ""}
+                  </span>
                   <span className="font-semibold text-gray-900">
-                    {(optionsCatalog[orderingId].unitAmount / 100).toFixed(0)}€
+                    {(getOrderAmount(orderingId, orderingQuantity) / 100).toFixed(0)}€
                     {optionsCatalog[orderingId].cadence === "once" ? " (frais uniques)" : "/mois"}
                   </span>
                 </div>

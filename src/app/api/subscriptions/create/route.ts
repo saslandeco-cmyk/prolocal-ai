@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured } from "@/lib/stripeServer";
-import { PLAN_PRICES } from "@/lib/pricing";
+import { PLAN_PRICES, CONTACT_PACKS } from "@/lib/pricing";
 import { getEffectiveOptionPrices } from "@/lib/db/options";
 
 /**
@@ -40,6 +40,11 @@ export async function POST(req: NextRequest) {
     const planId: string | undefined = body.planId;
     const optionIds: string[] = Array.isArray(body.optionIds) ? body.optionIds : [];
     const email: string | undefined = body.email;
+    const contactQuantity: number | undefined = body.contactQuantity;
+
+    if (optionIds.includes("contact") && contactQuantity !== undefined && !CONTACT_PACKS.some(p => p.quantity === contactQuantity)) {
+      return NextResponse.json({ error: "Pack de mises en contact invalide." }, { status: 400 });
+    }
     const OPTION_PRICES = await getEffectiveOptionPrices();
     const companyName: string = body.companyName || "Inscription Prolocal-Landes";
     const billing: {
@@ -139,7 +144,10 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       automatic_payment_methods: { enabled: true },
       usage: "off_session",
-      metadata: { companyName, planId: planId || "", optionIds: optionIds.join(",") },
+      metadata: {
+        companyName, planId: planId || "", optionIds: optionIds.join(","),
+        ...(optionIds.includes("contact") && contactQuantity ? { contactQuantity: String(contactQuantity) } : {}),
+      },
     });
 
     return NextResponse.json({

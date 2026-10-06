@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured, getOrCreateProduct } from "@/lib/stripeServer";
-import { PLAN_PRICES } from "@/lib/pricing";
+import { PLAN_PRICES, CONTACT_PACKS } from "@/lib/pricing";
 import { getEffectiveOptionPrices } from "@/lib/db/options";
 
 /**
@@ -27,8 +27,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { customerId, paymentMethodId, planId, optionIds } = await req.json();
+    const { customerId, paymentMethodId, planId, optionIds, contactQuantity } = await req.json();
     const options: string[] = Array.isArray(optionIds) ? optionIds : [];
+
+    // Prix du pack "Mises en contact" réellement choisi — déterminé ici, côté
+    // serveur, à partir de la quantité demandée (jamais du montant envoyé par
+    // le client). Repli sur le plus petit pack si la quantité est absente ou
+    // invalide.
+    const contactPack = CONTACT_PACKS.find(p => p.quantity === contactQuantity) || CONTACT_PACKS[0];
 
     if (!customerId || !paymentMethodId) {
       return NextResponse.json({ error: "customerId ou paymentMethodId manquant." }, { status: 400 });
@@ -96,7 +102,10 @@ export async function POST(req: NextRequest) {
       .filter(opt => opt && opt.cadence === "once");
 
     if (oneTimeOptions.length > 0) {
-      const amount = oneTimeOptions.reduce((sum, opt) => sum + opt.unitAmount, 0);
+      const amount = oneTimeOptions.reduce(
+        (sum, opt) => sum + (opt.id === "contact" ? contactPack.unitAmount : opt.unitAmount),
+        0
+      );
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency: "eur",
@@ -104,7 +113,11 @@ export async function POST(req: NextRequest) {
         payment_method: paymentMethodId,
         off_session: true,
         confirm: true,
-        metadata: { type: "one-time-options", optionIds: oneTimeOptions.map(o => o.id).join(",") },
+        metadata: {
+          type: "one-time-options",
+          optionIds: oneTimeOptions.map(o => o.id).join(","),
+          ...(options.includes("contact") ? { contactQuantity: String(contactPack.quantity) } : {}),
+        },
       });
       result.oneTimePaymentIntentId = paymentIntent.id;
     }
