@@ -164,7 +164,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
               Impossible de vérifier vos options déjà actives ({loadError}) — vous pouvez tout de même en commander de nouvelles ci-dessous.
             </p>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.values(optionsCatalog).map(opt => {
             const active = isActive(opt.id);
             return (
