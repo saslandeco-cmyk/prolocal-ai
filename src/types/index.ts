@@ -225,6 +225,7 @@ export const PLANS: Plan[] = [
       "Liens vers 3 réseaux sociaux",
       "Support prioritaire",
       "Statistiques de visite",
+      "5 mises en contact par mois",
     ],
   },
 ];
