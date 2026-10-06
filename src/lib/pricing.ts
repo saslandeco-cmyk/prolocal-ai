@@ -34,6 +34,11 @@ export const PLAN_PRICES: Record<string, CheckoutItem> = {
 // Options complémentaires — catalogue par défaut / de secours (voir
 // src/lib/db/options.ts : un catalogue géré depuis l'admin peut le remplacer).
 export const OPTION_PRICES: Record<string, CheckoutItem> = {
+  contact: {
+    id: "contact", name: "Mises en contact", unitAmount: 1000, cadence: "once",
+    description: "Pack de 5 mises en contact pour 10€. Rechargez vos crédits à tout moment — prix dégressifs selon la quantité achetée.",
+    stripeProductId: "prolocal_opt_contact",
+  },
   pub: {
     id: "pub", name: "Encart publicitaire ciblé", unitAmount: 2500, cadence: "month",
     description: "Affichez une bannière publicitaire de votre fiche sur la page de votre catégorie.",
