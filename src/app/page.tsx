@@ -291,11 +291,11 @@ export default async function HomePage() {
           <h2 className="section-title">Options complémentaires</h2>
           <p className="text-gray-500 mt-2">Vous pourrez choisir ces options lors de l&apos;enregistrement de votre entreprise. Sans engagement.</p>
         </div>
-        {/* w-[90vw] + ml-[50%]/-translate-x-1/2 : élargit cette grille à 90%
+        {/* w-[95vw] + ml-[50%]/-translate-x-1/2 : élargit cette grille à 95%
             de la largeur de l'écran en l'affranchissant du max-w-7xl du
             conteneur parent (centré indépendamment du padding du parent,
             qui resterait sinon décalé). */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 w-[90vw] ml-[50%] -translate-x-1/2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 w-[95vw] ml-[50%] -translate-x-1/2">
           <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
             <h3 className="text-xl font-bold mb-1 text-landes-forest">Mises en contact</h3>
             <div className="flex items-baseline gap-1 mb-6 flex-wrap">
