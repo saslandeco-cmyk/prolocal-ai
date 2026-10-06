@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -84,6 +86,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        {/* Statistiques de visite (pages vues, visiteurs) et performances
+            réelles (LCP/TBT/CLS côté visiteurs) — sans cookie ni stockage
+            local, donc sans bannière de consentement requise. Ne collecte
+            réellement qu'une fois "Web Analytics" / "Speed Insights" activés
+            dans Vercel Dashboard → projet → onglet Analytics. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
