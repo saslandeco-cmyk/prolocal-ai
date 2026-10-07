@@ -127,9 +127,16 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
           <h2 className="text-xl font-bold text-landes-pine">Demandes reçues</h2>
         </div>
         {quota && (
-          <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${quota.remaining <= 0 ? "bg-red-100 text-red-600" : "bg-landes-forest/10 text-landes-forest"}`}>
-            <Zap className="w-3.5 h-3.5" /> {quota.remaining} mise{quota.remaining > 1 ? "s" : ""} en contact restante{quota.remaining > 1 ? "s" : ""}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${quota.remaining <= 0 ? "bg-red-100 text-red-600" : "bg-landes-forest/10 text-landes-forest"}`}>
+              <Zap className="w-3.5 h-3.5" /> {quota.remaining} mise{quota.remaining > 1 ? "s" : ""} en contact restante{quota.remaining > 1 ? "s" : ""}
+            </span>
+            {onUpgradeClick && (
+              <button onClick={onUpgradeClick} className="text-xs font-semibold text-landes-forest border border-landes-forest px-3 py-1.5 rounded-lg hover:bg-landes-forest hover:text-white transition-colors whitespace-nowrap">
+                Recharger mes mises en contact
+              </button>
+            )}
+          </div>
         )}
       </div>
       <p className="text-sm text-gray-500 mb-4">
@@ -138,16 +145,9 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
 
       {lockedIds.size > 0 && (
         <div className="card p-4 border border-amber-200 bg-amber-50/50 space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-sm text-amber-800">
-              <strong>{lockedIds.size}</strong> demande{lockedIds.size > 1 ? "s" : ""} {lockedIds.size > 1 ? "sont verrouillées" : "est verrouillée"} — solde de mises en contact épuisé.
-            </p>
-            {onUpgradeClick && (
-              <button onClick={onUpgradeClick} className="text-xs font-semibold bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
-                Recharger mes mises en contact
-              </button>
-            )}
-          </div>
+          <p className="text-sm text-amber-800">
+            <strong>{lockedIds.size}</strong> demande{lockedIds.size > 1 ? "s" : ""} {lockedIds.size > 1 ? "sont verrouillées" : "est verrouillée"} — solde de mises en contact épuisé.
+          </p>
           <div className="flex flex-wrap gap-2 pt-1 border-t border-amber-200/60">
             {lockedByDate.map(({ date, count }) => (
               <span key={date} className="text-xs font-medium text-amber-700 bg-white/70 border border-amber-200 rounded-lg px-2.5 py-1">
