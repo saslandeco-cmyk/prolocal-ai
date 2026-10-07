@@ -5,7 +5,9 @@ import {
   LogOut, Edit3, CheckCircle, Clock, Save, Loader2, Eye, EyeOff,
   Calendar, Trash2, CalendarCheck, CalendarX, Settings, Ban, Plus, X,
   ImagePlus, Images, Star, Shield, Info, CreditCard, RefreshCw, AlertTriangle,
+  ShoppingCart,
 } from "lucide-react";
+import { CONTACT_PACKS, type CheckoutItem } from "@/lib/pricing";
 import {
   getSession, clearSession, getProfessionalById, saveProfessional, rehydrateAsync,
   generateId, getReviewsByPro, saveReview, deleteProfessional, mirrorProfessionalToDb,
@@ -66,12 +68,17 @@ function DashboardContent() {
   const [confirmAction, setConfirmAction] = useState<"suspend" | "delete" | null>(null);
   const [planChanging, setPlanChanging] = useState(false);
   const [planRenewalDate, setPlanRenewalDate] = useState<string | null>(null);
-  const [planOrderTarget, setPlanOrderTarget] = useState<string | null>(null);
-  const [planOrderClientSecret, setPlanOrderClientSecret] = useState<string | null>(null);
-  const [planOrderCustomerId, setPlanOrderCustomerId] = useState<string | null>(null);
-  const [planOrderPreparing, setPlanOrderPreparing] = useState(false);
-  const [planOrderFinalizing, setPlanOrderFinalizing] = useState(false);
-  const [planOrderDone, setPlanOrderDone] = useState(false);
+  // Panier unique pour formule + options complémentaires (dont "Mises en
+  // contact") : permet de cumuler plusieurs achats avant un seul paiement.
+  const [cart, setCart] = useState<{ planId: string | null; optionIds: string[]; contactQuantity: number | null }>({ planId: null, optionIds: [], contactQuantity: null });
+  const [cartExpanded, setCartExpanded] = useState(true);
+  const [optionsCatalog, setOptionsCatalog] = useState<Record<string, CheckoutItem>>({});
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null);
+  const [checkoutCustomerId, setCheckoutCustomerId] = useState<string | null>(null);
+  const [checkoutPreparing, setCheckoutPreparing] = useState(false);
+  const [checkoutFinalizing, setCheckoutFinalizing] = useState(false);
+  const [checkoutDone, setCheckoutDone] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
   const subscriptionManagerRef = useRef<SubscriptionManagerHandle>(null);
 
@@ -235,21 +242,61 @@ function DashboardContent() {
   const handleLogout = () => { clearSession(); router.push("/"); };
   const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
-  // Commande d'une formule payante : redirige vers un paiement Stripe intégré
-  // (jamais un simple changement local pour une formule payante).
-  const startPlanOrder = async (planId: string) => {
-    if (!pro) return;
-    setPlanOrderTarget(planId);
-    setPlanOrderPreparing(true);
-    setPlanOrderClientSecret(null);
-    setPlanOrderDone(false);
+  // ── Panier (formule + options complémentaires, dont "Mises en contact") ──
+  // Un professionnel peut cumuler un changement de formule payante et
+  // plusieurs options avant de valider une seule et même commande (un seul
+  // paiement Stripe — voir /api/subscriptions/create et /finalize, qui
+  // acceptent déjà planId + optionIds[] + contactQuantity combinés).
+  const toggleCartPlan = (planId: string) => {
+    setCart(prev => ({ ...prev, planId: prev.planId === planId ? null : planId }));
+  };
+  const toggleCartOption = (optionId: string) => {
+    setCart(prev => ({
+      ...prev,
+      optionIds: prev.optionIds.includes(optionId)
+        ? prev.optionIds.filter(id => id !== optionId)
+        : [...prev.optionIds, optionId],
+    }));
+  };
+  const selectContactPack = (quantity: number) => {
+    setCart(prev => ({
+      ...prev,
+      optionIds: prev.optionIds.includes("contact") ? prev.optionIds : [...prev.optionIds, "contact"],
+      contactQuantity: quantity,
+    }));
+  };
+  const removeContactPack = () => {
+    setCart(prev => ({ ...prev, optionIds: prev.optionIds.filter(id => id !== "contact"), contactQuantity: null }));
+  };
+
+  const cartPlan = cart.planId ? PLANS.find(p => p.id === cart.planId) || null : null;
+  const cartOptionItems = cart.optionIds.map(id => {
+    if (id === "contact") {
+      const pack = CONTACT_PACKS.find(p => p.quantity === cart.contactQuantity) || CONTACT_PACKS[0];
+      return { id, name: `${optionsCatalog.contact?.name || "Mises en contact"} — pack de ${pack.quantity}`, amount: pack.unitAmount, cadence: "once" as const };
+    }
+    const opt = optionsCatalog[id];
+    return { id, name: opt?.name || id, amount: opt?.unitAmount || 0, cadence: (opt?.cadence || "month") as "month" | "once" };
+  });
+  const cartIsEmpty = !cartPlan && cartOptionItems.length === 0;
+  const cartItemCount = (cartPlan ? 1 : 0) + cartOptionItems.length;
+  const cartMonthlyTotal = (cartPlan ? cartPlan.price * 100 : 0) + cartOptionItems.filter(i => i.cadence === "month").reduce((s, i) => s + i.amount, 0);
+  const cartOnceTotal = cartOptionItems.filter(i => i.cadence === "once").reduce((s, i) => s + i.amount, 0);
+
+  const startCheckout = async () => {
+    if (!pro || cartIsEmpty) return;
+    setCheckoutOpen(true);
+    setCheckoutPreparing(true);
+    setCheckoutClientSecret(null);
+    setCheckoutDone(false);
     try {
       const res = await fetch("/api/subscriptions/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId,
-          optionIds: [],
+          planId: cart.planId || undefined,
+          optionIds: cart.optionIds,
+          contactQuantity: cart.contactQuantity ?? undefined,
           email: pro.email,
           companyName: pro.companyName,
           siren: pro.siren,
@@ -257,34 +304,37 @@ function DashboardContent() {
       });
       const data = await res.json();
       if (data.clientSecret) {
-        setPlanOrderClientSecret(data.clientSecret);
-        setPlanOrderCustomerId(data.customerId);
+        setCheckoutClientSecret(data.clientSecret);
+        setCheckoutCustomerId(data.customerId);
       } else {
         alert(data.error || "Erreur lors de la préparation du paiement.");
-        setPlanOrderTarget(null);
+        setCheckoutOpen(false);
       }
     } catch {
       alert("Erreur réseau lors de la préparation du paiement.");
-      setPlanOrderTarget(null);
+      setCheckoutOpen(false);
     } finally {
-      setPlanOrderPreparing(false);
+      setCheckoutPreparing(false);
     }
   };
 
-  const handlePlanOrderSuccess = async (paymentMethodId?: string) => {
-    if (!pro || !planOrderCustomerId || !paymentMethodId || !planOrderTarget) {
+  const handleCheckoutSuccess = async (paymentMethodId?: string) => {
+    if (!pro || !checkoutCustomerId || !paymentMethodId) {
       alert("Impossible de finaliser le paiement (informations manquantes).");
       return;
     }
-    setPlanOrderFinalizing(true);
+    setCheckoutFinalizing(true);
     try {
       const res = await fetch("/api/subscriptions/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerId: planOrderCustomerId,
+          customerId: checkoutCustomerId,
           paymentMethodId,
-          planId: planOrderTarget, // jamais d'optionIds ici : la formule est un produit à part
+          planId: cart.planId || undefined,
+          optionIds: cart.optionIds,
+          contactQuantity: cart.contactQuantity ?? undefined,
+          proId: pro.id,
         }),
       });
       const data = await res.json();
@@ -292,27 +342,31 @@ function DashboardContent() {
         alert(data.error || "Erreur lors de la finalisation du paiement.");
         return;
       }
+      const currentOptions: string[] = (pro as any).complementaryOptions || [];
       const updated = {
         ...pro,
-        plan: planOrderTarget as any,
-        stripeCustomerId: (pro as any).stripeCustomerId || planOrderCustomerId,
+        plan: cart.planId ? (cart.planId as any) : pro.plan,
+        stripeCustomerId: (pro as any).stripeCustomerId || checkoutCustomerId,
+        complementaryOptions: Array.from(new Set([...currentOptions, ...cart.optionIds])),
         updatedAt: new Date().toISOString(),
-      };
+      } as any;
       saveProfessional(updated);
       setPro(updated);
-      setPlanOrderDone(true);
+      setCheckoutDone(true);
+      setCart({ planId: null, optionIds: [], contactQuantity: null });
+      setCartExpanded(true);
     } catch {
       alert("Erreur réseau lors de la finalisation du paiement.");
     } finally {
-      setPlanOrderFinalizing(false);
+      setCheckoutFinalizing(false);
     }
   };
 
-  const closePlanOrderModal = () => {
-    setPlanOrderTarget(null);
-    setPlanOrderClientSecret(null);
-    setPlanOrderCustomerId(null);
-    setPlanOrderDone(false);
+  const closeCheckout = () => {
+    setCheckoutOpen(false);
+    setCheckoutClientSecret(null);
+    setCheckoutCustomerId(null);
+    setCheckoutDone(false);
   };
 
   // Rétrogradation différée : Gold → Premium ou Premium → Standard.
@@ -1449,8 +1503,9 @@ function DashboardContent() {
                           return;
                         }
                         if (plan.price > 0) {
-                          // Formule payante : passage obligatoire par le formulaire de paiement
-                          startPlanOrder(plan.id);
+                          // Formule payante : ajoutée au panier, validée avec les
+                          // éventuelles options complémentaires en une seule commande.
+                          toggleCartPlan(plan.id);
                           return;
                         }
                         setPlanChanging(true);
@@ -1460,11 +1515,17 @@ function DashboardContent() {
                         setPro(updated);
                         setPlanChanging(false);
                       }}
-                      className="w-full py-2.5 rounded-xl border-2 border-landes-forest text-landes-forest hover:bg-landes-forest hover:text-white transition-all text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 mt-auto"
+                      className={`w-full py-2.5 rounded-xl border-2 transition-all text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 mt-auto ${
+                        cart.planId === plan.id
+                          ? "border-landes-forest bg-landes-forest text-white"
+                          : "border-landes-forest text-landes-forest hover:bg-landes-forest hover:text-white"
+                      }`}
                     >
                       {planChanging || downgrading
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> {downgrading ? "Programmation…" : "Changement…"}</>
-                        : `Passer à ${plan.name}`
+                        : cart.planId === plan.id
+                          ? <><CheckCircle className="w-4 h-4" /> Dans le panier — Retirer</>
+                          : `Ajouter au panier`
                       }
                     </button>
                   )}
@@ -1478,73 +1539,121 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* Modale de paiement — commande d'une formule payante */}
-          {planOrderTarget && (
-            <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4" onClick={closePlanOrderModal}>
+          <ComplementaryOptionsManager
+            stripeCustomerId={(pro as any).stripeCustomerId}
+            cart={{ optionIds: cart.optionIds, contactQuantity: cart.contactQuantity }}
+            onToggleOption={toggleCartOption}
+            onSelectContactPack={selectContactPack}
+            onRemoveContactPack={removeContactPack}
+            onCatalogLoaded={setOptionsCatalog}
+          />
+
+          {/* Panier — cumule formule + options complémentaires avant un seul paiement */}
+          {!cartIsEmpty && (
+            <div className="sticky bottom-4 z-30 mx-auto max-w-2xl">
+              <div className="card shadow-2xl border-2 border-landes-forest/30 p-4 bg-white">
+                {cartExpanded ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-landes-pine flex items-center gap-2">
+                        <ShoppingCart className="w-4 h-4" /> Votre panier
+                      </p>
+                      <button onClick={() => setCartExpanded(false)} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {cartPlan && (
+                        <span className="flex items-center gap-1.5 text-xs font-medium bg-landes-forest/10 text-landes-forest px-2.5 py-1 rounded-lg">
+                          Formule {cartPlan.name} — {cartPlan.price}€/mois
+                          <button onClick={() => toggleCartPlan(cartPlan.id)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                        </span>
+                      )}
+                      {cartOptionItems.map(item => (
+                        <span key={item.id} className="flex items-center gap-1.5 text-xs font-medium bg-landes-forest/10 text-landes-forest px-2.5 py-1 rounded-lg">
+                          {item.name} — {(item.amount / 100).toFixed(0)}€{item.cadence === "once" ? "" : "/mois"}
+                          <button onClick={() => item.id === "contact" ? removeContactPack() : toggleCartOption(item.id)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-gray-100">
+                      <div className="text-sm text-gray-600">
+                        {cartMonthlyTotal > 0 && <span className="font-semibold text-landes-pine">{(cartMonthlyTotal / 100).toFixed(0)}€/mois</span>}
+                        {cartMonthlyTotal > 0 && cartOnceTotal > 0 && <span className="mx-1">+</span>}
+                        {cartOnceTotal > 0 && <span className="font-semibold text-landes-pine">{(cartOnceTotal / 100).toFixed(0)}€ (frais uniques)</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setCartExpanded(false)} className="btn-secondary text-sm py-2 px-3">Continuer mes achats</button>
+                        <button onClick={startCheckout} className="btn-primary text-sm py-2 px-4">Valider la commande</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setCartExpanded(true)} className="w-full flex items-center justify-between text-sm font-semibold text-landes-forest">
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4" /> {cartItemCount} article{cartItemCount > 1 ? "s" : ""} dans le panier
+                    </span>
+                    <span>Voir mon panier →</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Modale de paiement — commande groupée (formule + options) */}
+          {checkoutOpen && (
+            <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4" onClick={closeCheckout}>
               <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="font-bold text-landes-pine">Passer à la formule {PLANS.find(p => p.id === planOrderTarget)?.name}</p>
-                  <button onClick={closePlanOrderModal} className="text-gray-400 hover:text-gray-600">
+                  <p className="font-bold text-landes-pine">Votre commande</p>
+                  <button onClick={closeCheckout} className="text-gray-400 hover:text-gray-600">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {planOrderDone ? (
+                {checkoutDone ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-4">
                       <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <p className="text-sm text-green-700 font-medium">Formule activée avec succès !</p>
+                      <p className="text-sm text-green-700 font-medium">Commande validée avec succès !</p>
                     </div>
-                    <button onClick={closePlanOrderModal} className="btn-secondary w-full py-2 text-sm">Fermer</button>
+                    <button onClick={closeCheckout} className="btn-secondary w-full py-2 text-sm">Fermer</button>
                   </div>
-                ) : planOrderPreparing || !planOrderClientSecret ? (
+                ) : checkoutPreparing || !checkoutClientSecret ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500 py-6 justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" /> Préparation du paiement sécurisé…
                   </div>
-                ) : planOrderFinalizing ? (
+                ) : checkoutFinalizing ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500 py-6 justify-center">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Activation de votre formule…
+                    <Loader2 className="w-4 h-4 animate-spin" /> Activation de votre commande…
                   </div>
                 ) : (
                   <>
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4 flex items-center justify-between text-sm">
-                      <span className="text-gray-700">Formule {PLANS.find(p => p.id === planOrderTarget)?.name}</span>
-                      <span className="font-semibold text-gray-900">{PLANS.find(p => p.id === planOrderTarget)?.price}€/mois</span>
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-1.5 text-sm">
+                      {cartPlan && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700">Formule {cartPlan.name}</span>
+                          <span className="font-semibold text-gray-900">{cartPlan.price}€/mois</span>
+                        </div>
+                      )}
+                      {cartOptionItems.map(item => (
+                        <div key={item.id} className="flex items-center justify-between">
+                          <span className="text-gray-700">{item.name}</span>
+                          <span className="font-semibold text-gray-900">{(item.amount / 100).toFixed(0)}€{item.cadence === "once" ? "" : "/mois"}</span>
+                        </div>
+                      ))}
                     </div>
                     <StripePaymentForm
-                      clientSecret={planOrderClientSecret}
+                      clientSecret={checkoutClientSecret}
                       intentType="setup"
-                      submitLabel="Payer et activer ma formule"
-                      onSuccess={handlePlanOrderSuccess}
+                      submitLabel="Payer et valider ma commande"
+                      onSuccess={handleCheckoutSuccess}
                     />
                   </>
                 )}
               </div>
             </div>
           )}
-
-          <ComplementaryOptionsManager
-            proId={pro.id}
-            stripeCustomerId={(pro as any).stripeCustomerId}
-            email={pro.email}
-            companyName={pro.companyName}
-            siren={pro.siren}
-            onCustomerIdObtained={(customerId) => {
-              const updated = { ...pro, stripeCustomerId: customerId, updatedAt: new Date().toISOString() } as any;
-              saveProfessional(updated);
-              setPro(updated);
-            }}
-            onOptionActivated={(optionId) => {
-              // Corrige le décalage entre le statut réel (Stripe) et le champ
-              // local complementaryOptions, utilisé par le diaporama des
-              // encarts publicitaires sur les pages catégories/sous-catégories.
-              const current = (pro as any).complementaryOptions || [];
-              if (current.includes(optionId)) return;
-              const updated = { ...pro, complementaryOptions: [...current, optionId], updatedAt: new Date().toISOString() } as any;
-              saveProfessional(updated);
-              setPro(updated);
-            }}
-          />
         </div>
       )}
 
