@@ -257,7 +257,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
           <div className="mb-4 sm:mb-6">
             <p className="text-sm font-semibold text-landes-sage uppercase tracking-wider mb-1">Carte interactive</p>
             <h2 className="text-xl sm:text-2xl font-bold text-landes-pine">
-              {subcategoryLabel} près de chez vous
+              {subcategoryLabel} dans les Landes : trouver un professionnel
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
           </div>
