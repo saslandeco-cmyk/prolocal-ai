@@ -13,7 +13,7 @@ import { dbAddContactRecharge } from "@/lib/db/contactRecharges";
  *  - un abonnement dédié à la formule (si demandée),
  *  - un abonnement séparé dédié aux options complémentaires mensuelles
  *    (si demandées),
- *  - un paiement unique pour les frais uniques (ex : rédaction SEO).
+ *  - un paiement unique pour les frais uniques (ex : pack "Mises en contact").
  *
  * Les options complémentaires ne sont JAMAIS regroupées dans le même
  * abonnement que la formule : ce sont des produits à part, que l'on peut
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       result.optionsSubscriptionId = sub.id;
     }
 
-    // ── Frais uniques (ex : rédaction SEO) — paiement immédiat, indépendant ──
+    // ── Frais uniques (ex : pack "Mises en contact") — paiement immédiat, indépendant ──
     const oneTimeOptions = options
       .map(id => OPTION_PRICES[id])
       .filter(opt => opt && opt.cadence === "once");

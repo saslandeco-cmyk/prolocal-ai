@@ -2584,7 +2584,6 @@ export default function AdminPage() {
                 <div className="flex flex-wrap gap-3">
                   {[
                     { id: "pub", label: "Encart publicitaire ciblé" },
-                    { id: "seo", label: "Service de rédaction SEO" },
                     { id: "crm", label: "Gestion prospects/clients" },
                   ].map(opt => {
                     const current: string[] = fullEditForm.complementaryOptions || [];

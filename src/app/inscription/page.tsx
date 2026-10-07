@@ -18,13 +18,12 @@ import StripePaymentForm from "@/components/professional/StripePaymentForm";
 import BannerCropper from "@/components/ui/BannerCropper";
 
 type PlanType = "standard" | "premium" | "gold";
-type Step = 1 | 2 | "seo" | 3 | 4;
+type Step = 1 | 2 | 3 | 4;
 
 const MAX_PHOTOS = 5;
 
 const DEFAULT_COMPLEMENTARY_OPTIONS = [
   { id: "pub",   label: "Encart publicitaire ciblé",      price: "25€", unit: "/mois" },
-  { id: "seo",   label: "Service de rédaction SEO",       price: "30€", unit: "(frais uniques)" },
   { id: "crm",   label: "Gestion prospects/clients",      price: "9€",  unit: "/mois" },
 ] as const;
 
@@ -280,7 +279,6 @@ function InscriptionForm() {
   const [sirenMsg,     setSirenMsg]     = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [seoKeywords, setSeoKeywords] = useState<string[]>(["", ""]);
   const [paymentChoice, setPaymentChoice] = useState<"card" | "cheque">("card");
   const [stripePaid, setStripePaid] = useState(false);
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
@@ -521,24 +519,15 @@ function InscriptionForm() {
     }
   };
 
-  // Étapes dédiées aux options complémentaires sélectionnées — l'étape de
-  // téléchargement de bannière pour "Encart publicitaire ciblé" a été
-  // retirée : le professionnel la téléchargera plus tard depuis son
-  // tableau de bord (voir handleSubmit, adBannerImage n'est plus collecté ici).
-  const optionSteps = useMemo(
-    () => (["seo"] as const).filter(id => selectedOptions.includes(id)),
-    [selectedOptions]
-  );
-
   // Séquence complète des étapes de la commande (hors étape 1, gérée séparément)
   // L'étape Paiement est désormais la dernière étape du parcours.
   // Pour la formule Standard (avec options), on ne passe pas par "Complétez votre fiche".
   const stepSequence = useMemo<Step[]>(() => {
-    const seq: Step[] = [1, 2, ...optionSteps];
+    const seq: Step[] = [1, 2];
     if (selectedPlan !== "standard") seq.push(4);
     if (needsPayment) seq.push(3);
     return seq;
-  }, [optionSteps, needsPayment, selectedPlan]);
+  }, [needsPayment, selectedPlan]);
 
   const goToStep = (target: Step) => setStep(target);
 
@@ -611,9 +600,6 @@ function InscriptionForm() {
       stripeSubscriptionId: stripeSubscriptionId || claimingPro?.stripeSubscriptionId || undefined,
       // L'option "Encart publicitaire ciblé" utilise la bannière de la
       // fiche (pro.banner) — aucune image dédiée séparée à collecter.
-      seoKeywords: selectedOptions.includes("seo") && seoKeywords.filter(k => k.trim()).length > 0
-        ? seoKeywords.filter(k => k.trim())
-        : undefined,
       status: claimingPro ? claimingPro.status : (REQUIRE_VALIDATION ? "pending" : "active"),
       ...(claimingPro ? {} : (REQUIRE_VALIDATION ? {} : { validatedAt: new Date().toISOString() })),
       claimed: true,
@@ -1108,49 +1094,6 @@ function InscriptionForm() {
               <ArrowLeft className="w-4 h-4" /> Retour
             </button>
           </div>
-        </div>
-      )}
-
-      {/* ── STEP seo : Service de rédaction SEO ── */}
-      {step === "seo" && (
-        <div className="space-y-6">
-          <div className="card p-8 space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-landes-pine mb-1 bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg inline-block">Service de rédaction SEO</h2>
-              <p className="text-sm text-gray-500 mt-2">Choisissez 2 mots-clés sur lesquels vous souhaitez optimiser le référencement de votre fiche.</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[0, 1].map(i => (
-                <div key={i}>
-                  <label className="label">Mot-clé {i + 1} *</label>
-                  <input
-                    value={seoKeywords[i] || ""}
-                    onChange={e => { const next = [...seoKeywords]; next[i] = e.target.value; setSeoKeywords(next); }}
-                    className="input-field"
-                    placeholder={i === 0 ? "Ex : plombier Dax" : "Ex : dépannage urgence"}
-                    maxLength={40}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => goPrevFromSequence("seo")} className="btn-secondary flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Retour
-            </button>
-            <button type="button"
-              onClick={() => goNextFromSequence("seo")}
-              disabled={!seoKeywords[0]?.trim() || !seoKeywords[1]?.trim() || loading}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              {isLastStepInSequence("seo")
-                ? (loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Finalisation…</> : <>Finaliser l&apos;inscription <ArrowRight className="w-4 h-4" /></>)
-                : <>Suivant <ArrowRight className="w-4 h-4" /></>
-              }
-            </button>
-          </div>
-          {(!seoKeywords[0]?.trim() || !seoKeywords[1]?.trim()) && (
-            <p className="text-xs text-center text-red-400">Veuillez renseigner les 2 mots-clés pour continuer.</p>
-          )}
         </div>
       )}
 

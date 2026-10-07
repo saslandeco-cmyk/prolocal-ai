@@ -63,11 +63,6 @@ export const OPTION_PRICES: Record<string, CheckoutItem> = {
     description: "Affichez une bannière publicitaire de votre fiche sur la page de votre catégorie.",
     stripeProductId: "prolocal_opt_pub",
   },
-  seo: {
-    id: "seo", name: "Service de rédaction SEO", unitAmount: 3000, cadence: "once",
-    description: "Une description optimisée pour les moteurs de recherche, rédigée pour vous.",
-    stripeProductId: "prolocal_opt_seo",
-  },
   crm: {
     id: "crm", name: "Gestion prospects/clients", unitAmount: 900, cadence: "month",
     description: "Éditeur de devis et facturation électronique, avec gestion de vos prospects et clients.",

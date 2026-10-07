@@ -110,7 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_billing_documents_status ON billing_documents (st
 -- le catalogue par défaut codé en dur (src/lib/pricing.ts), pour ne jamais
 -- casser le parcours de paiement.
 CREATE TABLE IF NOT EXISTS complementary_options (
-  id                TEXT PRIMARY KEY,        -- identifiant technique stable (ex: "pub", "seo")
+  id                TEXT PRIMARY KEY,        -- identifiant technique stable (ex: "pub", "crm")
   name              TEXT NOT NULL,
   description       TEXT,
   unit_amount       INTEGER NOT NULL,        -- montant en centimes d'euro

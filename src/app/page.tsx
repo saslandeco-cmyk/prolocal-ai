@@ -295,7 +295,7 @@ export default async function HomePage() {
             de la largeur de l'écran en l'affranchissant du max-w-7xl du
             conteneur parent (centré indépendamment du padding du parent,
             qui resterait sinon décalé). */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 w-[95vw] ml-[50%] -translate-x-1/2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-[95vw] ml-[50%] -translate-x-1/2">
           <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
             <h3 className="text-xl font-bold mb-1 text-landes-forest">Mises en contact</h3>
             <div className="flex items-baseline gap-1 mb-6 flex-wrap">
@@ -314,16 +314,6 @@ export default async function HomePage() {
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
               Afficher une bannière publicitaire de votre fiche sur la page de la catégorie pendant 1 mois.
-            </p>
-          </div>
-          <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
-            <h3 className="text-xl font-bold mb-1 text-landes-forest">Service de rédaction SEO</h3>
-            <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-4xl font-bold text-gray-900">{priceOf("seo", 30, "once").amount}€</span>
-              <span className="text-gray-400">{priceOf("seo", 30, "once").unit}</span>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Rédiger une description optimisée pour les moteurs de recherche.
             </p>
           </div>
           <div className="card p-6 sm:p-8 border-2 border-gray-100 flex flex-col">
