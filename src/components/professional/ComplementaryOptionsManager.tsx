@@ -169,7 +169,7 @@ export default function ComplementaryOptionsManager({ proId, stripeCustomerId, e
 
   return (
     <div className="card p-8 mt-6">
-      <h2 className="text-xl font-bold text-landes-pine bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg mb-1">Options complémentaires</h2>
+      <h2 id="options-complementaires" className="text-xl font-bold text-landes-pine bg-landes-forest/8 border-l-4 border-landes-forest px-4 py-3 rounded-r-lg mb-1 scroll-mt-24">Options complémentaires</h2>
       <p className="text-sm text-gray-500 mb-6">Boostez votre visibilité avec des options facultatives, activables à tout moment.</p>
 
       {loading ? (

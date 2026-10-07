@@ -75,6 +75,16 @@ function DashboardContent() {
   const [downgrading, setDowngrading] = useState(false);
   const subscriptionManagerRef = useRef<SubscriptionManagerHandle>(null);
 
+  /** Bascule sur l'onglet Formule puis défile jusqu'à la section "Options complémentaires" (pack "Mises en contact"). */
+  const goToContactRecharge = () => {
+    setActiveTab("plan");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById("options-complementaires")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  };
+
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
   // Date de renouvellement de la formule active — affichée directement sur
@@ -1359,7 +1369,7 @@ function DashboardContent() {
 
       {/* ── TAB DEMANDES REÇUES (PROLOCAL AI + fiche pro) ── */}
       {activeTab === "demandes" && (
-        <DemandesTab proId={pro.id} onUpgradeClick={() => setActiveTab("plan")} onCountChange={setNewDemandesCount} />
+        <DemandesTab proId={pro.id} onUpgradeClick={goToContactRecharge} onCountChange={setNewDemandesCount} />
       )}
 
       {/* ── TAB CLIENTS (CRM) ── */}
