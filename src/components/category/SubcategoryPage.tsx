@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight } from "lucide-react";
+import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight, ChevronDown } from "lucide-react";
 import { getListingRank } from "@/lib/listingOrder";
 import { useInView } from "@/lib/useInView";
 import { categorySlug } from "@/lib/profileUrl";
@@ -12,6 +12,7 @@ import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
 import { DEFAULT_BANNERS, DEFAULT_SUBCATEGORY_BANNERS } from "@/lib/defaultBanners";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
+import { buildSubcategoryLandingContent, buildSubcategoryFaq } from "@/lib/subcategoryContent";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
 
@@ -39,11 +40,20 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
     [initialPros]
   );
   const [filtered, setFiltered] = useState<Professional[]>(pros);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const citiesWithPros = useMemo(() => {
     const cities = Array.from(new Set(pros.map(p => p.city).filter(Boolean)));
     cities.sort((a, b) => a.localeCompare(b, "fr"));
     return cities;
   }, [pros]);
+  const landing = useMemo(
+    () => buildSubcategoryLandingContent({ categoryLabel, subcategoryLabel, proCount: pros.length, cities: citiesWithPros }),
+    [categoryLabel, subcategoryLabel, pros.length, citiesWithPros]
+  );
+  const faqItems = useMemo(
+    () => buildSubcategoryFaq({ subcategoryLabel, proCount: pros.length, cityCount: citiesWithPros.length }),
+    [subcategoryLabel, pros.length, citiesWithPros.length]
+  );
 
   // Formulaire de recherche
   const [query, setQuery] = useState("");
@@ -392,6 +402,14 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
       </section>
 
       <section id="resultats" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 scroll-mt-20">
+        {/* Texte d'introduction local — paragraphe unique généré à partir des
+            professionnels réellement référencés (nombre, communes). */}
+        {landing.intro && (
+          <div className="card p-6 mb-8 text-gray-700 leading-relaxed">
+            <p>{landing.intro}</p>
+          </div>
+        )}
+
         {/* Résultats */}
         {pros.length === 0 ? (
           <div className="text-center py-16 card">
@@ -418,6 +436,60 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
             {filtered.map(pro => <ProfessionalCard key={pro.id} pro={pro} />)}
           </div>
         )}
+
+        {/* ── SEO TEXT ── */}
+        <div className="mt-10 sm:mt-14 space-y-4 sm:space-y-5">
+          <div>
+            <p className="text-sm font-semibold text-landes-sage uppercase tracking-wider mb-1">À propos</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-landes-pine">{landing.seoTitle}</h2>
+          </div>
+          <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed space-y-4">
+            {landing.seoText.map((para, i) => <p key={i}>{para}</p>)}
+          </div>
+          <div className="pt-2">
+            <Link href="/inscription" className="btn-primary flex sm:inline-flex items-center justify-center gap-2 py-3 px-6 w-full sm:w-auto">
+              Référencer mon activité <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-10 sm:mt-14 bg-landes-pine rounded-3xl p-6 sm:p-12 text-center text-white">
+          <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{catMeta?.emoji || "💼"}</div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-3">
+            Vous exercez dans ce secteur dans les Landes&nbsp;?
+          </h2>
+          <p className="text-gray-300 mb-6 max-w-xl mx-auto text-sm leading-relaxed">
+            {landing.ctaText}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/inscription"
+              className="btn-amber flex items-center justify-center gap-2 py-3 px-8 w-full sm:w-auto">
+              Inscrire mon entreprise <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* FAQ locale */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-landes-pine mb-4">Questions fréquentes</h2>
+          <div className="space-y-2">
+            {faqItems.map((item, i) => (
+              <div key={i} className="card overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                >
+                  <span className="font-semibold text-landes-pine text-sm">{item.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                </button>
+                {openFaq === i && (
+                  <p className="px-4 pb-4 text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </div>
   );

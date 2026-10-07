@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUrl";
 import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsBySubcategory } from "@/lib/db/professionals";
+import { buildSubcategoryFaq } from "@/lib/subcategoryContent";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
@@ -60,6 +61,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
   const { categoryLabel, subcategoryLabel } = resolved;
   const initialPros = await dbGetProfessionalsBySubcategory(categoryLabel, subcategoryLabel);
   const url = `${baseUrl}/categories/${category}/${subcategory}`;
+  const cityCount = new Set(initialPros.map(p => p.city).filter(Boolean)).size;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -77,7 +79,16 @@ export default async function Page({ params }: { params: Promise<{ category: str
         "@type": "CollectionPage",
         name: `${subcategoryLabel} dans les Landes`,
         url,
+        description: `Annuaire des professionnels en ${subcategoryLabel} (${categoryLabel}) dans les Landes : coordonnées, avis clients et prise de contact directe.`,
         isPartOf: { "@type": "WebSite", name: "Prolocal-Landes", url: baseUrl },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: buildSubcategoryFaq({ subcategoryLabel, proCount: initialPros.length, cityCount }).map(item => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
       },
     ],
   };
