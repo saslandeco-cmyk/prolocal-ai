@@ -259,7 +259,9 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
             <h2 className="text-xl sm:text-2xl font-bold text-landes-pine">
               {subcategoryLabel} dans les Landes : trouver un professionnel
             </h2>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">Cliquez sur un marqueur pour voir la fiche du professionnel</p>
+            {landing.intro && (
+              <p className="text-gray-500 text-xs sm:text-sm mt-1">{landing.intro}</p>
+            )}
           </div>
           <div ref={mapRef} className="card-map h-72 sm:h-96 lg:h-[460px]">
             {mapInView && mapPros.length > 0 ? (
@@ -402,14 +404,6 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
       </section>
 
       <section id="resultats" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 scroll-mt-20">
-        {/* Texte d'introduction local — paragraphe unique généré à partir des
-            professionnels réellement référencés (nombre, communes). */}
-        {landing.intro && (
-          <div className="card p-6 mb-8 text-gray-700 leading-relaxed">
-            <p>{landing.intro}</p>
-          </div>
-        )}
-
         {/* Résultats */}
         {pros.length === 0 ? (
           <div className="text-center py-16 card">
