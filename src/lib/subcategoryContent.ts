@@ -56,7 +56,7 @@ export function buildSubcategoryLandingContent(params: {
 
   return {
     intro,
-    seoTitle: `${subcategoryLabel} dans les Landes : trouvez un professionnel`,
+    seoTitle: `Trouver un professionnel en ${subcategoryLabel} dans les Landes`,
     seoText,
     ctaText,
   };
