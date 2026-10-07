@@ -224,21 +224,429 @@ export function buildSubcategoryMetaDescription(params: {
   return truncate(text, META_DESCRIPTION_MAX);
 }
 
+/**
+ * Questions/réponses rédigées individuellement pour chaque métier (clé =
+ * libellé exact de la sous-catégorie) — insérées entre la question
+ * "Combien de professionnels...", toujours calculée depuis les données
+ * réelles, et la question "Comment référencer mon entreprise...", commune
+ * à toutes les pages. Une sous-catégorie absente de cette liste (ex: ajout
+ * récent depuis l'admin) retombe sur une question générique de secours,
+ * pour qu'aucune page ne reste avec une FAQ incomplète.
+ */
+const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
+  // Alimentation & Épicerie
+  "Alimentation générale": [
+    { q: "Une alimentation générale dans les Landes peut-elle dépanner en dehors des horaires classiques ?", a: "De nombreuses épiceries de proximité proposent des horaires élargis, en soirée ou le dimanche. Consultez les horaires affichés sur chaque fiche pour connaître les disponibilités exactes." },
+    { q: "Les épiceries générales proposent-elles des produits locaux ou régionaux ?", a: "Beaucoup de commerces de proximité dans les Landes complètent leur offre avec des produits locaux (terroir, producteurs du département) en plus des produits du quotidien." },
+  ],
+  "Boucherie / Charcuterie": [
+    { q: "Peut-on commander à l'avance chez un boucher dans les Landes pour un événement ?", a: "Oui, la plupart des artisans bouchers-charcutiers prennent des commandes pour les fêtes, mariages ou repas de famille. Contactez directement le professionnel pour organiser votre commande." },
+    { q: "Les bouchers des Landes proposent-ils de la viande locale ?", a: "De nombreux artisans travaillent avec des éleveurs locaux et proposent des viandes d'origine régionale. Renseignez-vous directement auprès du professionnel sur la provenance de ses produits." },
+  ],
+  "Boulangerie / Pâtisserie": [
+    { q: "Peut-on commander un gâteau personnalisé chez un pâtissier dans les Landes ?", a: "Oui, la plupart des pâtissiers artisanaux réalisent des gâteaux sur-mesure pour les anniversaires, mariages et occasions spéciales. Anticipez votre commande de quelques jours selon la complexité souhaitée." },
+    { q: "Les boulangeries des Landes sont-elles ouvertes le dimanche ?", a: "De nombreuses boulangeries ouvrent le dimanche matin, souvent avec une fermeture un autre jour de la semaine. Consultez les horaires précis sur chaque fiche professionnelle." },
+  ],
+  "Caviste / Marchand de boissons": [
+    { q: "Un caviste peut-il conseiller un vin pour accompagner un repas spécifique ?", a: "Oui, c'est le rôle principal d'un caviste : il vous oriente selon le plat, le budget et vos préférences gustatives pour un accord mets-vins réussi." },
+    { q: "Peut-on faire livrer une commande de vins pour un événement ?", a: "De nombreux cavistes proposent la livraison ou la préparation de commandes groupées pour les mariages, réceptions ou événements professionnels. Contactez le professionnel pour connaître ses modalités." },
+  ],
+  "Épicerie fine": [
+    { q: "Quels types de produits trouve-t-on dans une épicerie fine des Landes ?", a: "Conserves artisanales, spécialités régionales, produits gourmets ou coffrets cadeaux : ces commerces proposent une sélection qualitative, souvent axée sur le terroir landais et les petits producteurs." },
+    { q: "Une épicerie fine peut-elle préparer un panier cadeau sur-mesure ?", a: "Oui, beaucoup de ces commerces composent des coffrets ou paniers gourmands personnalisés selon votre budget et vos envies, pour offrir ou vous faire plaisir." },
+  ],
+  "Fromagerie / Crèmerie": [
+    { q: "Une fromagerie peut-elle composer un plateau pour un événement ?", a: "Oui, la plupart des fromagers-affineurs proposent des plateaux sur-mesure adaptés au nombre d'invités et à vos goûts, pour un repas, un apéritif ou une réception." },
+    { q: "Trouve-t-on des fromages locaux dans les crèmeries des Landes ?", a: "De nombreux artisans affineurs proposent des fromages de producteurs locaux ou régionaux, en complément d'une sélection nationale et internationale." },
+  ],
+  "Poissonnerie": [
+    { q: "Comment savoir si le poisson proposé est frais du jour ?", a: "Les poissonniers affichent généralement la provenance et la date d'arrivage de leurs produits. N'hésitez pas à demander conseil directement en boutique sur la fraîcheur et l'origine." },
+    { q: "Une poissonnerie peut-elle préparer le poisson (écailler, lever les filets) ?", a: "Oui, la plupart des poissonniers proposent ce service à la demande : écaillage, vidage ou levée de filets, directement en boutique." },
+  ],
+  "Primeurs": [
+    { q: "Les primeurs des Landes proposent-ils des produits bio ou locaux ?", a: "De nombreux primeurs travaillent avec des producteurs locaux et proposent une offre bio ou de saison. Renseignez-vous directement auprès du commerçant sur l'origine de ses produits." },
+    { q: "Peut-on trouver des fruits et légumes de saison toute l'année chez un primeur ?", a: "Les primeurs adaptent leur offre aux arrivages et aux saisons, avec une rotation régulière des produits pour garantir fraîcheur et qualité." },
+  ],
+
+  // Artisanat & Métiers d'art
+  "Archetier": [
+    { q: "Quand faut-il faire réviser un archet chez un archetier ?", a: "Un archet s'entretient régulièrement : rehaussage de la mèche, vérification du bois et des mécanismes. Un archetier recommande généralement un contrôle au moins une fois par an selon l'usage." },
+    { q: "Un archetier peut-il réparer un archet ancien ou de famille ?", a: "Oui, la restauration d'archets anciens fait partie du savoir-faire de cet artisan, qui évalue l'état de la pièce avant d'intervenir." },
+  ],
+  "Bijoutier-Joaillier": [
+    { q: "Un bijoutier peut-il transformer un bijou de famille ?", a: "Oui, de nombreux bijoutiers-joailliers proposent la transformation ou le remontage de bijoux anciens pour leur donner une nouvelle vie, selon vos envies." },
+    { q: "Peut-on faire réparer une bague ou un collier abîmé ?", a: "Oui, la réparation (resserrage de pierre, redimensionnement, soudure) fait partie des prestations courantes proposées par ces artisans." },
+  ],
+  "Céramiste": [
+    { q: "Un céramiste peut-il réaliser une pièce sur-mesure ?", a: "Oui, de nombreux céramistes réalisent des créations personnalisées (vaisselle, décoration, pièces uniques) selon vos envies et un échange préalable sur le projet." },
+    { q: "Propose-t-on des ateliers d'initiation à la céramique dans les Landes ?", a: "Certains céramistes proposent des cours ou ateliers d'initiation. Contactez directement le professionnel pour connaître ses disponibilités." },
+  ],
+  "Chaudronnier": [
+    { q: "Un chaudronnier peut-il intervenir sur une pièce métallique sur-mesure ?", a: "Oui, la fabrication de pièces sur-mesure (découpe, pliage, soudure) fait partie du cœur de métier du chaudronnier, pour des projets industriels ou artisanaux." },
+    { q: "Peut-on faire réparer une pièce métallique endommagée ?", a: "Oui, la réparation et la transformation de pièces existantes sont des prestations courantes proposées par ces professionnels." },
+  ],
+  "Décorateur sur céramique / Peintre sur faïence ou porcelaine": [
+    { q: "Peut-on faire personnaliser une pièce de vaisselle existante ?", a: "Oui, ces artisans peuvent peindre ou décorer une pièce que vous possédez déjà, selon vos motifs ou inspirations." },
+    { q: "Ces artisans réalisent-ils aussi des créations entièrement sur-mesure ?", a: "Oui, en plus de la décoration, beaucoup proposent la création complète de pièces uniques en céramique, faïence ou porcelaine." },
+  ],
+  "Doreur à la feuille": [
+    { q: "Un doreur à la feuille peut-il restaurer un cadre ancien ?", a: "Oui, la restauration de cadres, meubles ou objets anciens dorés à la feuille est une spécialité courante de cet artisan d'art." },
+    { q: "La dorure à la feuille convient-elle aussi aux créations contemporaines ?", a: "Oui, cette technique traditionnelle s'applique aussi bien à la restauration patrimoniale qu'à des projets décoratifs modernes." },
+  ],
+  "Ébéniste": [
+    { q: "Un ébéniste peut-il restaurer un meuble ancien abîmé ?", a: "Oui, la restauration de meubles anciens (réparation, finition, remplacement de pièces) fait partie des prestations courantes de cet artisan." },
+    { q: "Peut-on commander un meuble sur-mesure à un ébéniste ?", a: "Oui, la création de meubles sur-mesure selon vos dimensions et votre style est une spécialité de ce métier." },
+  ],
+  "Encadreur": [
+    { q: "Un encadreur peut-il proposer un encadrement adapté à une œuvre fragile ?", a: "Oui, l'encadreur choisit les matériaux (verre, passe-partout, fixation) en fonction de la nature de l'œuvre pour en assurer la meilleure conservation." },
+    { q: "Peut-on faire encadrer un diplôme, une photo ou un objet particulier ?", a: "Oui, l'encadrement sur-mesure s'adapte à tout type de support : œuvre d'art, photo, diplôme ou objet à exposer." },
+  ],
+  "Ferronnier d'art": [
+    { q: "Un ferronnier d'art peut-il restaurer un portail ou une grille ancienne ?", a: "Oui, la restauration d'éléments en fer forgé fait partie du savoir-faire de cet artisan, qui intervient aussi bien sur du patrimoine ancien que sur des créations récentes." },
+    { q: "Peut-on commander une création sur-mesure en fer forgé ?", a: "Oui, portails, rampes d'escalier ou éléments décoratifs peuvent être conçus sur-mesure selon votre projet et vos goûts." },
+  ],
+  "Horloger": [
+    { q: "Un horloger peut-il réparer une montre ancienne ou de famille ?", a: "Oui, la réparation et la restauration de montres et horloges anciennes font partie des spécialités courantes de cet artisan." },
+    { q: "Faut-il faire réviser sa montre régulièrement chez un horloger ?", a: "Un entretien périodique (tous les quelques années selon le modèle) permet de préserver le bon fonctionnement d'une montre mécanique ou automatique." },
+  ],
+  "Luthier": [
+    { q: "Un luthier peut-il réparer un instrument endommagé ?", a: "Oui, la réparation (fissures, mécanismes, cordes, vernis) fait partie du quotidien de cet artisan, qui évalue l'état de l'instrument avant d'intervenir." },
+    { q: "Peut-on faire réviser régulièrement son instrument chez un luthier ?", a: "Oui, un entretien régulier est recommandé, notamment avant un concert ou un examen, pour garantir le meilleur son et la longévité de l'instrument." },
+  ],
+  "Maroquinier": [
+    { q: "Un maroquinier peut-il réparer un sac ou un article en cuir abîmé ?", a: "Oui, la réparation (coutures, fermetures, teinture) fait partie des prestations courantes de cet artisan du cuir." },
+    { q: "Peut-on commander une création en cuir sur-mesure ?", a: "Oui, de nombreux maroquiniers réalisent des pièces personnalisées selon vos dimensions, votre style et l'usage souhaité." },
+  ],
+  "Souffleur de verre / Verrier à la main": [
+    { q: "Un souffleur de verre peut-il réaliser une pièce sur-mesure ?", a: "Oui, la création de pièces uniques selon vos envies (forme, couleur, taille) fait partie du savoir-faire de cet artisan d'art." },
+    { q: "Peut-on assister à une démonstration de soufflage de verre dans les Landes ?", a: "Certains ateliers proposent des démonstrations ou visites. Contactez directement l'artisan pour connaître ses disponibilités." },
+  ],
+  "Tailleur de pierre": [
+    { q: "Un tailleur de pierre peut-il restaurer un élément de patrimoine ancien ?", a: "Oui, la restauration de façades, monuments ou éléments en pierre fait partie des spécialités de cet artisan, souvent sollicité pour des projets de rénovation patrimoniale." },
+    { q: "Peut-on commander une création sur-mesure en pierre ?", a: "Oui, ce professionnel réalise aussi des pièces neuves (éléments décoratifs, aménagements) selon votre projet et vos dimensions." },
+  ],
+  "Tapissier d'ameublement": [
+    { q: "Un tapissier peut-il redonner vie à un fauteuil ancien ?", a: "Oui, la restauration de sièges anciens (structure, garnissage, tissu) est le cœur de métier de cet artisan, qui vous conseille sur le choix des matières." },
+    { q: "Peut-on choisir son propre tissu pour la rénovation d'un siège ?", a: "Oui, le choix du tissu et des finitions se fait généralement avec vous, selon votre budget et le style recherché." },
+  ],
+  "Vitrailliste": [
+    { q: "Un vitrailliste peut-il restaurer un vitrail ancien endommagé ?", a: "Oui, la restauration de vitraux anciens (plomb, verre, structure) fait partie des spécialités courantes de cet artisan d'art." },
+    { q: "Peut-on commander un vitrail sur-mesure pour une habitation ?", a: "Oui, de nombreux vitraillistes réalisent des créations contemporaines sur-mesure, en plus des travaux de restauration patrimoniale." },
+  ],
+
+  // Bâtiment & Travaux
+  "Architecte": [
+    { q: "À partir de quelle surface un architecte est-il obligatoire pour une construction ?", a: "En France, le recours à un architecte est obligatoire au-delà d'un certain seuil de surface de plancher (généralement 150 m² pour un particulier). Un architecte des Landes peut vous confirmer votre situation précise." },
+    { q: "Un architecte peut-il aussi suivre le chantier jusqu'à la fin des travaux ?", a: "Oui, selon la mission confiée, l'architecte peut intervenir de la conception jusqu'au suivi complet du chantier et la réception des travaux." },
+  ],
+  "Carreleur": [
+    { q: "Combien de temps dure en moyenne la pose de carrelage dans une pièce ?", a: "La durée varie selon la surface, le type de carrelage et la préparation du support. Un carreleur des Landes pourra vous donner une estimation précise après avoir vu votre projet." },
+    { q: "Un carreleur peut-il aussi poser du carrelage extérieur ou de la faïence murale ?", a: "Oui, ce professionnel intervient aussi bien sur les sols intérieurs et extérieurs que sur les murs (salle de bain, cuisine, façade)." },
+  ],
+  "Charpentier": [
+    { q: "Quand faut-il faire appel à un charpentier en urgence ?", a: "En cas de dégât des eaux, d'affaissement ou de signe de faiblesse de la charpente, il est recommandé de contacter rapidement un charpentier pour éviter l'aggravation du problème." },
+    { q: "Un charpentier intervient-il aussi pour l'aménagement de combles ?", a: "Oui, la création ou le renforcement de charpente pour aménager des combles habitables fait partie de ses interventions courantes." },
+  ],
+  "Couvreur": [
+    { q: "Quand faut-il faire appel à un couvreur en urgence ?", a: "En cas de fuite, de tuiles déplacées après une tempête ou d'infiltration visible, il est recommandé de contacter rapidement un couvreur pour limiter les dégâts." },
+    { q: "Un couvreur peut-il aussi intervenir sur l'isolation de la toiture ?", a: "Oui, de nombreux couvreurs proposent des travaux d'isolation combinés à la rénovation de toiture, notamment dans le cadre d'une rénovation énergétique." },
+  ],
+  "Électricien": [
+    { q: "Quand faut-il faire appel à un électricien en urgence ?", a: "Coupure de courant, disjoncteur qui saute en permanence ou odeur de brûlé sont des signes qui justifient une intervention rapide d'un électricien." },
+    { q: "Un électricien peut-il réaliser la mise aux normes d'une installation ancienne ?", a: "Oui, la mise en conformité d'une installation électrique ancienne est une intervention courante, notamment avant une vente ou une rénovation." },
+  ],
+  "Expert en bâtiment": [
+    { q: "Quand faire appel à un expert en bâtiment ?", a: "Avant un achat immobilier, en cas de malfaçon après travaux, ou pour un désaccord avec un professionnel, un expert en bâtiment apporte un avis technique indépendant qui peut servir de base à une négociation ou une procédure." },
+    { q: "Un rapport d'expertise bâtiment a-t-il une valeur juridique ?", a: "Le rapport rédigé par un expert en bâtiment peut être utilisé comme élément de preuve technique en cas de litige, notamment auprès d'un assureur ou dans une procédure judiciaire." },
+  ],
+  "Maçon": [
+    { q: "Un maçon peut-il intervenir aussi bien sur une construction neuve qu'une rénovation ?", a: "Oui, ce professionnel intervient sur les constructions neuves (fondations, murs, dalles) comme sur les travaux de rénovation ou d'extension." },
+    { q: "Combien de temps dure en moyenne un chantier de maçonnerie ?", a: "La durée dépend fortement de l'ampleur du projet (extension, gros œuvre complet, réparation). Un maçon des Landes pourra vous donner un délai précis après avoir étudié votre projet." },
+  ],
+  "Menuisier": [
+    { q: "Un menuisier peut-il remplacer des fenêtres pour améliorer l'isolation ?", a: "Oui, le remplacement de menuiseries anciennes par des modèles plus performants fait partie des interventions courantes dans le cadre d'une rénovation énergétique." },
+    { q: "Un menuisier réalise-t-il aussi des aménagements intérieurs sur-mesure ?", a: "Oui, dressing, placards ou escaliers sur-mesure font partie des prestations proposées par de nombreux menuisiers, en plus de la pose de portes et fenêtres." },
+  ],
+  "Peintre en bâtiment": [
+    { q: "Un peintre en bâtiment peut-il conseiller sur le choix des couleurs ?", a: "Oui, la plupart des peintres en bâtiment vous accompagnent dans le choix des teintes et finitions adaptées à chaque pièce et à la luminosité de votre logement." },
+    { q: "Combien de temps faut-il prévoir pour repeindre une pièce ?", a: "Cela dépend de la surface, de l'état des supports et du nombre de couches nécessaires. Un peintre en bâtiment des Landes pourra vous donner un délai précis après avoir vu les lieux." },
+  ],
+  "Plaquiste": [
+    { q: "Un plaquiste peut-il créer une cloison pour diviser une pièce ?", a: "Oui, la création de cloisons pour réorganiser un espace intérieur est une intervention courante de ce professionnel." },
+    { q: "Un plaquiste intervient-il aussi sur l'isolation thermique ou phonique ?", a: "Oui, la pose de plaques de plâtre s'accompagne souvent d'une isolation intégrée, thermique ou phonique, selon vos besoins." },
+  ],
+  "Plombier-chauffagiste": [
+    { q: "Quand faut-il faire appel à un plombier-chauffagiste en urgence ?", a: "Fuite d'eau, panne de chauffage en hiver ou dégât des eaux justifient une intervention rapide. De nombreux plombiers-chauffagistes des Landes proposent un service d'urgence." },
+    { q: "Un plombier-chauffagiste peut-il aussi installer une chaudière ou une pompe à chaleur ?", a: "Oui, l'installation et l'entretien d'équipements de chauffage (chaudière, pompe à chaleur, ballon d'eau chaude) font partie de ses compétences courantes." },
+  ],
+
+  // Beauté & Bien-être
+  "Coiffeur": [
+    { q: "Faut-il prendre rendez-vous à l'avance chez un coiffeur dans les Landes ?", a: "C'est recommandé, surtout en période de forte demande (vacances, fêtes). Certains salons acceptent aussi les clients sans rendez-vous selon leur disponibilité." },
+    { q: "Un coiffeur peut-il proposer un diagnostic capillaire avant une prestation ?", a: "Oui, de nombreux coiffeurs réalisent un diagnostic (nature du cheveu, du cuir chevelu) avant de conseiller une coupe, une couleur ou un soin adapté." },
+  ],
+  "Esthéticienne": [
+    { q: "Quels types de soins propose une esthéticienne ?", a: "Soins du visage, épilation, manucure ou prestations de bien-être : les esthéticiennes proposent une large palette de soins, variable selon chaque institut." },
+    { q: "Faut-il prendre rendez-vous pour un soin esthétique ?", a: "Oui, il est généralement recommandé de réserver à l'avance, notamment pour les soins plus longs ou avant un événement particulier." },
+  ],
+  "Maquilleur professionnel": [
+    { q: "Faut-il prévoir un essai maquillage avant un mariage ?", a: "C'est vivement recommandé : un essai permet d'ajuster le style souhaité et de s'assurer du rendu avant le jour J." },
+    { q: "Un maquilleur professionnel se déplace-t-il à domicile ?", a: "De nombreux maquilleurs proposent un déplacement à domicile ou sur le lieu de l'événement, notamment pour les mariages. Renseignez-vous directement auprès du professionnel." },
+  ],
+  "Naturopathe": [
+    { q: "Que se passe-t-il lors d'une première consultation chez un naturopathe ?", a: "Le praticien réalise généralement un bilan complet de votre hygiène de vie (alimentation, sommeil, stress) avant de proposer des conseils personnalisés et naturels." },
+    { q: "La naturopathie remplace-t-elle un suivi médical classique ?", a: "Non, la naturopathie est une approche complémentaire et ne se substitue pas à un avis ou un traitement médical en cas de pathologie." },
+  ],
+  "Praticien en massage bien-être": [
+    { q: "Quels types de massages propose un praticien en massage bien-être ?", a: "Les techniques varient selon le praticien (relaxant, californien, sportif...) et s'adaptent à vos besoins : détente, récupération musculaire ou simple moment de bien-être." },
+    { q: "Faut-il un motif médical pour consulter un praticien en massage bien-être ?", a: "Non, ces séances sont accessibles pour un simple moment de détente, sans prescription médicale nécessaire." },
+  ],
+  "Prothésiste ongulaire": [
+    { q: "Combien de temps dure une pose d'ongles chez une prothésiste ongulaire ?", a: "La durée varie selon la prestation (pose simple, nail art, remplissage), généralement entre 1h et 2h. La professionnelle pourra vous préciser le temps nécessaire selon votre demande." },
+    { q: "Faut-il prendre rendez-vous pour un soin des ongles ?", a: "Oui, il est recommandé de réserver à l'avance, notamment avant un événement ou pour les prestations les plus demandées." },
+  ],
+  "Sophrologue / Réflexologue": [
+    { q: "Combien de séances sont nécessaires avec un sophrologue ou un réflexologue ?", a: "Cela dépend de votre objectif et de votre ressenti personnel. Certains consultent ponctuellement, d'autres choisissent un suivi régulier sur plusieurs séances." },
+    { q: "Ces séances sont-elles adaptées à la gestion du stress au travail ?", a: "Oui, la sophrologie et la réflexologie sont souvent utilisées pour accompagner la gestion du stress, de l'anxiété ou des tensions liées au quotidien professionnel." },
+  ],
+
+  // Commerce & Vente
+  "Ameublement": [
+    { q: "Un magasin d'ameublement propose-t-il un service de conseil en agencement ?", a: "Oui, de nombreux magasins proposent un accompagnement pour l'agencement de vos espaces, selon vos dimensions et votre style." },
+    { q: "Peut-on commander un meuble sur-mesure dans ces magasins ?", a: "Certains magasins d'ameublement proposent des meubles sur-mesure ou des options de personnalisation. Renseignez-vous directement auprès du commerçant." },
+  ],
+  "Décoration": [
+    { q: "Une boutique de décoration propose-t-elle des conseils d'aménagement ?", a: "Oui, de nombreux commerces de décoration conseillent leurs clients sur l'harmonie des couleurs, des matières et des styles pour un intérieur cohérent." },
+    { q: "Peut-on trouver des objets de décoration pour toutes les occasions ?", a: "Oui, ces boutiques proposent généralement une offre variée adaptée aux saisons, fêtes et occasions de cadeaux." },
+  ],
+  "Électroménager / Multimédia": [
+    { q: "Un magasin d'électroménager propose-t-il la livraison et l'installation ?", a: "De nombreux magasins proposent la livraison et parfois l'installation de l'appareil acheté. Renseignez-vous directement auprès du commerçant sur ses modalités." },
+    { q: "Peut-on faire réparer un appareil électroménager en panne ?", a: "Certains magasins proposent un service après-vente ou orientent vers un réparateur partenaire. Contactez le professionnel pour connaître ses solutions." },
+  ],
+  "Ésotérique": [
+    { q: "Quels types de prestations propose une boutique ésotérique ?", a: "Objets, pierres, tarot, soins énergétiques ou conseils personnalisés : l'offre varie selon chaque professionnel et ses spécialités." },
+    { q: "Faut-il prendre rendez-vous pour une consultation ésotérique ?", a: "C'est généralement recommandé, notamment pour les consultations individuelles. Contactez directement le professionnel pour connaître ses disponibilités." },
+  ],
+  "Fleuriste": [
+    { q: "Un fleuriste peut-il livrer un bouquet le jour même ?", a: "De nombreux fleuristes proposent une livraison rapide, parfois le jour même selon les disponibilités. Contactez directement le professionnel pour connaître ses délais." },
+    { q: "Un fleuriste peut-il s'occuper de la décoration florale complète d'un mariage ?", a: "Oui, de nombreux fleuristes proposent des prestations complètes pour les événements : bouquets, compositions de salle et décorations sur-mesure." },
+  ],
+  "Friperie": [
+    { q: "Peut-on vendre ses propres vêtements dans une friperie ?", a: "Certaines friperies rachètent ou proposent des dépôts-ventes de vêtements. Renseignez-vous directement auprès du commerçant sur ses conditions." },
+    { q: "Les vêtements de friperie sont-ils triés par taille ou par style ?", a: "L'organisation varie selon chaque boutique, mais la plupart organisent leur offre pour faciliter la recherche selon la taille, le style ou la saison." },
+  ],
+  "Garage automobile": [
+    { q: "Un garage automobile peut-il effectuer le contrôle technique ?", a: "Cela dépend du garage : certains sont agréés pour réaliser le contrôle technique, d'autres orientent vers un centre partenaire. Renseignez-vous directement auprès du professionnel." },
+    { q: "Peut-on obtenir un véhicule de remplacement pendant une réparation ?", a: "Certains garages proposent un véhicule de courtoisie pendant la durée des travaux. Vérifiez cette option directement avec le professionnel." },
+  ],
+  "Habillement": [
+    { q: "Les boutiques de vêtements des Landes proposent-elles des retouches ?", a: "Certaines boutiques proposent un service de retouche sur place ou orientent vers un partenaire. Renseignez-vous directement auprès du commerçant." },
+    { q: "Peut-on trouver des vêtements pour toutes les tailles et tous les âges ?", a: "L'offre varie selon chaque boutique : certaines sont spécialisées (enfant, grande taille, mode spécifique), d'autres proposent une gamme plus large." },
+  ],
+  "Jardinerie": [
+    { q: "Une jardinerie peut-elle conseiller sur l'entretien des plantes selon la saison ?", a: "Oui, les jardineries accompagnent leurs clients tout au long de l'année sur le choix des végétaux, l'arrosage et les traitements adaptés à chaque saison." },
+    { q: "Peut-on trouver du matériel de jardinage et des équipements extérieurs en jardinerie ?", a: "Oui, en plus des végétaux, ces commerces proposent généralement outils, mobilier de jardin et accessoires d'aménagement extérieur." },
+  ],
+  "Librairie": [
+    { q: "Une librairie peut-elle commander un livre non disponible en rayon ?", a: "Oui, la plupart des librairies peuvent commander un ouvrage spécifique et vous prévenir dès sa réception, généralement sous quelques jours." },
+    { q: "Les libraires proposent-ils des conseils de lecture personnalisés ?", a: "Oui, c'est l'un des atouts majeurs d'une librairie indépendante : un conseil adapté à vos goûts, contrairement à un simple rayon en libre-service." },
+  ],
+  "Motoculture": [
+    { q: "Un spécialiste en motoculture peut-il réparer une tondeuse en panne ?", a: "Oui, la réparation et l'entretien de matériel motorisé (tondeuse, débroussailleuse, tronçonneuse) font partie des services courants proposés par ces professionnels." },
+    { q: "Faut-il faire réviser son matériel de motoculture chaque année ?", a: "Un entretien annuel est recommandé avant la reprise de la saison pour garantir le bon fonctionnement et la sécurité de votre équipement." },
+  ],
+  "Parfumerie": [
+    { q: "Une parfumerie peut-elle proposer un échantillon avant l'achat ?", a: "Oui, la plupart des parfumeries proposent des échantillons ou vous laissent tester le produit en boutique avant de faire votre choix." },
+    { q: "Les parfumeries proposent-elles aussi des produits de soin visage et corps ?", a: "Oui, en complément des parfums, ces commerces proposent souvent une gamme de cosmétiques et de produits de soin." },
+  ],
+  "Pharmacie": [
+    { q: "Une pharmacie peut-elle conseiller sans ordonnance ?", a: "Oui, les pharmaciens peuvent conseiller des produits sans ordonnance pour des maux courants, dans la limite de leurs compétences et en vous orientant vers un médecin si nécessaire." },
+    { q: "Les pharmacies des Landes assurent-elles des gardes le week-end ?", a: "Oui, un système de garde organise la disponibilité des pharmacies en dehors des horaires habituels. Consultez les informations affichées localement pour connaître la pharmacie de garde." },
+  ],
+  "Tabac / Presse": [
+    { q: "Un bureau de tabac peut-il proposer d'autres services que le tabac et la presse ?", a: "Beaucoup de bureaux de tabac proposent aussi jeux à gratter, timbres, recharges téléphoniques ou point relais colis. Renseignez-vous directement auprès du commerçant." },
+    { q: "Ces commerces sont-ils ouverts tôt le matin ?", a: "De nombreux bureaux de tabac ouvrent tôt pour la presse du matin. Consultez les horaires précis affichés sur chaque fiche." },
+  ],
+  "Troc / Dépôt vente": [
+    { q: "Comment fonctionne un dépôt-vente ?", a: "Vous déposez un objet que le commerçant met en vente ; une commission est généralement prélevée lors de la vente. Les modalités précises varient selon chaque commerce." },
+    { q: "Quels types d'objets peut-on vendre ou acheter en dépôt-vente ?", a: "Mobilier, vêtements, objets de décoration ou articles divers : l'offre dépend de la spécialité de chaque commerce. Renseignez-vous directement auprès du professionnel." },
+  ],
+
+  // Culture & Élevage
+  "Apiculteur / Apicultrice": [
+    { q: "Peut-on acheter du miel directement chez un apiculteur des Landes ?", a: "Oui, de nombreux apiculteurs vendent directement leur production à la ferme ou sur les marchés locaux. Contactez le producteur pour connaître ses modalités de vente." },
+    { q: "Un apiculteur peut-il intervenir pour retirer un essaim d'abeilles ?", a: "Certains apiculteurs proposent ce service de récupération d'essaims. Contactez directement le professionnel pour vérifier sa disponibilité." },
+  ],
+  "Aquaculteur / Aquacultrice": [
+    { q: "Peut-on acheter directement les produits d'un aquaculteur des Landes ?", a: "Oui, de nombreux aquaculteurs proposent la vente directe à la ferme ou sur les marchés locaux. Contactez le producteur pour connaître ses disponibilités." },
+    { q: "Les produits aquacoles locaux sont-ils disponibles toute l'année ?", a: "La disponibilité dépend des espèces élevées et des cycles de production. Renseignez-vous directement auprès du producteur sur ses périodes de récolte." },
+  ],
+  "Arboriculteur / Arboricultrice": [
+    { q: "Peut-on acheter des fruits directement chez un arboriculteur des Landes ?", a: "Oui, de nombreux arboriculteurs proposent la vente directe à la ferme, sur les marchés ou en cueillette selon la saison des fruits." },
+    { q: "Un arboriculteur peut-il conseiller sur l'entretien d'un verger personnel ?", a: "Certains producteurs partagent volontiers leur expérience sur la taille, la plantation ou l'entretien d'arbres fruitiers. N'hésitez pas à les solliciter." },
+  ],
+  "Éleveur / Éleveuse": [
+    { q: "Peut-on acheter de la viande directement chez un éleveur des Landes ?", a: "Oui, la vente directe à la ferme ou en colis est proposée par de nombreux éleveurs locaux. Contactez le producteur pour connaître ses modalités et ses disponibilités." },
+    { q: "Les éleveurs des Landes pratiquent-ils la vente en circuit court ?", a: "De nombreux éleveurs privilégient la vente directe ou les circuits courts, pour une viande traçable issue de leur propre exploitation." },
+  ],
+  "Horticulteur / Horticultrice": [
+    { q: "Un horticulteur peut-il conseiller sur l'aménagement d'un jardin ?", a: "Oui, ces producteurs partagent leur expertise sur le choix des végétaux adaptés à votre sol, votre exposition et vos envies esthétiques." },
+    { q: "Peut-on acheter directement les plantes chez un horticulteur des Landes ?", a: "Oui, de nombreux horticulteurs proposent la vente directe de leur production, sur place ou lors de marchés locaux." },
+  ],
+  "Maraîcher / Maraîchère": [
+    { q: "Peut-on acheter des paniers de légumes directement chez un maraîcher des Landes ?", a: "Oui, de nombreux maraîchers proposent des paniers réguliers ou la vente directe à la ferme et sur les marchés locaux, selon la saison." },
+    { q: "Les maraîchers des Landes proposent-ils des produits bio ?", a: "Certains producteurs sont certifiés bio, d'autres pratiquent une agriculture raisonnée. Renseignez-vous directement auprès du maraîcher sur ses méthodes de culture." },
+  ],
+  "Viticulteur / Viticultrice": [
+    { q: "Peut-on visiter l'exploitation d'un viticulteur des Landes ?", a: "De nombreux viticulteurs proposent des visites et dégustations sur leur domaine. Contactez directement le producteur pour organiser votre venue." },
+    { q: "Peut-on acheter du vin directement à la propriété ?", a: "Oui, la vente directe au domaine est une pratique courante chez les viticulteurs, souvent accompagnée d'une dégustation." },
+  ],
+
+  // Immobilier
+  "Agence immobilière": [
+    { q: "Quels sont les frais d'agence lors d'une vente ou d'une location ?", a: "Les honoraires varient selon chaque agence et le type de prestation (vente, location, gestion). Demandez un détail précis directement à l'agence immobilière concernée." },
+    { q: "Une agence immobilière peut-elle estimer gratuitement un bien ?", a: "Oui, la plupart des agences proposent une estimation gratuite et sans engagement avant une mise en vente ou en location." },
+  ],
+  "Conciergerie": [
+    { q: "Une conciergerie gère-t-elle les locations de courte durée (type Airbnb) ?", a: "Oui, c'est l'une des missions courantes d'une conciergerie : gestion des réservations, accueil des voyageurs, ménage et entretien du bien entre deux séjours." },
+    { q: "Quels services inclut généralement une conciergerie ?", a: "Accueil des locataires, ménage, gestion des clés, maintenance ou communication avec les voyageurs : les prestations varient selon chaque professionnel." },
+  ],
+  "Diagnostique technique": [
+    { q: "Quels diagnostics immobiliers sont obligatoires avant une vente ?", a: "Selon le bien, plusieurs diagnostics peuvent être requis : DPE, amiante, plomb, électricité, gaz ou termites. Un diagnostiqueur certifié des Landes vous indiquera les diagnostics applicables à votre situation." },
+    { q: "Combien de temps est valable un diagnostic de performance énergétique (DPE) ?", a: "Le DPE est généralement valable 10 ans, sauf changement réglementaire. Un diagnostiqueur pourra vous confirmer la validité de votre document actuel." },
+  ],
+  "Gestionnaire de bien": [
+    { q: "Un gestionnaire de biens s'occupe-t-il de trouver un locataire ?", a: "Oui, la recherche et la sélection de locataires font généralement partie des missions d'un gestionnaire de biens, en plus du suivi locatif." },
+    { q: "Quels sont les avantages de confier son bien à un gestionnaire ?", a: "Vous déléguez les démarches administratives, l'encaissement des loyers et la gestion des éventuels litiges, pour un investissement locatif plus serein." },
+  ],
+  "Mandataire immobilier": [
+    { q: "Quelle est la différence entre un mandataire immobilier et une agence classique ?", a: "Le mandataire est un professionnel indépendant, souvent avec des frais réduits, qui vous accompagne personnellement sur votre projet de vente ou d'achat." },
+    { q: "Un mandataire immobilier peut-il réaliser l'estimation d'un bien ?", a: "Oui, l'estimation fait partie de ses missions principales avant la mise en vente d'un bien." },
+  ],
+  "Syndic de copropriété": [
+    { q: "Quelles sont les missions principales d'un syndic de copropriété ?", a: "Gestion administrative et financière de l'immeuble, organisation des assemblées générales, suivi des travaux et des contrats : les missions sont encadrées par la loi." },
+    { q: "Un copropriétaire peut-il changer de syndic ?", a: "Oui, le changement de syndic se décide en assemblée générale selon une procédure encadrée. Un syndic des Landes peut vous renseigner sur les modalités." },
+  ],
+
+  // Informatique & Numérique
+  "Agence Web": [
+    { q: "Combien de temps faut-il pour créer un site internet professionnel ?", a: "Cela dépend de la complexité du projet (vitrine simple, e-commerce, fonctionnalités sur-mesure). Une agence web des Landes pourra vous donner un délai précis après avoir étudié vos besoins." },
+    { q: "Une agence web assure-t-elle aussi la maintenance après la mise en ligne ?", a: "Oui, de nombreuses agences proposent des contrats de maintenance et de mise à jour après la livraison du site." },
+  ],
+  "Community manager": [
+    { q: "Un community manager peut-il gérer plusieurs réseaux sociaux en même temps ?", a: "Oui, la gestion simultanée de plusieurs plateformes (Facebook, Instagram, LinkedIn...) fait partie des missions courantes de ce professionnel." },
+    { q: "Combien de temps avant de voir des résultats sur les réseaux sociaux ?", a: "Les résultats varient selon la stratégie et la régularité de publication. Un community manager vous conseillera sur un planning réaliste selon vos objectifs." },
+  ],
+  "Cybersécurité": [
+    { q: "Une petite entreprise a-t-elle vraiment besoin d'un expert en cybersécurité ?", a: "Oui, les petites structures sont aussi ciblées par les cyberattaques. Un audit permet d'identifier les failles et de sécuriser vos données, même à petite échelle." },
+    { q: "Que fait un expert en cybersécurité lors d'un audit ?", a: "Il évalue les vulnérabilités de votre système informatique et propose des solutions adaptées pour protéger vos données et vos accès." },
+  ],
+  "Graphiste": [
+    { q: "Un graphiste peut-il créer un logo et toute l'identité visuelle d'une entreprise ?", a: "Oui, la création d'une identité visuelle complète (logo, charte graphique, supports de communication) est une prestation courante proposée par ces professionnels." },
+    { q: "Combien de temps faut-il pour la création d'un logo ?", a: "Cela varie selon le nombre de propositions et d'échanges nécessaires. Un graphiste des Landes pourra vous donner un délai précis selon votre projet." },
+  ],
+  "Informaticien": [
+    { q: "Un informaticien peut-il intervenir à domicile pour un dépannage ?", a: "Oui, de nombreux informaticiens indépendants se déplacent à domicile ou en entreprise pour un dépannage ou une installation." },
+    { q: "Un informaticien peut-il récupérer des données après une panne ?", a: "Selon la nature de la panne, une récupération de données est souvent possible. Contactez directement le professionnel pour évaluer votre situation." },
+  ],
+  "Webdesigner": [
+    { q: "Quelle est la différence entre un webdesigner et un développeur web ?", a: "Le webdesigner conçoit l'apparence et l'ergonomie du site (interface, expérience utilisateur), tandis que le développeur s'occupe de la partie technique et fonctionnelle." },
+    { q: "Un webdesigner peut-il aussi adapter un site pour mobile ?", a: "Oui, l'adaptation responsive (mobile, tablette) fait partie des compétences essentielles de ce professionnel aujourd'hui." },
+  ],
+  "Webmaster indépendant": [
+    { q: "Un webmaster peut-il reprendre la gestion d'un site déjà existant ?", a: "Oui, la reprise de maintenance d'un site existant est une prestation courante, même si le webmaster n'est pas à l'origine de sa création." },
+    { q: "À quelle fréquence faut-il mettre à jour son site internet ?", a: "Cela dépend du type de site, mais des mises à jour régulières (sécurité, contenu) sont recommandées pour garantir performance et sécurité." },
+  ],
+
+  // Restauration
+  "Restaurant": [
+    { q: "Faut-il réserver à l'avance dans les restaurants des Landes ?", a: "C'est recommandé, en particulier le week-end, pendant les vacances ou pour un grand nombre de convives. Contactez directement l'établissement pour vérifier la disponibilité." },
+    { q: "Les restaurants des Landes proposent-ils des menus adaptés aux allergies ?", a: "De nombreux établissements s'adaptent aux régimes spécifiques sur demande. Signalez vos allergies ou restrictions lors de votre réservation." },
+  ],
+  "Café / Bar": [
+    { q: "Les cafés et bars des Landes organisent-ils des événements ou soirées à thème ?", a: "Certains établissements proposent des soirées musicales, des quiz ou des événements sportifs. Renseignez-vous directement auprès de l'établissement sur sa programmation." },
+    { q: "Peut-on privatiser un bar pour un événement privé ?", a: "Certains établissements proposent la privatisation partielle ou totale selon le nombre d'invités. Contactez directement le professionnel pour organiser votre événement." },
+  ],
+  "Traiteur": [
+    { q: "Combien de temps à l'avance faut-il réserver un traiteur pour un mariage ?", a: "Il est recommandé de réserver plusieurs mois à l'avance, notamment en haute saison, pour s'assurer de la disponibilité du traiteur et affiner le menu ensemble." },
+    { q: "Un traiteur peut-il s'adapter à un budget ou un nombre d'invités précis ?", a: "Oui, la plupart des traiteurs proposent des formules modulables selon votre budget, le type d'événement et le nombre de convives." },
+  ],
+
+  // Services à la personne
+  "Aide à domicile": [
+    { q: "Quelles tâches peut prendre en charge une aide à domicile ?", a: "Courses, ménage, préparation de repas, aide à la toilette ou simple présence : les missions varient selon les besoins de la personne accompagnée." },
+    { q: "Peut-on bénéficier d'aides financières pour une aide à domicile ?", a: "Des aides existent selon votre situation (âge, perte d'autonomie, ressources). Renseignez-vous auprès du professionnel ou des organismes compétents pour connaître vos droits." },
+  ],
+  "Assistant administratif": [
+    { q: "Un assistant administratif indépendant peut-il travailler à distance ?", a: "Oui, de nombreuses missions (courrier, facturation, gestion de dossiers) peuvent être réalisées à distance, selon vos besoins et les outils utilisés." },
+    { q: "Quelles entreprises font appel à un assistant administratif indépendant ?", a: "Indépendants, artisans, TPE/PME ou associations font souvent appel à ce professionnel pour externaliser leurs tâches administratives sans embaucher." },
+  ],
+  "Assistant informatique et Internet": [
+    { q: "Un assistant informatique peut-il aider les personnes peu à l'aise avec les écrans ?", a: "Oui, c'est l'une des missions principales de ce professionnel : accompagner pas à pas dans l'utilisation d'un ordinateur, d'un smartphone ou de démarches en ligne." },
+    { q: "Un assistant informatique se déplace-t-il à domicile ?", a: "De nombreux professionnels proposent des interventions à domicile pour un accompagnement personnalisé et rassurant." },
+  ],
+  "Employé de ménage / Repassage": [
+    { q: "Peut-on bénéficier d'un crédit d'impôt pour un service de ménage ?", a: "Oui, les services à la personne comme le ménage ou le repassage ouvrent droit, sous conditions, à un crédit d'impôt. Renseignez-vous auprès du professionnel sur les modalités (CESU, déclaration)." },
+    { q: "Peut-on demander une intervention ponctuelle ou seulement un contrat régulier ?", a: "Les deux formules existent généralement : intervention ponctuelle pour un besoin précis, ou contrat régulier pour un entretien suivi de votre logement." },
+  ],
+  "Garde d'animaux": [
+    { q: "Un service de garde d'animaux intervient-il à domicile ou accueille-t-il l'animal ?", a: "Les deux formules existent selon le professionnel : garde chez vous (visites ou présence) ou accueil de l'animal chez le prestataire." },
+    { q: "Peut-on faire garder son animal pour un simple week-end ?", a: "Oui, la garde ponctuelle (week-end, vacances) est une demande courante prise en charge par ces professionnels." },
+  ],
+  "Garde d'enfants": [
+    { q: "Une garde d'enfants peut-elle intervenir pour la sortie d'école uniquement ?", a: "Oui, les interventions ponctuelles (sortie d'école, quelques heures) sont possibles en plus des gardes régulières ou à la journée." },
+    { q: "Peut-on bénéficier d'aides financières pour la garde d'enfants ?", a: "Oui, sous conditions, des aides existent (CAF, crédit d'impôt). Renseignez-vous auprès du professionnel ou des organismes compétents pour connaître vos droits." },
+  ],
+  "Travaux de jardinerie": [
+    { q: "Un professionnel des travaux de jardinerie peut-il intervenir ponctuellement ou seulement en contrat régulier ?", a: "Les deux formules sont généralement proposées : intervention ponctuelle (taille, débroussaillage) ou entretien régulier de votre jardin tout au long de l'année." },
+    { q: "Peut-on faire appel à ce professionnel pour l'élagage d'arbres ?", a: "Cela dépend du professionnel et de la hauteur des arbres concernés — certaines interventions nécessitent un élagueur spécialisé. Renseignez-vous directement sur ses compétences." },
+  ],
+
+  // Sport & Fitness
+  "Coach sportif": [
+    { q: "Un coach sportif peut-il intervenir à domicile ou en extérieur ?", a: "Oui, de nombreux coachs proposent des séances à domicile, en extérieur ou en salle, selon vos préférences et votre matériel disponible." },
+    { q: "Faut-il être sportif confirmé pour faire appel à un coach sportif ?", a: "Non, un coach adapte son programme à tous les niveaux, du débutant au sportif confirmé, selon vos objectifs personnels." },
+  ],
+  "Salle de sport et de fitness": [
+    { q: "Les salles de sport des Landes proposent-elles des cours collectifs ?", a: "De nombreuses salles proposent des cours collectifs (cardio, renforcement, cours dirigés) en plus de l'accès libre aux équipements." },
+    { q: "Peut-on essayer une salle de sport avant de s'abonner ?", a: "De nombreuses salles proposent une séance d'essai ou une visite gratuite. Renseignez-vous directement auprès de l'établissement." },
+  ],
+
+  // Transport de personnes
+  "Ambulance": [
+    { q: "Un transport en ambulance est-il remboursé par l'Assurance Maladie ?", a: "Sous certaines conditions (prescription médicale, motif du transport), les frais peuvent être pris en charge. Renseignez-vous auprès du professionnel ou de votre caisse d'assurance maladie." },
+    { q: "Peut-on réserver un transport médical à l'avance pour un rendez-vous programmé ?", a: "Oui, la réservation à l'avance est recommandée pour les rendez-vous médicaux programmés (consultation, examen, hospitalisation)." },
+  ],
+  "Déménagement": [
+    { q: "Combien de temps à l'avance faut-il réserver une entreprise de déménagement ?", a: "Il est recommandé de réserver plusieurs semaines à l'avance, notamment en période de forte demande (été, fins de mois), pour garantir la disponibilité du professionnel." },
+    { q: "Une entreprise de déménagement propose-t-elle l'emballage des affaires ?", a: "Oui, de nombreuses entreprises proposent un service d'emballage et de fourniture de cartons en plus du transport." },
+  ],
+  "Taxi": [
+    { q: "Peut-on réserver un taxi à l'avance dans les Landes ?", a: "Oui, la réservation à l'avance est possible et recommandée, notamment pour un départ en gare ou en aéroport à heure fixe." },
+    { q: "Les taxis des Landes prennent-ils en charge les trajets conventionnés (transport médical) ?", a: "Certains taxis sont conventionnés pour le transport médical assis. Renseignez-vous directement auprès du professionnel sur cette prestation." },
+  ],
+  "Transport de groupe": [
+    { q: "Quel type de véhicule est utilisé pour un transport de groupe ?", a: "Cela dépend du nombre de passagers et du trajet : minibus ou autocar selon le prestataire. Précisez vos besoins pour obtenir un devis adapté." },
+    { q: "Peut-on réserver un transport de groupe pour un événement ponctuel (mariage, sortie scolaire) ?", a: "Oui, ces prestataires s'adressent aussi bien aux événements ponctuels qu'aux déplacements réguliers pour des groupes constitués." },
+  ],
+};
+
 export function buildSubcategoryFaq(params: {
   subcategoryLabel: string;
   proCount: number;
   cityCount: number;
 }): FaqItem[] {
   const { subcategoryLabel, proCount, cityCount } = params;
+  const specific = SUBCATEGORY_FAQ_EXTRA[subcategoryLabel] ?? [{
+    q: `Comment choisir un bon professionnel en ${subcategoryLabel} ?`,
+    a: `Comparez les fiches détaillées, les avis vérifiés laissés par d'autres clients, et contactez directement le professionnel par téléphone, email ou WhatsApp depuis sa fiche sur Prolocal-Landes.`,
+  }];
   return [
     {
       q: `Combien y a-t-il de professionnels en ${subcategoryLabel} référencés dans les Landes ?`,
       a: `${proCount} professionnel${proCount > 1 ? "s" : ""} en ${subcategoryLabel} ${proCount > 1 ? "sont" : "est"} actuellement référencé${proCount > 1 ? "s" : ""} sur Prolocal-Landes${cityCount > 0 ? `, dans ${cityCount} commune${cityCount > 1 ? "s" : ""} du département` : ""}.`,
     },
-    {
-      q: `Comment choisir un bon professionnel en ${subcategoryLabel} ?`,
-      a: `Comparez les fiches détaillées, les avis vérifiés laissés par d'autres clients, et contactez directement le professionnel par téléphone, email ou WhatsApp depuis sa fiche sur Prolocal-Landes.`,
-    },
+    ...specific,
     {
       q: `Comment référencer mon entreprise en ${subcategoryLabel} ?`,
       a: `L'inscription est gratuite et rapide : rendez-vous sur la page d'inscription, renseignez votre numéro SIREN et les informations de votre entreprise. Votre fiche est visible immédiatement sur Prolocal-Landes.`,
