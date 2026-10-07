@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUrl";
 import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsBySubcategory } from "@/lib/db/professionals";
-import { buildSubcategoryFaq } from "@/lib/subcategoryContent";
+import { buildSubcategoryFaq, buildSubcategoryMetaDescription } from "@/lib/subcategoryContent";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
@@ -43,7 +43,9 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   const { categoryLabel, subcategoryLabel } = resolved;
   const url = `${baseUrl}/categories/${category}/${subcategory}`;
   const title = `${subcategoryLabel} dans les Landes | Prolocal-Landes`;
-  const description = `Trouvez un professionnel en ${subcategoryLabel} (${categoryLabel}) dans les Landes. Coordonnées, avis clients et informations pratiques sur Prolocal-Landes.`;
+  const initialPros = await dbGetProfessionalsBySubcategory(categoryLabel, subcategoryLabel);
+  const cityCount = new Set(initialPros.map(p => p.city).filter(Boolean)).size;
+  const description = buildSubcategoryMetaDescription({ subcategoryLabel, proCount: initialPros.length, cityCount });
 
   return {
     title,
@@ -62,6 +64,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
   const initialPros = await dbGetProfessionalsBySubcategory(categoryLabel, subcategoryLabel);
   const url = `${baseUrl}/categories/${category}/${subcategory}`;
   const cityCount = new Set(initialPros.map(p => p.city).filter(Boolean)).size;
+  const description = buildSubcategoryMetaDescription({ subcategoryLabel, proCount: initialPros.length, cityCount });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -79,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
         "@type": "CollectionPage",
         name: `${subcategoryLabel} dans les Landes`,
         url,
-        description: `Annuaire des professionnels en ${subcategoryLabel} (${categoryLabel}) dans les Landes : coordonnées, avis clients et prise de contact directe.`,
+        description,
         isPartOf: { "@type": "WebSite", name: "Prolocal-Landes", url: baseUrl },
       },
       {

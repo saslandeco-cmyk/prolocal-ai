@@ -62,6 +62,36 @@ export function buildSubcategoryLandingContent(params: {
   };
 }
 
+const META_DESCRIPTION_MAX = 360;
+
+/** Coupe proprement sur un mot entier plutôt qu'en plein milieu, avec une ellipse. */
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : max - 1)}…`;
+}
+
+/**
+ * Meta description (et description OpenGraph) de la page sous-catégorie —
+ * rédigée dans un ton naturel, comme on s'adresserait à un visiteur plutôt
+ * qu'une accumulation de mots-clés, tout en restant pertinente localement
+ * (Landes, nombre de professionnels, communes). Plafonnée à 360 caractères.
+ */
+export function buildSubcategoryMetaDescription(params: {
+  subcategoryLabel: string;
+  proCount: number;
+  cityCount: number;
+}): string {
+  const { subcategoryLabel, proCount, cityCount } = params;
+
+  const text = proCount > 0
+    ? `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Prolocal-Landes recense ${proCount} professionnel${proCount > 1 ? "s" : ""} de confiance${cityCount > 0 ? `, réparti${proCount > 1 ? "s" : ""} dans ${cityCount} commune${cityCount > 1 ? "s" : ""} du département` : ""}, avec coordonnées et avis clients, pour trouver facilement la bonne personne près de chez vous.`
+    : `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Aucune fiche n'est encore publiée pour ce secteur, mais notre annuaire s'enrichit chaque semaine. Vous exercez ce métier ? Référencez gratuitement votre entreprise dès maintenant.`;
+
+  return truncate(text, META_DESCRIPTION_MAX);
+}
+
 export function buildSubcategoryFaq(params: {
   subcategoryLabel: string;
   proCount: number;
