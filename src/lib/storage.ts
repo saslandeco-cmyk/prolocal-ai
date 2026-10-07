@@ -1,4 +1,5 @@
 import { Professional } from "@/types";
+import { isLikelyBot } from "@/lib/isBot";
 
 const STORAGE_KEY         = "prolocal_professionals";
 const SESSION_KEY         = "prolocal_session";
@@ -520,6 +521,7 @@ export function getVisitsByPro(proId: string): Visit[] {
 
 export function recordVisit(proId: string, source: Visit["source"] = "direct"): void {
   if (typeof window === "undefined") return;
+  if (isLikelyBot()) return;
   const now  = new Date();
   const date = now.toISOString().slice(0, 10);
   const hour = now.getHours();
