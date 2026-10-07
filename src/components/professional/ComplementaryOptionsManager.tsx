@@ -90,7 +90,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, cart, on
               Impossible de vérifier vos options déjà actives ({loadError}) — vous pouvez tout de même en ajouter de nouvelles au panier ci-dessous.
             </p>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.values(optionsCatalog).map(opt => {
             const active = isActive(opt.id);
             const inCart = cart.optionIds.includes(opt.id);
