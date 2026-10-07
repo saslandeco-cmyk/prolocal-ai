@@ -286,3 +286,18 @@ CREATE INDEX IF NOT EXISTS idx_demandes_status ON demandes (status);
 -- (src/lib/contactQuota.ts).
 ALTER TABLE demandes ADD COLUMN IF NOT EXISTS canal TEXT NOT NULL DEFAULT 'prolocal_ai';
 CREATE INDEX IF NOT EXISTS idx_demandes_pro_id_created_at ON demandes (pro_id, created_at);
+
+-- ── Recharges de l'option complémentaire "Mises en contact" ──
+-- Une ligne par pack acheté (voir src/lib/pricing.ts : CONTACT_PACKS). Le
+-- solde de mises en contact d'un professionnel n'est plus un quota mensuel
+-- lié à sa formule (src/lib/contactQuota.ts ne sert plus que de base de
+-- départ gratuite) : il correspond au total de ces recharges, consommé au
+-- fil de l'eau par les demandes reçues (voir dbGetTotalContactCredits).
+CREATE TABLE IF NOT EXISTS contact_recharges (
+  id          TEXT PRIMARY KEY,
+  pro_id      TEXT NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+  quantity    INTEGER NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_recharges_pro_id ON contact_recharges (pro_id);

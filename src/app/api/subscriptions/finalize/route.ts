@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured, getOrCreateProduct } from "@/lib/stripeServer";
 import { PLAN_PRICES, CONTACT_PACKS } from "@/lib/pricing";
 import { getEffectiveOptionPrices } from "@/lib/db/options";
+import { dbAddContactRecharge } from "@/lib/db/contactRecharges";
 
 /**
  * POST /api/subscriptions/finalize
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { customerId, paymentMethodId, planId, optionIds, contactQuantity } = await req.json();
+    const { customerId, paymentMethodId, planId, optionIds, contactQuantity, proId } = await req.json();
     const options: string[] = Array.isArray(optionIds) ? optionIds : [];
 
     // Prix du pack "Mises en contact" réellement choisi — déterminé ici, côté
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
     }
     if (!planId && options.length === 0) {
       return NextResponse.json({ error: "Aucun élément à créer." }, { status: 400 });
+    }
+    if (options.includes("contact") && typeof proId !== "string") {
+      return NextResponse.json({ error: "proId requis pour créditer les mises en contact." }, { status: 400 });
     }
 
     // Catalogue effectif des options (base si configurée/alimentée, sinon valeurs par défaut)
@@ -120,6 +124,12 @@ export async function POST(req: NextRequest) {
         },
       });
       result.oneTimePaymentIntentId = paymentIntent.id;
+
+      // Crédite immédiatement le solde de mises en contact du professionnel
+      // — le paiement vient de réussir (confirm: true, ci-dessus).
+      if (options.includes("contact")) {
+        await dbAddContactRecharge(proId, contactPack.quantity);
+      }
     }
 
     // ── Inclusion automatique de "Gestion prospects/clients" (CRM) avec la formule Gold ──

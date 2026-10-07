@@ -4,10 +4,11 @@ import { categoryLabelFromSlug, unslugify, extractIdFromSlug } from "@/lib/profi
 import { cityMetaFromSlug } from "@/lib/cityData";
 import { dbGetProfessionalById, dbGetProfessionalsByCity } from "@/lib/db/professionals";
 import { dbGetReviewsByPro } from "@/lib/db/reviews";
-import { dbCountDemandesThisMonth } from "@/lib/db/demandes";
+import { dbCountDemandesTotal } from "@/lib/db/demandes";
+import { dbGetTotalContactCredits } from "@/lib/db/contactRecharges";
 import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
-import { CONTACT_QUOTAS } from "@/lib/contactQuota";
+import { computeContactLimit } from "@/lib/contactQuota";
 import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
@@ -219,12 +220,13 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
 
   let jsonLd: Record<string, unknown> | null = null;
   let initialData: Professional | null = null;
-  // Quota de mises en contact (voir src/lib/contactQuota.ts) : calculé côté
+  // Solde de mises en contact (voir src/lib/contactQuota.ts) : calculé côté
   // serveur pour que les boutons Poser une question/Appeler/Envoyer un
-  // email se désactivent dès l'affichage une fois le plafond mensuel du
-  // plan atteint (voir CONTACT_QUOTAS pour le détail par formule), sans
-  // aller-retour client supplémentaire vers /api/demandes.
-  let contactQuota: { limit: number | null; used: number } | null = null;
+  // email se désactivent dès l'affichage une fois le solde épuisé (base
+  // gratuite de la formule + recharges achetées via l'option complémentaire
+  // "Mises en contact"), sans aller-retour client supplémentaire vers
+  // /api/demandes.
+  let contactQuota: { limit: number; used: number } | null = null;
 
   if (parsed) {
     const { categorySlugSeg, categoryLabel, subcategoryLabel, id, fallbackName } = parsed;
@@ -232,7 +234,11 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
     const pro = await resolveProfessional(id);
     initialData = pro;
     if (pro) {
-      contactQuota = { limit: CONTACT_QUOTAS[pro.plan], used: await dbCountDemandesThisMonth(pro.id) };
+      const [used, totalRecharged] = await Promise.all([
+        dbCountDemandesTotal(pro.id),
+        dbGetTotalContactCredits(pro.id),
+      ]);
+      contactQuota = { limit: computeContactLimit(pro.plan, totalRecharged), used };
     }
 
     if (pro) {

@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Inbox, Loader2, Mail, Phone, MapPin, Lock, MessageCircle, Sparkles, MessageSquareText } from "lucide-react";
+import { Inbox, Loader2, Mail, Phone, MapPin, Lock, MessageCircle, Sparkles, MessageSquareText, Zap } from "lucide-react";
 import type { Demande, DemandeStatus, DemandeCanal } from "@/types/needs";
 import { phoneHref, formatFrPhoneDisplay } from "@/lib/phone";
+import { getLockedDemandeIds, groupLockedByDate } from "@/lib/contactQuota";
 
 const STATUS_LABELS: Record<DemandeStatus, string> = {
   nouvelle: "Nouvelle",
@@ -39,17 +40,20 @@ const CANAL_ICONS: Record<DemandeCanal, React.ReactNode> = {
 };
 
 interface Quota {
-  limit: number | null; // null = illimité
+  limit: number;
   used: number;
+  remaining: number;
   plan: string | null;
 }
 
 /**
  * Onglet dashboard "Demandes reçues" — regroupe tous les contacts reçus par
  * le professionnel (recherche PROLOCAL AI, "Poser une question" et clics
- * Appeler/WhatsApp/Email sur la fiche). Au-delà du quota mensuel de sa
- * formule (src/lib/contactQuota.ts), les demandes les plus récentes restent
- * visibles (date, canal) mais leur contenu est masqué.
+ * Appeler/WhatsApp/Email sur la fiche). Au-delà de son solde de mises en
+ * contact (base gratuite de la formule + recharges achetées via l'option
+ * complémentaire "Mises en contact", voir src/lib/contactQuota.ts), les
+ * demandes les plus récentes restent visibles (date, canal) mais leur
+ * contenu est masqué.
  */
 interface DemandesTabProps {
   proId: string;
@@ -107,18 +111,13 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
     );
   }
 
-  // Demandes du mois en cours (les seules concernées par le quota), les plus
-  // anciennes en premier — les `limit` premières restent lisibles, le reste
-  // (plus récent) est verrouillé.
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthIds = demandes
-    .filter(d => new Date(d.createdAt) >= startOfMonth)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .map(d => d.id);
-  const lockedIds = new Set(
-    quota?.limit != null ? thisMonthIds.slice(quota.limit) : []
-  );
+  // Solde de mises en contact (base gratuite de la formule + recharges
+  // achetées, voir src/lib/contactQuota.ts) consommé sur tout l'historique —
+  // les demandes les plus anciennes restent lisibles, les plus récentes
+  // au-delà du solde sont verrouillées.
+  const lockedIds = quota ? getLockedDemandeIds(demandes, quota.limit) : new Set<string>();
+  const lockedDemandes = demandes.filter(d => lockedIds.has(d.id));
+  const lockedByDate = groupLockedByDate(lockedDemandes);
 
   return (
     <div className="space-y-4">
@@ -127,9 +126,9 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
           <Inbox className="w-5 h-5 text-landes-forest" />
           <h2 className="text-xl font-bold text-landes-pine">Demandes reçues</h2>
         </div>
-        {quota && quota.limit != null && (
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${quota.used >= quota.limit ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600"}`}>
-            {Math.min(quota.used, quota.limit)}/{quota.limit} ce mois-ci
+        {quota && (
+          <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${quota.remaining <= 0 ? "bg-red-100 text-red-600" : "bg-landes-forest/10 text-landes-forest"}`}>
+            <Zap className="w-3.5 h-3.5" /> {quota.remaining} mise{quota.remaining > 1 ? "s" : ""} en contact restante{quota.remaining > 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -138,15 +137,24 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
       </p>
 
       {lockedIds.size > 0 && (
-        <div className="card p-4 border border-amber-200 bg-amber-50/50 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-amber-800">
-            <strong>{lockedIds.size}</strong> demande{lockedIds.size > 1 ? "s" : ""} de ce mois {lockedIds.size > 1 ? "sont verrouillées" : "est verrouillée"} — quota mensuel de votre formule atteint.
-          </p>
-          {onUpgradeClick && (
-            <button onClick={onUpgradeClick} className="text-xs font-semibold bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors">
-              Changer de formule
-            </button>
-          )}
+        <div className="card p-4 border border-amber-200 bg-amber-50/50 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-sm text-amber-800">
+              <strong>{lockedIds.size}</strong> demande{lockedIds.size > 1 ? "s" : ""} {lockedIds.size > 1 ? "sont verrouillées" : "est verrouillée"} — solde de mises en contact épuisé.
+            </p>
+            {onUpgradeClick && (
+              <button onClick={onUpgradeClick} className="text-xs font-semibold bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
+                Recharger mes mises en contact
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-amber-200/60">
+            {lockedByDate.map(({ date, count }) => (
+              <span key={date} className="text-xs font-medium text-amber-700 bg-white/70 border border-amber-200 rounded-lg px-2.5 py-1">
+                {new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} — {count} masquée{count > 1 ? "s" : ""}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -184,12 +192,12 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
                   <div className="mt-3 rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center gap-3">
                     <Lock className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600">Quota mensuel atteint</p>
-                      <p className="text-xs text-gray-400">Passez à la formule supérieure pour lire ce contact.</p>
+                      <p className="text-sm font-medium text-gray-600">Solde de mises en contact épuisé</p>
+                      <p className="text-xs text-gray-400">Rechargez vos mises en contact pour lire ce contact.</p>
                     </div>
                     {onUpgradeClick && (
                       <button onClick={onUpgradeClick} className="text-xs font-semibold text-landes-forest hover:underline flex-shrink-0">
-                        Voir les formules
+                        Recharger
                       </button>
                     )}
                   </div>

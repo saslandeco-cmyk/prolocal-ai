@@ -205,16 +205,17 @@ function PhotoGallery({ photos, companyName }: { photos: string[]; companyName: 
 }
 
 interface ContactQuota {
-  limit: number | null;
+  limit: number;
   used: number;
 }
 
 export default function ProfessionalProfileView({ id, initialData, contactQuota }: { id: string; initialData?: Professional | null; contactQuota?: ContactQuota | null }) {
-  // Formule Standard (gratuite) : 3 mises en contact par mois via Poser une
-  // question/Appeler/Envoyer un email (voir src/lib/contactQuota.ts) — au-delà,
-  // ces trois actions se désactivent jusqu'au mois suivant. Le WhatsApp n'est
-  // volontairement pas concerné par ce plafond.
-  const contactLimitReached = Boolean(contactQuota && contactQuota.limit != null && contactQuota.used >= contactQuota.limit);
+  // Solde de mises en contact (base gratuite de la formule + recharges
+  // achetées via l'option complémentaire "Mises en contact", voir
+  // src/lib/contactQuota.ts) consommé via Poser une question/Appeler/Envoyer
+  // un email — une fois épuisé, ces trois actions se désactivent jusqu'à une
+  // nouvelle recharge. Le WhatsApp n'est volontairement pas concerné.
+  const contactLimitReached = Boolean(contactQuota && contactQuota.used >= contactQuota.limit);
   const [pro, setPro]       = useState<Professional | null>(initialData ?? null);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -493,7 +494,7 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota 
 
               {contactLimitReached && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  Ce professionnel a atteint son nombre maximum de mises en contact pour ce mois-ci. Réessayez le mois prochain.
+                  Ce professionnel a atteint son nombre maximum de mises en contact. Réessayez plus tard.
                 </p>
               )}
 

@@ -1514,6 +1514,7 @@ function DashboardContent() {
           )}
 
           <ComplementaryOptionsManager
+            proId={pro.id}
             stripeCustomerId={(pro as any).stripeCustomerId}
             email={pro.email}
             companyName={pro.companyName}

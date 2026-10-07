@@ -5,6 +5,7 @@ import { OPTION_PRICES as DEFAULT_OPTION_PRICES, CONTACT_PACKS, type CheckoutIte
 import StripePaymentForm from "./StripePaymentForm";
 
 interface Props {
+  proId: string;
   stripeCustomerId?: string;
   email: string;
   companyName: string;
@@ -20,7 +21,7 @@ interface Props {
   onOptionActivated?: (optionId: string) => void;
 }
 
-export default function ComplementaryOptionsManager({ stripeCustomerId, email, companyName, siren, onCustomerIdObtained, onOptionActivated }: Props) {
+export default function ComplementaryOptionsManager({ proId, stripeCustomerId, email, companyName, siren, onCustomerIdObtained, onOptionActivated }: Props) {
   const [optionsCatalog, setOptionsCatalog] = useState<Record<string, CheckoutItem>>(DEFAULT_OPTION_PRICES);
   const [activeNames, setActiveNames] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -138,6 +139,7 @@ export default function ComplementaryOptionsManager({ stripeCustomerId, email, c
           paymentMethodId,
           optionIds: [orderingId], // jamais de planId ici : les options sont des produits à part
           contactQuantity: orderingQuantity ?? undefined,
+          proId,
         }),
       });
       const data = await res.json();

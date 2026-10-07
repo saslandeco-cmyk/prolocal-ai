@@ -24,13 +24,10 @@ export async function dbGetDemandesByPro(proId: string): Promise<Demande[]> {
   return rows.map(rowToDemande);
 }
 
-/** Nombre de demandes (tous canaux) reçues par un pro depuis le 1er du mois en cours — base du quota de lecture. */
-export async function dbCountDemandesThisMonth(proId: string): Promise<number> {
+/** Nombre total de demandes (tous canaux, tout l'historique) reçues par un pro — base du solde de mises en contact. */
+export async function dbCountDemandesTotal(proId: string): Promise<number> {
   if (!isDbConfigured) return 0;
-  const { rows } = await sql`
-    SELECT count(*)::int AS count FROM demandes
-    WHERE pro_id = ${proId} AND created_at >= date_trunc('month', now())
-  `;
+  const { rows } = await sql`SELECT count(*)::int AS count FROM demandes WHERE pro_id = ${proId}`;
   return rows[0]?.count ?? 0;
 }
 

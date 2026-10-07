@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDbConfigured } from "@/lib/db/client";
-import { dbCreateDemande, dbGetDemandesByPro, dbCountDemandesThisMonth } from "@/lib/db/demandes";
+import { dbCreateDemande, dbGetDemandesByPro, dbCountDemandesTotal } from "@/lib/db/demandes";
 import { dbGetProfessionalById } from "@/lib/db/professionals";
-import { CONTACT_QUOTAS } from "@/lib/contactQuota";
+import { dbGetTotalContactCredits } from "@/lib/db/contactRecharges";
+import { computeContactLimit } from "@/lib/contactQuota";
 import type { Demande, DemandeCanal } from "@/types/needs";
 
 /** Canaux sans formulaire associé — pas d'identité visiteur à exiger. */
@@ -25,15 +26,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Paramètre proId requis." }, { status: 400 });
   }
   try {
-    const [demandes, professional, usedThisMonth] = await Promise.all([
+    const [demandes, professional, used, totalRecharged] = await Promise.all([
       dbGetDemandesByPro(proId),
       dbGetProfessionalById(proId),
-      dbCountDemandesThisMonth(proId),
+      dbCountDemandesTotal(proId),
+      dbGetTotalContactCredits(proId),
     ]);
-    const limit = professional ? CONTACT_QUOTAS[professional.plan] : null;
+    const limit = professional ? computeContactLimit(professional.plan, totalRecharged) : 0;
     return NextResponse.json({
       demandes,
-      quota: { limit, used: usedThisMonth, plan: professional?.plan ?? null },
+      quota: { limit, used, remaining: Math.max(0, limit - used), plan: professional?.plan ?? null },
     });
   } catch (err: any) {
     console.error("[api/demandes GET] Erreur:", err);

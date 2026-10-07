@@ -28,7 +28,7 @@ import type { CategoryRecord } from "@/lib/categories";
  * (identifiant de fiche legacy, avec redirection automatique).
  */
 interface ContactQuota {
-  limit: number | null;
+  limit: number;
   used: number;
 }
 
