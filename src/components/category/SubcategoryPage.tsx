@@ -183,7 +183,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3 sm:mb-4 flex items-center gap-3">
-                <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" /> {subcategoryLabel}
+                <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" /> {subcategoryLabel} dans les Landes (40)
               </h1>
               <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-2">
                 Tous les professionnels référencés en {subcategoryLabel} ({categoryLabel}) sur Prolocal-Landes.
