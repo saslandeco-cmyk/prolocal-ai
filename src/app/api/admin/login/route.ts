@@ -2,6 +2,12 @@ import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_AUTH_COOKIE, ADMIN_AUTH_COOKIE_MAX_AGE, adminAuthTokenInput } from "@/lib/adminAuthCookie";
 
+// Sans cela, Next.js marque par défaut cette réponse comme publique/cachable
+// ("Cache-Control: public, max-age=0, must-revalidate") — l'en-tête
+// Set-Cookie est alors strippé par le réseau Vercel avant d'atteindre le
+// visiteur, et le cookie d'authentification n'est jamais posé.
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/admin/login → vérifie les identifiants administrateur.
  *

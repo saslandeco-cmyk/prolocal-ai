@@ -5,7 +5,12 @@ import { dbGetMaintenanceStatus, dbSetMaintenanceStatus, DEFAULT_MAINTENANCE_MES
  * GET  /api/admin/maintenance → statut actuel (activé/désactivé + message)
  * POST /api/admin/maintenance → met à jour le statut, depuis l'onglet
  *                                Personnalisation de l'admin.
+ *
+ * Toujours dynamique (jamais mis en cache) : l'admin doit voir l'état réel
+ * du statut en base à chaque appel, jamais une valeur potentiellement
+ * périmée.
  */
+export const dynamic = "force-dynamic";
 export async function GET() {
   const status = await dbGetMaintenanceStatus();
   return NextResponse.json(status);
