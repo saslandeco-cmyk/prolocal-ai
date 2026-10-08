@@ -1218,6 +1218,114 @@ function CategoriesManager() {
   );
 }
 
+// Mode maintenance du site public — activable/désactivable sans
+// déploiement (voir src/middleware.ts et src/app/api/admin/maintenance).
+// L'espace admin reste toujours accessible, quel que soit ce statut.
+// Valeur de secours identique à celle de src/lib/db/siteSettings.ts — non
+// importée ici, ce module serveur (accès base de données) ne doit jamais
+// être inclus dans le bundle client.
+const DEFAULT_MAINTENANCE_MESSAGE = "Site en cours de finalisation, veuillez nous excuser pour le dérangement.";
+
+function MaintenanceManager() {
+  const [enabled, setEnabled] = useState(false);
+  const [message, setMessage] = useState(DEFAULT_MAINTENANCE_MESSAGE);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/admin/maintenance");
+      const data = await res.json();
+      setEnabled(Boolean(data.enabled));
+      setMessage(data.message || DEFAULT_MAINTENANCE_MESSAGE);
+    } catch {
+      setLoadError("Impossible de charger le statut du mode maintenance.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const save = async (nextEnabled: boolean) => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextEnabled, message }),
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      setEnabled(nextEnabled);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      alert("Erreur réseau lors de la mise à jour du mode maintenance.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={`card p-6 border-2 ${enabled ? "border-amber-300 bg-amber-50/40" : "border-gray-100"}`}>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-bold text-landes-pine">Mode maintenance</h2>
+        {saved && <span className="text-green-600 text-xs font-medium flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Enregistré</span>}
+      </div>
+      <p className="text-sm text-gray-500 mb-4">
+        Affiche une page d&apos;attente à tous les visiteurs du site public. L&apos;espace admin reste accessible pour continuer à travailler ou désactiver la maintenance.
+      </p>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-gray-400 py-2"><Loader2 className="w-4 h-4 animate-spin" /> Chargement…</div>
+      ) : loadError ? (
+        <p className="text-sm text-red-500">{loadError}</p>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white border border-gray-100">
+            <div>
+              <p className="font-semibold text-sm text-landes-pine">Site en maintenance</p>
+              <p className="text-xs text-gray-500">{enabled ? "Actif — le site public affiche la page d'attente." : "Inactif — le site public est accessible normalement."}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => save(!enabled)}
+              disabled={saving}
+              aria-pressed={enabled}
+              className={`relative w-14 h-8 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 ${enabled ? "bg-amber-500" : "bg-gray-300"}`}
+            >
+              <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-6" : ""}`} />
+            </button>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Message affiché aux visiteurs</label>
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+            />
+            <button
+              type="button"
+              onClick={() => save(enabled)}
+              disabled={saving}
+              className="mt-2 flex items-center gap-2 text-sm font-medium text-landes-forest hover:text-landes-pine disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer le message
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Gestion manuelle du diaporama hero (professionnels avec l'option
 // "Encart publicitaire ciblé"), sélection et ordre entièrement contrôlés
 // par l'administrateur.
@@ -1774,6 +1882,7 @@ export default function AdminPage() {
       {/* ── Section Personnalisation ── */}
       {adminSection === "site" && (
         <div className="space-y-6">
+          <MaintenanceManager />
           <HeroSlideshowManager />
         </div>
       )}

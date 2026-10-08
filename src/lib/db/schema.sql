@@ -301,3 +301,16 @@ CREATE TABLE IF NOT EXISTS contact_recharges (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contact_recharges_pro_id ON contact_recharges (pro_id);
+
+-- ── Réglages globaux du site (mode maintenance, etc.) ──
+-- Une seule ligne possible (id toujours = true) : contrainte CHECK + clé
+-- primaire sur une colonne BOOLEAN, astuce Postgres classique pour forcer
+-- une table "singleton". Lu à chaque requête publique par le middleware
+-- (src/middleware.ts) pour activer/désactiver le mode maintenance sans
+-- déploiement, depuis l'admin (onglet Personnalisation).
+CREATE TABLE IF NOT EXISTS site_settings (
+  id                   BOOLEAN PRIMARY KEY DEFAULT true CHECK (id = true),
+  maintenance_enabled  BOOLEAN NOT NULL DEFAULT false,
+  maintenance_message  TEXT NOT NULL DEFAULT 'Site en cours de finalisation, veuillez nous excuser pour le dérangement.',
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);

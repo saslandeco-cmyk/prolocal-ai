@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dbGetMaintenanceStatus } from "@/lib/db/siteSettings";
 
 /**
  * Protection de l'espace admin par chemin secret côté serveur.
@@ -14,21 +15,62 @@ import { NextRequest, NextResponse } from "next/server";
  */
 const ADMIN_INTERNAL_PATH = "/admin";
 
-export function middleware(req: NextRequest) {
+function renderMaintenancePage(message: string): NextResponse {
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Maintenance | Prolocal-Landes</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a3a2a;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px;text-align:center}
+  .card{max-width:480px}
+  .emoji{font-size:48px;margin-bottom:16px}
+  h1{font-size:22px;font-weight:700;margin-bottom:12px}
+  p{font-size:15px;line-height:1.6;color:rgba(255,255,255,0.8)}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">🚧</div>
+    <h1>Prolocal-Landes</h1>
+    <p>${message}</p>
+  </div>
+</body>
+</html>`;
+  return new NextResponse(html, {
+    status: 503,
+    headers: { "Content-Type": "text/html; charset=utf-8", "Retry-After": "3600" },
+  });
+}
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const secret = process.env.ADMIN_SECRET_PATH;
+  const secretPath = secret ? `/${secret}` : null;
 
   // Le chemin interne réel ne doit jamais être atteignable directement.
   if (pathname === ADMIN_INTERNAL_PATH || pathname.startsWith(`${ADMIN_INTERNAL_PATH}/`)) {
     return new NextResponse(null, { status: 404 });
   }
 
-  if (secret) {
-    const secretPath = `/${secret}`;
-    if (pathname === secretPath || pathname.startsWith(`${secretPath}/`)) {
-      const url = req.nextUrl.clone();
-      url.pathname = ADMIN_INTERNAL_PATH + pathname.slice(secretPath.length);
-      return NextResponse.rewrite(url);
+  if (secretPath && (pathname === secretPath || pathname.startsWith(`${secretPath}/`))) {
+    const url = req.nextUrl.clone();
+    url.pathname = ADMIN_INTERNAL_PATH + pathname.slice(secretPath.length);
+    return NextResponse.rewrite(url);
+  }
+
+  // Mode maintenance (activable/désactivable depuis l'admin, sans
+  // déploiement — voir src/app/api/admin/maintenance/route.ts). Par
+  // construction, l'espace admin (ci-dessus) n'atteint jamais ce point ; les
+  // routes API restent explicitement exclues pour que l'administrateur
+  // puisse continuer à travailler sur le site pendant qu'elle est active.
+  if (!pathname.startsWith("/api/")) {
+    const { enabled, message } = await dbGetMaintenanceStatus();
+    if (enabled) {
+      return renderMaintenancePage(message);
     }
   }
 
