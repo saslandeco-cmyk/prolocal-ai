@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbGetMaintenanceStatus } from "@/lib/db/siteSettings";
+import { ADMIN_AUTH_COOKIE, adminAuthTokenInput } from "@/lib/adminAuthCookie";
 
 /**
  * Protection de l'espace admin par chemin secret côté serveur.
@@ -14,6 +15,25 @@ import { dbGetMaintenanceStatus } from "@/lib/db/siteSettings";
  * .env.local), le vrai chemin n'apparaît jamais dans le code source.
  */
 const ADMIN_INTERNAL_PATH = "/admin";
+
+/**
+ * Un administrateur authentifié (cookie HttpOnly posé par /api/admin/login,
+ * voir src/lib/adminAuthCookie.ts) doit pouvoir continuer à naviguer sur le
+ * front office normalement pendant que le mode maintenance affiche la page
+ * d'attente à tous les autres visiteurs. Le hachage SHA-256 est recalculé
+ * ici via l'API Web Crypto (disponible nativement dans le runtime Edge, à
+ * la différence de "node:crypto" utilisé côté route API) à partir du mot
+ * de passe admin — jamais stocké en clair dans le cookie.
+ */
+async function isAuthenticatedAdmin(req: NextRequest): Promise<boolean> {
+  const password = process.env.ADMIN_PASSWORD;
+  const cookie = req.cookies.get(ADMIN_AUTH_COOKIE)?.value;
+  if (!password || !cookie) return false;
+  const data = new TextEncoder().encode(adminAuthTokenInput(password));
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const expected = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return cookie === expected;
+}
 
 function renderMaintenancePage(message: string): NextResponse {
   const html = `<!DOCTYPE html>
@@ -67,9 +87,11 @@ export async function middleware(req: NextRequest) {
   // construction, l'espace admin (ci-dessus) n'atteint jamais ce point ; les
   // routes API restent explicitement exclues pour que l'administrateur
   // puisse continuer à travailler sur le site pendant qu'elle est active.
+  // Un administrateur authentifié (cookie HttpOnly) voit en plus le front
+  // office normalement, comme n'importe quel visiteur hors maintenance.
   if (!pathname.startsWith("/api/")) {
     const { enabled, message } = await dbGetMaintenanceStatus();
-    if (enabled) {
+    if (enabled && !(await isAuthenticatedAdmin(req))) {
       return renderMaintenancePage(message);
     }
   }

@@ -1545,7 +1545,12 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => { clearSession(); setAuthenticated(false); router.push("/"); };
+  const handleLogout = () => {
+    clearSession();
+    setAuthenticated(false);
+    fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+    router.push("/");
+  };
 
   const refresh = () => { getProfessionalsWithImages().then(setPros); setReviews(getReviews()); };
 

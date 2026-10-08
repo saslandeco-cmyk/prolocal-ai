@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_AUTH_COOKIE, ADMIN_AUTH_COOKIE_MAX_AGE, adminAuthTokenInput } from "@/lib/adminAuthCookie";
 
 /**
  * POST /api/admin/login → vérifie les identifiants administrateur.
@@ -7,6 +9,12 @@ import { NextRequest, NextResponse } from "next/server";
  * ADMIN_USERNAME / ADMIN_PASSWORD (jamais commitées dans le dépôt — voir
  * .env.local.example). Aucun identifiant n'est codé en dur dans le code
  * source ni envoyé au navigateur avant authentification.
+ *
+ * Pose aussi un cookie HttpOnly (voir src/lib/adminAuthCookie.ts) que le
+ * middleware peut lire — indépendamment de la session client en
+ * localStorage (src/lib/storage.ts), invisible côté serveur — pour laisser
+ * l'administrateur connecté voir le site public normalement même quand le
+ * mode maintenance est actif pour les autres visiteurs.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +30,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (username === expectedUsername && password === expectedPassword) {
-      return NextResponse.json({ ok: true });
+      const token = createHash("sha256").update(adminAuthTokenInput(expectedPassword)).digest("hex");
+      const res = NextResponse.json({ ok: true });
+      res.cookies.set(ADMIN_AUTH_COOKIE, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: ADMIN_AUTH_COOKIE_MAX_AGE,
+      });
+      return res;
     }
     return NextResponse.json({ error: "Identifiant ou mot de passe incorrect." }, { status: 401 });
   } catch (err: any) {
