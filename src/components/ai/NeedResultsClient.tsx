@@ -68,9 +68,12 @@ function NeedResultsContent() {
   }, []);
 
   useEffect(() => {
-    setGeoCoords(null);
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+    const initialGeo = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
+    setGeoCoords(initialGeo ?? null);
     setCityInput("");
-    runSearch(texte);
+    runSearch(texte, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [texte]);
 
@@ -151,7 +154,7 @@ function NeedResultsContent() {
         <div className="w-full mx-auto text-center py-10">
           <h1 className="text-2xl sm:text-3xl font-bold text-landes-pine mb-2">De quoi avez-vous besoin ?</h1>
           <p className="text-gray-500 mb-6">Décrivez simplement votre besoin, nous trouvons le bon professionnel près de chez vous.</p>
-          <NeedSearchBar onSearch={(q) => runSearch(q)} />
+          <NeedSearchBar onSearch={(q, geo) => runSearch(q, geo)} />
         </div>
       )}
 
