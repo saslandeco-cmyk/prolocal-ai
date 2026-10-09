@@ -3,12 +3,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
-const EXAMPLES = [
-  "J'ai une fuite d'eau chez moi à Dax",
-  "Je cherche un jardinier près de Mont-de-Marsan",
-  "Mon lave-linge ne fonctionne plus",
-];
-
 interface NeedSearchBarProps {
   initialValue?: string;
   onSearch?: (text: string) => void;
@@ -43,7 +37,7 @@ export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearc
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Décrivez votre besoin en quelques mots… (ex : ${EXAMPLES.join(", ")})`}
+            placeholder="Recherche par métier ou décrivez votre besoin en quelques mots…"
             className="w-full text-gray-800 placeholder-gray-400 text-[0.76rem] italic focus:outline-none bg-transparent"
             autoComplete="off"
             maxLength={500}
