@@ -445,7 +445,7 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota 
                   <>
                     <div className="card p-6">
                       <p className="pro-description leading-relaxed text-gray-600">
-                        Ce professionnel n&apos;a pas encore revendiqué sa fiche.
+                        Ce professionnel n&apos;a pas encore complété sa fiche mais vous pouvez quand même le joindre.
                       </p>
                     </div>
                     {!pro.claimed && (
