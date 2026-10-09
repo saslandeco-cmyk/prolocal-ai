@@ -53,12 +53,20 @@ export default function NeedSearchBar({ initialValue = "", initialCity = "", ini
     e.preventDefault();
     const trimmed = text.trim();
     if (trimmed.length < 3) return;
-    // La position géolocalisée prime sur la ville tapée au clavier.
-    const query = cityInput.trim() && !geoCoords ? `${trimmed} à ${cityInput.trim()}` : trimmed;
+    const city = cityInput.trim();
+    // La position géolocalisée prime sur la ville tapée au clavier. Texte
+    // transmis à l'IA : la ville y est injectée seulement si aucune géoloc
+    // n'est active, pour que le moteur de recherche local puisse la détecter.
+    const query = city && !geoCoords ? `${trimmed} à ${city}` : trimmed;
     if (onSearch) {
       onSearch(query, geoCoords ?? undefined);
     } else {
-      const params = new URLSearchParams({ texte: query });
+      // Le texte et la ville restent transmis séparément dans l'URL (plutôt
+      // que la phrase combinée `query`) pour que la page de résultats puisse
+      // pré-remplir le formulaire avec exactement ce que le visiteur a saisi
+      // dans chaque champ, sans dépendre de l'interprétation IA.
+      const params = new URLSearchParams({ texte: trimmed });
+      if (city) params.set("ville", city);
       if (geoCoords) {
         params.set("lat", String(geoCoords.lat));
         params.set("lng", String(geoCoords.lng));

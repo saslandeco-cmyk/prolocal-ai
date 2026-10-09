@@ -19,6 +19,7 @@ interface GeoCoords {
 function NeedResultsContent() {
   const searchParams = useSearchParams();
   const texte = searchParams.get("texte") || "";
+  const ville = searchParams.get("ville") || "";
 
   // Démarre en chargement s'il y a déjà une demande dans l'URL, pour ne pas
   // laisser apparaître un instant le bandeau de recherche vide avant que la
@@ -61,9 +62,12 @@ function NeedResultsContent() {
     const lng = searchParams.get("lng");
     const initialGeo = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
     setGeoCoords(initialGeo ?? null);
-    runSearch(texte, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
+    // La ville n'est injectée dans le texte envoyé à l'IA que si aucune
+    // géoloc n'est active — comme à la saisie initiale dans NeedSearchBar.
+    const query = ville && !initialGeo ? `${texte} à ${ville}` : texte;
+    runSearch(query, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texte]);
+  }, [texte, ville]);
 
   const hasSignal = response ? response.need.categorie !== null || response.need.motsCles.length > 0 : false;
 
@@ -94,8 +98,8 @@ function NeedResultsContent() {
           {/* 1. Nouvelle recherche — reprend ce que le visiteur a déjà saisi */}
           <div className="mb-6">
             <NeedSearchBar
-              initialValue={response.need.besoin || texte}
-              initialCity={response.need.commune || ""}
+              initialValue={texte}
+              initialCity={ville}
               initialGeo={geoCoords ?? undefined}
               onSearch={(q, geo) => { setGeoCoords(geo ?? null); runSearch(q, geo); }}
             />
