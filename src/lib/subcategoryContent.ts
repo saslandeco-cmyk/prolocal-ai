@@ -164,6 +164,132 @@ const SUBCATEGORY_INTROS: Record<string, string> = {
   "Transport de groupe": "Vous recherchez un service de transport de groupe dans les Landes pour un déplacement collectif ? Que ce soit pour un mariage, une sortie scolaire ou un voyage organisé, ce professionnel assure le transport confortable et sécurisé de votre groupe.",
 };
 
+/**
+ * Description succincte du métier (clé = libellé exact de la sous-catégorie)
+ * — utilisée pour la question FAQ "Que fait un [métier] ?" (voir
+ * buildSubcategoryFaq). Contrairement à SUBCATEGORY_INTROS (adressé au
+ * visiteur, "vous recherchez..."), ce texte décrit l'activité elle-même,
+ * pour qui ne connaît pas encore le métier.
+ */
+const SUBCATEGORY_DESCRIPTIONS: Record<string, string> = {
+  // Alimentation & Épicerie
+  "Alimentation générale": "Une alimentation générale vend des produits de consommation courante (épicerie, boissons, produits frais) dans un commerce de proximité, souvent avec des horaires élargis.",
+  "Boucherie / Charcuterie": "Un boucher-charcutier découpe, prépare et vend de la viande ainsi que des produits de charcuterie, en conseillant ses clients selon leurs besoins et les occasions.",
+  "Boulangerie / Pâtisserie": "Un boulanger-pâtissier fabrique et vend du pain, des viennoiseries et des pâtisseries, le plus souvent élaborés chaque jour selon des méthodes artisanales.",
+  "Caviste / Marchand de boissons": "Un caviste sélectionne, conseille et vend des vins et d'autres boissons, en orientant ses clients selon leurs goûts, leur budget et l'occasion.",
+  "Épicerie fine": "Une épicerie fine propose une sélection de produits gourmets et de spécialités régionales ou du terroir, souvent destinés à un usage gastronomique ou à l'offrande.",
+  "Fromagerie / Crèmerie": "Un fromager-affineur sélectionne, affine et vend des fromages et des produits laitiers, en conseillant ses clients sur le choix et les accords.",
+  "Poissonnerie": "Un poissonnier sélectionne, prépare et vend des produits de la mer frais (poissons, coquillages, crustacés), en conseillant selon les arrivages du jour.",
+  "Primeurs": "Un primeur sélectionne et vend des fruits et légumes frais et de saison, souvent issus de producteurs locaux.",
+
+  // Artisanat & Métiers d'art
+  "Archetier": "Un archetier fabrique, répare et entretient les archets des instruments à cordes (violon, alto, violoncelle, contrebasse).",
+  "Bijoutier-Joaillier": "Un bijoutier-joaillier crée, répare et vend des bijoux, et peut transformer ou remonter des pièces anciennes sur demande.",
+  "Céramiste": "Un céramiste façonne, cuit et décore des pièces en terre ou en porcelaine, qu'il s'agisse de vaisselle, d'objets décoratifs ou de créations sur-mesure.",
+  "Chaudronnier": "Un chaudronnier façonne, découpe, plie et assemble des pièces métalliques pour des projets industriels, artisanaux ou sur-mesure.",
+  "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "Ce professionnel peint et décore des pièces en céramique, faïence ou porcelaine, qu'elles soient existantes ou entièrement créées sur-mesure.",
+  "Doreur à la feuille": "Un doreur à la feuille applique de fines feuilles d'or ou d'argent sur des cadres, meubles ou objets, pour une finition décorative ou une restauration.",
+  "Ébéniste": "Un ébéniste conçoit, fabrique et restaure des meubles en bois, en travaillant sur-mesure selon les besoins et le style recherché.",
+  "Encadreur": "Un encadreur conçoit et réalise un encadrement sur-mesure pour une œuvre, une photo ou un objet, en choisissant les matériaux adaptés à sa conservation.",
+  "Ferronnier d'art": "Un ferronnier d'art façonne et restaure des éléments en fer forgé (grilles, portails, rampes), alliant technique traditionnelle et créativité.",
+  "Horloger": "Un horloger répare, entretient et vend des montres et des horloges, en intervenant aussi bien sur des pièces anciennes que récentes.",
+  "Luthier": "Un luthier fabrique, répare et entretient les instruments à cordes, en veillant à la qualité du son et à la longévité de l'instrument.",
+  "Maroquinier": "Un maroquinier conçoit, répare et personnalise des articles en cuir (sacs, ceintures, accessoires), en travaillant souvent sur-mesure.",
+  "Souffleur de verre / Verrier à la main": "Ce professionnel façonne le verre à la main pour créer des pièces artisanales et décoratives uniques.",
+  "Tailleur de pierre": "Un tailleur de pierre taille, restaure et façonne des éléments en pierre pour des monuments, façades ou projets de rénovation patrimoniale.",
+  "Tapissier d'ameublement": "Un tapissier d'ameublement restaure et rénove des sièges (fauteuils, canapés, chaises) en reprenant la structure, le garnissage et le tissu.",
+  "Vitrailliste": "Un vitrailliste crée et restaure des vitraux, en travaillant le verre et le plomb pour des édifices religieux, des habitations ou des projets décoratifs.",
+
+  // Bâtiment & Travaux
+  "Architecte": "Un architecte conçoit des projets de construction, d'extension ou de rénovation, et peut suivre le chantier jusqu'à sa réception.",
+  "Carreleur": "Un carreleur pose du carrelage et de la faïence sur les sols et les murs, pour des constructions neuves ou des rénovations.",
+  "Charpentier": "Un charpentier construit, rénove et répare les charpentes en bois, garantissant la solidité de la toiture et des aménagements de combles.",
+  "Couvreur": "Un couvreur installe, répare et entretient les toitures, en assurant leur étanchéité et leur durabilité.",
+  "Électricien": "Un électricien installe, répare et met aux normes les installations électriques, pour des constructions neuves comme pour des rénovations ou des urgences.",
+  "Expert en bâtiment": "Un expert en bâtiment évalue l'état d'une construction et rédige un rapport technique indépendant, utile avant un achat, après des malfaçons ou en cas de litige.",
+  "Maçon": "Un maçon réalise les travaux de gros œuvre (fondations, murs, dalles) pour des constructions neuves, des extensions ou des rénovations.",
+  "Menuisier": "Un menuisier fabrique et pose des portes, fenêtres et aménagements en bois, sur-mesure ou pour des constructions neuves et rénovations.",
+  "Peintre en bâtiment": "Un peintre en bâtiment rafraîchit ou transforme un intérieur ou une façade, en conseillant sur les teintes et finitions adaptées.",
+  "Plaquiste": "Un plaquiste pose des cloisons, des faux plafonds et réalise l'isolation intérieure, pour des rénovations, aménagements de combles ou constructions neuves.",
+  "Plombier-chauffagiste": "Un plombier-chauffagiste installe, répare et entretient les équipements sanitaires et de chauffage, en intervenant aussi en urgence.",
+
+  // Beauté & Bien-être
+  "Coiffeur": "Un coiffeur réalise coupes, colorations et soins capillaires, en conseillant ses clients selon leur type de cheveux et leurs envies.",
+  "Esthéticienne": "Une esthéticienne réalise des soins du visage, des épilations et des prestations de bien-être, adaptés à chaque type de peau.",
+  "Maquilleur professionnel": "Un maquilleur professionnel sublime le visage pour un mariage, une séance photo ou un événement, selon le style recherché.",
+  "Naturopathe": "Un naturopathe accompagne l'hygiène de vie de ses clients (alimentation, sommeil, stress) par des conseils et des approches naturelles, en complément d'un suivi médical.",
+  "Praticien en massage bien-être": "Un praticien en massage bien-être propose des massages adaptés à chacun pour soulager les tensions ou offrir un moment de détente.",
+  "Prothésiste ongulaire": "Une prothésiste ongulaire réalise la pose, le soin et la décoration des ongles, selon les envies et le style de chaque cliente.",
+  "Sophrologue / Réflexologue": "Ce praticien accompagne la gestion du stress, des émotions ou des tensions physiques par des séances de sophrologie ou de réflexologie.",
+
+  // Commerce & Vente
+  "Ameublement": "Un magasin d'ameublement vend des meubles et conseille sur l'agencement d'un intérieur, selon le style et les dimensions de chaque pièce.",
+  "Décoration": "Une boutique de décoration propose des objets et conseille sur l'aménagement d'un intérieur, pour donner du caractère à un logement.",
+  "Électroménager / Multimédia": "Ce commerce vend et parfois répare des appareils électroménagers ou multimédias, en conseillant selon les besoins et le budget de chaque client.",
+  "Ésotérique": "Une boutique ésotérique propose des objets, soins ou consultations liés au bien-être spirituel, selon les centres d'intérêt de chacun.",
+  "Fleuriste": "Un fleuriste compose et vend des bouquets et des créations florales, pour toutes les occasions et événements.",
+  "Friperie": "Une friperie vend des vêtements de seconde main, sélectionnés et renouvelés régulièrement.",
+  "Garage automobile": "Un garage automobile entretient, répare et diagnostique les véhicules, en assurant la sécurité et le bon fonctionnement de chaque voiture.",
+  "Habillement": "Une boutique d'habillement vend des vêtements pour toutes les occasions, en conseillant ses clients selon leur style et leurs besoins.",
+  "Jardinerie": "Une jardinerie vend plantes, outils et équipements de jardin, en conseillant sur l'aménagement et l'entretien des extérieurs.",
+  "Librairie": "Une librairie vend des livres et conseille ses clients sur leurs lectures, en pouvant commander des ouvrages non disponibles en rayon.",
+  "Motoculture": "Un spécialiste en motoculture vend, répare et entretient le matériel de jardinage motorisé (tondeuses, tronçonneuses, débroussailleuses).",
+  "Parfumerie": "Une parfumerie vend des parfums et des produits de beauté, en conseillant ses clients selon leurs préférences.",
+  "Pharmacie": "Une pharmacie délivre des médicaments et conseille sur la santé, avec ou sans ordonnance, en assurant parfois des gardes en dehors des horaires habituels.",
+  "Tabac / Presse": "Un bureau de tabac vend tabac, presse et jeux à gratter, souvent complété par d'autres services de proximité (timbres, recharges, point relais).",
+  "Troc / Dépôt vente": "Un troc ou dépôt-vente permet d'acheter, de vendre ou d'échanger des objets d'occasion, contre une commission prélevée à la vente.",
+
+  // Culture & Élevage
+  "Apiculteur / Apicultrice": "Un apiculteur élève des abeilles et produit du miel ainsi que d'autres produits de la ruche, souvent vendus en direct.",
+  "Aquaculteur / Aquacultrice": "Un aquaculteur élève des espèces aquatiques (poissons, coquillages) et vend sa production, souvent directement à la ferme ou sur les marchés.",
+  "Arboriculteur / Arboricultrice": "Un arboriculteur cultive des arbres fruitiers et récolte leurs fruits, qu'il vend en direct à la ferme ou sur les marchés locaux.",
+  "Éleveur / Éleveuse": "Un éleveur élève du bétail ou des animaux de ferme et vend ses produits (viande notamment) en direct ou en circuit court.",
+  "Horticulteur / Horticultrice": "Un horticulteur cultive et vend des plantes et des fleurs, en conseillant sur l'aménagement paysager et l'entretien des jardins.",
+  "Maraîcher / Maraîchère": "Un maraîcher cultive des fruits et légumes et les vend directement, à la ferme, sur les marchés ou via des paniers réguliers.",
+  "Viticulteur / Viticultrice": "Un viticulteur cultive la vigne et produit du vin, qu'il fait découvrir lors de visites, dégustations et ventes directes au domaine.",
+
+  // Immobilier
+  "Agence immobilière": "Une agence immobilière accompagne l'achat, la vente ou la location d'un bien, de l'estimation jusqu'à la signature.",
+  "Conciergerie": "Une conciergerie gère au quotidien un bien immobilier (accueil des locataires, ménage, entretien), notamment pour les locations saisonnières.",
+  "Diagnostique technique": "Un diagnostiqueur immobilier réalise les diagnostics obligatoires (DPE, amiante, électricité...) avant une vente ou une location, et fournit un rapport conforme à la réglementation.",
+  "Gestionnaire de bien": "Un gestionnaire de biens administre un patrimoine locatif au nom du propriétaire : recherche de locataires, encaissement des loyers, suivi des relations locatives.",
+  "Mandataire immobilier": "Un mandataire immobilier accompagne, en indépendant, l'achat ou la vente d'un bien, de l'estimation jusqu'à la conclusion de la transaction.",
+  "Syndic de copropriété": "Un syndic de copropriété assure la gestion administrative, financière et technique d'un immeuble, dans le cadre fixé par la loi.",
+
+  // Informatique & Numérique
+  "Agence Web": "Une agence web conçoit et développe des sites internet, de la conception à la mise en ligne, et peut assurer leur maintenance.",
+  "Community manager": "Un community manager anime les réseaux sociaux d'une entreprise et développe sa visibilité en ligne, selon une stratégie adaptée à ses objectifs.",
+  "Cybersécurité": "Un expert en cybersécurité évalue les vulnérabilités d'un système informatique et met en place des solutions pour protéger les données et les accès.",
+  "Graphiste": "Un graphiste crée l'identité visuelle d'une entreprise (logo, charte graphique, supports de communication) selon son image et ses objectifs.",
+  "Informaticien": "Un informaticien installe, dépanne et entretient du matériel informatique, à domicile ou en entreprise.",
+  "Webdesigner": "Un webdesigner conçoit l'interface et l'ergonomie d'un site ou d'une application, en alliant esthétique et expérience utilisateur.",
+  "Webmaster indépendant": "Un webmaster indépendant assure la gestion, la maintenance et la mise à jour d'un site internet, pour en garantir le bon fonctionnement et la sécurité.",
+
+  // Restauration
+  "Restaurant": "Un restaurant propose des repas sur place, dans une ambiance et une cuisine adaptées à chaque occasion.",
+  "Café / Bar": "Un café ou un bar accueille ses clients pour une pause, un verre ou une soirée conviviale, en journée ou en soirée.",
+  "Traiteur": "Un traiteur conçoit et prépare des repas pour des événements (mariages, réceptions professionnelles), sous forme de buffet, cocktail ou menu complet.",
+
+  // Services à la personne
+  "Aide à domicile": "Une aide à domicile accompagne une personne dans les tâches du quotidien (ménage, courses, aide à la toilette) ou lui apporte une présence rassurante.",
+  "Assistant administratif": "Un assistant administratif indépendant prend en charge des tâches administratives (courrier, facturation, gestion de dossiers) pour des particuliers ou des entreprises.",
+  "Assistant informatique et Internet": "Cet assistant accompagne les particuliers dans l'utilisation de leurs appareils informatiques et de leurs démarches en ligne, souvent à domicile.",
+  "Employé de ménage / Repassage": "Ce professionnel prend en charge l'entretien d'un logement ou du linge (ménage, repassage), de façon ponctuelle ou régulière.",
+  "Garde d'animaux": "Un service de garde d'animaux prend soin d'un animal de compagnie en l'absence de son propriétaire, à domicile ou chez le prestataire.",
+  "Garde d'enfants": "Une garde d'enfants veille sur des enfants de façon ponctuelle ou régulière (sortie d'école, vacances, soirée).",
+  "Travaux de jardinerie": "Ce professionnel entretient un jardin (tonte, taille, débroussaillage) de façon ponctuelle ou dans le cadre d'un contrat régulier.",
+
+  // Sport & Fitness
+  "Coach sportif": "Un coach sportif élabore et encadre un programme d'entraînement personnalisé, adapté au niveau et aux objectifs de chacun.",
+  "Salle de sport et de fitness": "Une salle de sport propose équipements, cours collectifs et encadrement pour s'entraîner régulièrement.",
+
+  // Transport de personnes
+  "Ambulance": "Un service d'ambulance assure le transport médicalisé de patients, pour une urgence ou un rendez-vous médical programmé.",
+  "Déménagement": "Une entreprise de déménagement organise et transporte les meubles et effets personnels, en proposant souvent aussi l'emballage.",
+  "Taxi": "Un taxi transporte ses clients d'un point à un autre, pour un trajet ponctuel ou réservé à l'avance.",
+  "Transport de groupe": "Ce prestataire assure le transport collectif de groupes (minibus ou autocar), pour des événements ponctuels ou des déplacements réguliers.",
+};
+
 export function buildSubcategoryLandingContent(params: {
   categoryLabel: string;
   subcategoryLabel: string;
@@ -633,18 +759,18 @@ const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
 
 export function buildSubcategoryFaq(params: {
   subcategoryLabel: string;
-  proCount: number;
-  cityCount: number;
 }): FaqItem[] {
-  const { subcategoryLabel, proCount, cityCount } = params;
+  const { subcategoryLabel } = params;
   const specific = SUBCATEGORY_FAQ_EXTRA[subcategoryLabel] ?? [{
     q: `Comment choisir un bon professionnel en ${subcategoryLabel} ?`,
     a: `Comparez les fiches détaillées, les avis vérifiés laissés par d'autres clients, et contactez directement le professionnel par téléphone, email ou WhatsApp depuis sa fiche sur Prolocal-Landes.`,
   }];
+  const description = SUBCATEGORY_DESCRIPTIONS[subcategoryLabel]
+    ?? `Un professionnel en ${subcategoryLabel} exerce une activité spécialisée dans ce domaine — consultez les fiches référencées ci-dessus pour en savoir plus sur les prestations proposées localement.`;
   return [
     {
-      q: `Combien y a-t-il de professionnels en ${subcategoryLabel} référencés dans les Landes ?`,
-      a: `${proCount} professionnel${proCount > 1 ? "s" : ""} en ${subcategoryLabel} ${proCount > 1 ? "sont" : "est"} actuellement référencé${proCount > 1 ? "s" : ""} sur Prolocal-Landes${cityCount > 0 ? `, dans ${cityCount} commune${cityCount > 1 ? "s" : ""} du département` : ""}.`,
+      q: `Que fait un ${subcategoryLabel} ?`,
+      a: description,
     },
     ...specific,
     {

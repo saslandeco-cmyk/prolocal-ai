@@ -51,8 +51,8 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
     [categoryLabel, subcategoryLabel, pros.length, citiesWithPros]
   );
   const faqItems = useMemo(
-    () => buildSubcategoryFaq({ subcategoryLabel, proCount: pros.length, cityCount: citiesWithPros.length }),
-    [subcategoryLabel, pros.length, citiesWithPros.length]
+    () => buildSubcategoryFaq({ subcategoryLabel }),
+    [subcategoryLabel]
   );
 
   // Formulaire de recherche

@@ -87,7 +87,7 @@ export default async function Page({ params }: { params: Promise<{ category: str
       },
       {
         "@type": "FAQPage",
-        mainEntity: buildSubcategoryFaq({ subcategoryLabel, proCount: initialPros.length, cityCount }).map(item => ({
+        mainEntity: buildSubcategoryFaq({ subcategoryLabel }).map(item => ({
           "@type": "Question",
           name: item.q,
           acceptedAnswer: { "@type": "Answer", text: item.a },
