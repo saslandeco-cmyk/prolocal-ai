@@ -10,6 +10,8 @@ interface GeoCoords {
 
 interface NeedSearchBarProps {
   initialValue?: string;
+  initialCity?: string;
+  initialGeo?: GeoCoords;
   onSearch?: (text: string, geo?: GeoCoords) => void;
 }
 
@@ -19,11 +21,11 @@ interface NeedSearchBarProps {
  * de chat à plusieurs échanges) : l'utilisateur décrit son besoin une fois,
  * PROLOCAL AI comprend et affiche directement des professionnels réels.
  */
-export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearchBarProps) {
+export default function NeedSearchBar({ initialValue = "", initialCity = "", initialGeo, onSearch }: NeedSearchBarProps) {
   const router = useRouter();
   const [text, setText] = useState(initialValue);
-  const [cityInput, setCityInput] = useState("");
-  const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
+  const [cityInput, setCityInput] = useState(initialCity);
+  const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(initialGeo ?? null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState("");
 

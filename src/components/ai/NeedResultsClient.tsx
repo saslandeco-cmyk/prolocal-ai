@@ -26,6 +26,7 @@ function NeedResultsContent() {
   const [loading, setLoading] = useState(Boolean(texte));
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
 
   const runSearch = useCallback(async (query: string, geo?: GeoCoords, radius?: number) => {
     if (!query.trim()) return;
@@ -59,6 +60,7 @@ function NeedResultsContent() {
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
     const initialGeo = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
+    setGeoCoords(initialGeo ?? null);
     runSearch(texte, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [texte]);
@@ -89,6 +91,16 @@ function NeedResultsContent() {
 
       {!loading && !error && response && (
         <>
+          {/* 1. Nouvelle recherche — reprend ce que le visiteur a déjà saisi */}
+          <div className="mb-6">
+            <NeedSearchBar
+              initialValue={response.need.besoin || texte}
+              initialCity={response.need.commune || ""}
+              initialGeo={geoCoords ?? undefined}
+              onSearch={(q, geo) => { setGeoCoords(geo ?? null); runSearch(q, geo); }}
+            />
+          </div>
+
           {/* 2. Carte des professionnels trouvés */}
           {response.results.length > 0 && (
             <div className="mb-8">
