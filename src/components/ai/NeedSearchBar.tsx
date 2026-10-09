@@ -79,32 +79,32 @@ export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearc
             maxLength={500}
           />
         </div>
+        <div className="flex-1 flex items-center gap-2 px-3 sm:px-4 py-3">
+          <MapPin className="w-5 h-5 text-landes-sage flex-shrink-0" />
+          <input
+            value={cityInput}
+            onChange={(e) => { setCityInput(e.target.value); setGeoCoords(null); }}
+            placeholder="Ville ou code postal…"
+            className="w-full text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent min-w-0"
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={handleAutourDeMoi}
+            disabled={geoLoading}
+            title="Autour de moi"
+            className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-landes-forest bg-landes-forest/8 hover:bg-landes-forest/15 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+          >
+            {geoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Locate className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{geoCoords ? "Position activée" : "Autour de moi"}</span>
+          </button>
+        </div>
         <button
           type="submit"
           className="flex items-center justify-center gap-2 bg-landes-forest hover:bg-landes-pine text-white font-semibold text-base px-6 sm:px-8 py-3 rounded-xl transition-colors whitespace-nowrap"
         >
           <Search className="w-5 h-5" />
           <span>Trouver un professionnel</span>
-        </button>
-      </div>
-      <div className="flex items-center gap-2 px-4 py-3">
-        <MapPin className="w-5 h-5 text-landes-sage flex-shrink-0" />
-        <input
-          value={cityInput}
-          onChange={(e) => { setCityInput(e.target.value); setGeoCoords(null); }}
-          placeholder="Ville ou code postal…"
-          className="w-full text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent min-w-0"
-          autoComplete="off"
-        />
-        <button
-          type="button"
-          onClick={handleAutourDeMoi}
-          disabled={geoLoading}
-          title="Autour de moi"
-          className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-landes-forest bg-landes-forest/8 hover:bg-landes-forest/15 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
-        >
-          {geoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Locate className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">{geoCoords ? "Position activée" : "Autour de moi"}</span>
         </button>
       </div>
       {geoError && <p className="text-xs text-red-500 px-4">{geoError}</p>}
