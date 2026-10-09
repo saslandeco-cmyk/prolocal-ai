@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { categoryLabelFromSlug, subcategoryLabelFromSlug } from "@/lib/profileUrl";
+import { categoryLabelFromSlug, subcategoryLabelFromSlug, buildProfileUrl } from "@/lib/profileUrl";
 import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsBySubcategory } from "@/lib/db/professionals";
 import { buildSubcategoryFaq, buildSubcategoryMetaDescription } from "@/lib/subcategoryContent";
@@ -84,6 +84,16 @@ export default async function Page({ params }: { params: Promise<{ category: str
         url,
         description,
         isPartOf: { "@type": "WebSite", name: "Prolocal-Landes", url: baseUrl },
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: initialPros.length,
+          itemListElement: initialPros.map((pro, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: `${baseUrl}${buildProfileUrl(pro)}`,
+            name: pro.companyName,
+          })),
+        },
       },
       {
         "@type": "FAQPage",

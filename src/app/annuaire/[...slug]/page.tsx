@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { categoryLabelFromSlug, unslugify, extractIdFromSlug } from "@/lib/profileUrl";
+import { categoryLabelFromSlug, unslugify, extractIdFromSlug, buildProfileUrl } from "@/lib/profileUrl";
 import { cityMetaFromSlug } from "@/lib/cityData";
 import { dbGetProfessionalById, dbGetProfessionalsByCity } from "@/lib/db/professionals";
 import { dbGetReviewsByPro } from "@/lib/db/reviews";
@@ -179,6 +179,16 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
               name: cityMeta.name,
               address: { "@type": "PostalAddress", addressLocality: cityMeta.name, postalCode: cityMeta.postalCode, addressCountry: "FR" },
               geo: { "@type": "GeoCoordinates", latitude: cityMeta.lat, longitude: cityMeta.lng },
+            },
+            mainEntity: {
+              "@type": "ItemList",
+              numberOfItems: initialPros.length,
+              itemListElement: initialPros.map((pro, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `${baseUrl}${buildProfileUrl(pro)}`,
+                name: pro.companyName,
+              })),
             },
           },
           {

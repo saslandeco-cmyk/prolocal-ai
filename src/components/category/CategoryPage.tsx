@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Search, MapPin, ArrowRight, ChevronRight, X, TrendingUp, Loader2, LocateFixed } from "lucide-react";
+import { Search, MapPin, ArrowRight, ChevronRight, ChevronDown, X, TrendingUp, Loader2, LocateFixed } from "lucide-react";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 import { getListingRank } from "@/lib/listingOrder";
 import { useInView } from "@/lib/useInView";
@@ -48,6 +48,7 @@ export default function CategoryPage({ meta, initialPros }: Props) {
   const [showSug,  setShowSug]    = useState(false);
   const [showCity, setShowCity]   = useState(false);
   const [activeSub, setActiveSub] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const queryRef = useRef<HTMLDivElement>(null);
   const cityRef  = useRef<HTMLDivElement>(null);
 
@@ -195,6 +196,25 @@ export default function CategoryPage({ meta, initialPros }: Props) {
   // "bootup-time") n'est montée qu'à l'approche du viewport, pour ne pas
   // bloquer le fil principal dès le chargement de la page.
   const [mapRef, mapInView] = useInView<HTMLDivElement>();
+
+  // FAQ — même contenu, calculé de façon identique, que le JSON-LD FAQPage
+  // généré côté serveur (voir app/categories/[category]/page.tsx), pour que
+  // les données structurées correspondent toujours exactement à ce qui est
+  // visible (recommandation Google pour les extraits FAQ).
+  const faqItems = [
+    {
+      q: `Combien y a-t-il de professionnels en ${meta.category} référencés dans les Landes ?`,
+      a: `${pros.length} professionnel${pros.length > 1 ? "s" : ""} en ${meta.category} ${pros.length > 1 ? "sont" : "est"} actuellement référencé${pros.length > 1 ? "s" : ""} sur Prolocal-Landes.`,
+    },
+    {
+      q: `Comment choisir un bon professionnel en ${meta.category} dans les Landes ?`,
+      a: `Comparez les fiches détaillées, les avis vérifiés laissés par d'autres clients, et contactez directement le professionnel par téléphone, email ou WhatsApp depuis sa fiche sur Prolocal-Landes.`,
+    },
+    {
+      q: `Comment référencer mon entreprise en ${meta.category} ?`,
+      a: `Rendez-vous sur la page d'inscription, renseignez votre numéro SIREN et complétez les informations demandées sur votre activité. Votre fiche sera visible sur Prolocal-Landes.fr dans les 24h.`,
+    },
+  ];
 
   return (
     <div className="bg-landes-cream min-h-screen">
@@ -534,6 +554,27 @@ export default function CategoryPage({ meta, initialPros }: Props) {
               className="btn-amber flex items-center justify-center gap-2 py-3 px-8 w-full sm:w-auto">
               Inscrire mon entreprise <ArrowRight className="w-5 h-5" />
             </Link>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-landes-pine mb-4">Questions fréquentes</h2>
+          <div className="space-y-2">
+            {faqItems.map((item, i) => (
+              <div key={i} className="card overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                >
+                  <span className="font-semibold text-landes-pine text-sm">{item.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                </button>
+                {openFaq === i && (
+                  <p className="px-4 pb-4 text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

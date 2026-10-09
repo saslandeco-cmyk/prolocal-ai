@@ -4,6 +4,7 @@ import CategoryPage, { type CategoryMeta } from "@/components/category/CategoryP
 import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsByCategory } from "@/lib/db/professionals";
 import type { CategoryRecord } from "@/lib/categories";
+import { buildProfileUrl } from "@/lib/profileUrl";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -88,6 +89,39 @@ export default async function Page({ params }: { params: Promise<{ category: str
         description: meta.subtitle,
         url,
         isPartOf: { "@type": "WebSite", name: "Prolocal-Landes", url: baseUrl },
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: initialPros.length,
+          itemListElement: initialPros.map((pro, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: `${baseUrl}${buildProfileUrl(pro)}`,
+            name: pro.companyName,
+          })),
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: `Combien y a-t-il de professionnels en ${meta.category} référencés dans les Landes ?`,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: `${initialPros.length} professionnel${initialPros.length > 1 ? "s" : ""} en ${meta.category} ${initialPros.length > 1 ? "sont" : "est"} actuellement référencé${initialPros.length > 1 ? "s" : ""} sur Prolocal-Landes.`,
+            },
+          },
+          {
+            "@type": "Question",
+            name: `Comment choisir un bon professionnel en ${meta.category} dans les Landes ?`,
+            acceptedAnswer: { "@type": "Answer", text: "Comparez les fiches détaillées, les avis vérifiés laissés par d'autres clients, et contactez directement le professionnel par téléphone, email ou WhatsApp depuis sa fiche sur Prolocal-Landes." },
+          },
+          {
+            "@type": "Question",
+            name: `Comment référencer mon entreprise en ${meta.category} ?`,
+            acceptedAnswer: { "@type": "Answer", text: "Rendez-vous sur la page d'inscription, renseignez votre numéro SIREN et complétez les informations demandées sur votre activité. Votre fiche sera visible sur Prolocal-Landes.fr dans les 24h." },
+          },
+        ],
       },
     ],
   };
