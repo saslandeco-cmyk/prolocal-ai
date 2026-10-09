@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { Loader2, MapPin, Locate, RotateCcw } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
-import QuoteRequestForm from "@/components/ai/QuoteRequestForm";
 import type { NeedSearchResponse } from "@/types/needs";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
@@ -231,7 +230,6 @@ function NeedResultsContent() {
               {response.results.map((r) => (
                 <div key={r.professional.id}>
                   <ProfessionalCard pro={r.professional} />
-                  <QuoteRequestForm professionalId={r.professional.id} need={response.need} />
                 </div>
               ))}
             </div>
