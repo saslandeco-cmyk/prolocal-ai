@@ -7,6 +7,7 @@ import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, Arrow
 import { getListingRank } from "@/lib/listingOrder";
 import { useInView } from "@/lib/useInView";
 import { categorySlug } from "@/lib/profileUrl";
+import { CITY_META } from "@/lib/cityData";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
@@ -46,6 +47,14 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
     cities.sort((a, b) => a.localeCompare(b, "fr"));
     return cities;
   }, [pros]);
+  // Seules les communes de la liste éditorialisée CITY_META ont une page
+  // /annuaire/[ville] dédiée (voir sitemap.ts) — on ne lie donc que celles-là.
+  const citiesWithPages = useMemo(
+    () => citiesWithPros
+      .map(name => Object.values(CITY_META).find(c => c.name.toLowerCase() === name.toLowerCase()))
+      .filter((c): c is typeof CITY_META[string] => Boolean(c)),
+    [citiesWithPros]
+  );
   const landing = useMemo(
     () => buildSubcategoryLandingContent({ categoryLabel, subcategoryLabel, proCount: pros.length, cities: citiesWithPros }),
     [categoryLabel, subcategoryLabel, pros.length, citiesWithPros]
@@ -484,6 +493,26 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
             ))}
           </div>
         </div>
+
+        {/* Villes où des professionnels sont référencés dans cette sous-catégorie */}
+        {citiesWithPages.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <h2 className="text-lg font-bold text-landes-pine mb-3">
+              {subcategoryLabel} par ville
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {citiesWithPages.map(city => (
+                <Link
+                  key={city.slug}
+                  href={`/annuaire/${city.slug}/${categorySlug(categoryLabel)}`}
+                  className="px-4 py-2 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:border-landes-sage hover:text-landes-forest transition-colors"
+                >
+                  {city.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { MapPin, ChevronRight, Award, ChevronDown } from "lucide-react";
 import { getListingRank } from "@/lib/listingOrder";
-import { categorySlug } from "@/lib/profileUrl";
+import { categorySlug, subcategorySlugForUrl } from "@/lib/profileUrl";
 import { CITY_META } from "@/lib/cityData";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
@@ -25,6 +25,16 @@ interface Props {
 function joinCategories(cats: string[]): string {
   if (cats.length === 1) return cats[0];
   return `${cats.slice(0, -1).join(", ")} et ${cats[cats.length - 1]}`;
+}
+
+/** Même énumération française, mais chaque élément est un lien cliquable vers sa page dédiée. */
+function joinLinkList(items: { label: string; href: string }[]): ReactNode {
+  return items.map((item, i) => (
+    <span key={item.href}>
+      <Link href={item.href} className="text-landes-forest font-medium hover:underline">{item.label}</Link>
+      {i < items.length - 2 ? ", " : i === items.length - 2 ? " et " : ""}
+    </span>
+  ));
 }
 
 export default function CityPage({ meta, categoryFilter, initialPros }: Props) {
@@ -140,7 +150,10 @@ export default function CityPage({ meta, categoryFilter, initialPros }: Props) {
               {availableSubcategories.length > 0 ? (
                 <>
                   À {meta.name}, retrouvez des professionnels spécialisés en{" "}
-                  {joinCategories(availableSubcategories)} au sein de la catégorie {categoryFilter}.
+                  {joinLinkList(availableSubcategories.map(sub => ({
+                    label: sub,
+                    href: `/categories/${categorySlug(categoryFilter)}/${subcategorySlugForUrl(sub)}`,
+                  })))} au sein de la catégorie {categoryFilter}.
                   Consultez les fiches ci-dessous pour trouver le bon interlocuteur selon votre besoin précis,
                   avec coordonnées, avis clients et disponibilités.
                 </>
@@ -243,15 +256,19 @@ export default function CityPage({ meta, categoryFilter, initialPros }: Props) {
           </div>
         </div>
 
-        {/* Villes voisines */}
-        {!categoryFilter && neighborCities.length > 0 && (
+        {/* Villes voisines — conserve le filtre catégorie actif s'il y en a un,
+            pour qu'un visiteur sans résultat ici puisse élargir sa recherche
+            aux communes proches sans perdre le métier recherché. */}
+        {neighborCities.length > 0 && (
           <div className="mt-12 pt-8 border-t border-gray-200">
-            <h2 className="text-lg font-bold text-landes-pine mb-3">Villes voisines</h2>
+            <h2 className="text-lg font-bold text-landes-pine mb-3">
+              {categoryFilter ? `${categoryFilter} dans les villes voisines` : "Villes voisines"}
+            </h2>
             <div className="flex flex-wrap gap-2">
               {neighborCities.map(city => (
                 <Link
                   key={city.slug}
-                  href={`/annuaire/${city.slug}`}
+                  href={categoryFilter ? `/annuaire/${city.slug}/${categorySlug(categoryFilter)}` : `/annuaire/${city.slug}`}
                   className="px-4 py-2 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:border-landes-sage hover:text-landes-forest transition-colors"
                 >
                   {city.name}

@@ -12,6 +12,8 @@ import { getProfessionalById, recordVisit, rehydrateAsync } from "@/lib/storage"
 import { Professional, formatDayHours } from "@/types";
 import { getBanner } from "@/lib/defaultBanners";
 import { phoneHref } from "@/lib/phone";
+import { categorySlug as categorySlugFor, subcategorySlugForUrl } from "@/lib/profileUrl";
+import { CITY_META } from "@/lib/cityData";
 
 const SingleMap     = dynamic(() => import("@/components/map/SingleMap"), { ssr: false });
 const ReviewSection = dynamic(() => import("@/components/professional/ReviewSection"), { ssr: false });
@@ -294,21 +296,8 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota 
     ? { avg: Math.round(approvedReviews.reduce((s,r) => s + r.rating, 0) / approvedReviews.length * 10) / 10, count: approvedReviews.length }
     : null;
 
-  // Map category name → slug
-  const CATEGORY_SLUGS: Record<string, string> = {
-    "Alimentation & Épicerie":    "alimentation",
-    "Artisanat & Métiers d'art":  "artisanat",
-    "Bâtiment & Travaux":         "batiment",
-    "Beauté & Bien-être":         "beaute",
-    "Commerce & Vente":           "commerce",
-    "Immobilier":                 "immobilier",
-    "Informatique & Numérique":   "informatique",
-    "Culture & Élevage":       "agriculture",
-    "Services à la personne":     "services",
-    "Sport & Fitness":            "sport",
-    "Transport de personnes":     "transport",
-  };
-  const categorySlug = CATEGORY_SLUGS[pro.category] || null;
+  const categorySlug = categorySlugFor(pro.category);
+  const citySlug = Object.values(CITY_META).find(c => c.name.toLowerCase() === pro.city.toLowerCase())?.slug ?? null;
 
   return (
     <div className="bg-landes-cream min-h-screen">
@@ -387,12 +376,21 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota 
               </h2>
             )}
             <p className="text-landes-sage font-medium mt-0.5 flex items-center gap-3">
-              {pro.category}{pro.subcategory && <span className="text-gray-400 font-normal"> · {pro.subcategory}</span>}
+              <Link href={`/categories/${categorySlug}`} className="hover:underline">{pro.category}</Link>
+              {pro.subcategory && (
+                <span className="text-gray-400 font-normal">
+                  {" · "}
+                  <Link href={`/categories/${categorySlug}/${subcategorySlugForUrl(pro.subcategory)}`} className="hover:underline hover:text-landes-sage">
+                    {pro.subcategory}
+                  </Link>
+                </span>
+              )}
               {proRating && <StarDisplay rating={proRating.avg} count={proRating.count} size="sm" />}
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-2">
               <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-                <MapPin className="w-3.5 h-3.5" /> {pro.city} ({pro.postalCode})
+                <MapPin className="w-3.5 h-3.5" />
+                {citySlug ? <Link href={`/annuaire/${citySlug}`} className="hover:underline hover:text-landes-forest">{pro.city}</Link> : pro.city} ({pro.postalCode})
               </span>
               {hasHours && (
                 <span className={`flex items-center gap-1.5 text-sm font-medium ${openStatus.open ? "text-green-600" : "text-red-500"}`}>

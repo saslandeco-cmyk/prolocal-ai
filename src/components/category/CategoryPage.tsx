@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Search, MapPin, ArrowRight, ChevronRight, X, TrendingUp, Loader2, LocateFixed } from "lucide-react";
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 import { getListingRank } from "@/lib/listingOrder";
+import { subcategorySlugForUrl } from "@/lib/profileUrl";
 import { useInView } from "@/lib/useInView";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
@@ -476,6 +477,26 @@ export default function CategoryPage({ meta, initialPros }: Props) {
                 >
                   <span>{sub}</span>
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* Liens vers les pages dédiées de chaque sous-catégorie — complète
+              les puces de filtre ci-dessus (qui filtrent sur place) par de
+              vrais liens vers les pages d'atterrissage SEO correspondantes. */}
+          {meta.subcategories && meta.subcategories.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-sm text-gray-500">
+              <span className="font-medium text-gray-600">En savoir plus :</span>
+              {meta.subcategories.map((sub, i) => (
+                <span key={sub} className="flex items-center">
+                  <Link
+                    href={`/categories/${meta.slug}/${subcategorySlugForUrl(sub)}`}
+                    className="text-landes-forest hover:underline"
+                  >
+                    {sub}
+                  </Link>
+                  {i < meta.subcategories!.length - 1 && <span className="text-gray-300 ml-2">·</span>}
+                </span>
               ))}
             </div>
           )}
