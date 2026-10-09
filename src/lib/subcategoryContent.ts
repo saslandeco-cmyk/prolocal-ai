@@ -757,6 +757,143 @@ const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
   ],
 };
 
+/**
+ * Forme plurielle naturelle du métier (clé = libellé exact de la
+ * sous-catégorie), pour une ancre de lien du type "Voir les {pluriel} dans
+ * les Landes" (voir buildSubcategoryCtaLabel) — jamais une simple
+ * concaténation d'un "s", pour rester grammaticalement naturel même sur les
+ * intitulés composés ou les commerces (qui ne se pluralisent pas comme un
+ * nom de métier).
+ */
+const SUBCATEGORY_PLURAL: Record<string, string> = {
+  // Alimentation & Épicerie
+  "Alimentation générale": "commerces d'alimentation générale",
+  "Boucherie / Charcuterie": "bouchers-charcutiers",
+  "Boulangerie / Pâtisserie": "boulangers-pâtissiers",
+  "Caviste / Marchand de boissons": "cavistes",
+  "Épicerie fine": "épiceries fines",
+  "Fromagerie / Crèmerie": "fromagers-affineurs",
+  "Poissonnerie": "poissonniers",
+  "Primeurs": "primeurs",
+
+  // Artisanat & Métiers d'art
+  "Archetier": "archetiers",
+  "Bijoutier-Joaillier": "bijoutiers-joailliers",
+  "Céramiste": "céramistes",
+  "Chaudronnier": "chaudronniers",
+  "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "décorateurs sur céramique et peintres sur faïence",
+  "Doreur à la feuille": "doreurs à la feuille",
+  "Ébéniste": "ébénistes",
+  "Encadreur": "encadreurs",
+  "Ferronnier d'art": "ferronniers d'art",
+  "Horloger": "horlogers",
+  "Luthier": "luthiers",
+  "Maroquinier": "maroquiniers",
+  "Souffleur de verre / Verrier à la main": "souffleurs de verre",
+  "Tailleur de pierre": "tailleurs de pierre",
+  "Tapissier d'ameublement": "tapissiers d'ameublement",
+  "Vitrailliste": "vitraillistes",
+
+  // Bâtiment & Travaux
+  "Architecte": "architectes",
+  "Carreleur": "carreleurs",
+  "Charpentier": "charpentiers",
+  "Couvreur": "couvreurs",
+  "Électricien": "électriciens",
+  "Expert en bâtiment": "experts en bâtiment",
+  "Maçon": "maçons",
+  "Menuisier": "menuisiers",
+  "Peintre en bâtiment": "peintres en bâtiment",
+  "Plaquiste": "plaquistes",
+  "Plombier-chauffagiste": "plombiers-chauffagistes",
+
+  // Beauté & Bien-être
+  "Coiffeur": "coiffeurs",
+  "Esthéticienne": "esthéticiennes",
+  "Maquilleur professionnel": "maquilleurs professionnels",
+  "Naturopathe": "naturopathes",
+  "Praticien en massage bien-être": "praticiens en massage bien-être",
+  "Prothésiste ongulaire": "prothésistes ongulaires",
+  "Sophrologue / Réflexologue": "sophrologues et réflexologues",
+
+  // Commerce & Vente
+  "Ameublement": "magasins d'ameublement",
+  "Décoration": "boutiques de décoration",
+  "Électroménager / Multimédia": "magasins d'électroménager et multimédia",
+  "Ésotérique": "boutiques ésotériques",
+  "Fleuriste": "fleuristes",
+  "Friperie": "friperies",
+  "Garage automobile": "garages automobiles",
+  "Habillement": "boutiques d'habillement",
+  "Jardinerie": "jardineries",
+  "Librairie": "librairies",
+  "Motoculture": "spécialistes en motoculture",
+  "Parfumerie": "parfumeries",
+  "Pharmacie": "pharmacies",
+  "Tabac / Presse": "bureaux de tabac et presse",
+  "Troc / Dépôt vente": "trocs et dépôts-vente",
+
+  // Culture & Élevage
+  "Apiculteur / Apicultrice": "apiculteurs",
+  "Aquaculteur / Aquacultrice": "aquaculteurs",
+  "Arboriculteur / Arboricultrice": "arboriculteurs",
+  "Éleveur / Éleveuse": "éleveurs",
+  "Horticulteur / Horticultrice": "horticulteurs",
+  "Maraîcher / Maraîchère": "maraîchers",
+  "Viticulteur / Viticultrice": "viticulteurs",
+
+  // Immobilier
+  "Agence immobilière": "agences immobilières",
+  "Conciergerie": "conciergeries",
+  "Diagnostique technique": "diagnostiqueurs immobiliers",
+  "Gestionnaire de bien": "gestionnaires de biens",
+  "Mandataire immobilier": "mandataires immobiliers",
+  "Syndic de copropriété": "syndics de copropriété",
+
+  // Informatique & Numérique
+  "Agence Web": "agences web",
+  "Community manager": "community managers",
+  "Cybersécurité": "experts en cybersécurité",
+  "Graphiste": "graphistes",
+  "Informaticien": "informaticiens",
+  "Webdesigner": "webdesigners",
+  "Webmaster indépendant": "webmasters indépendants",
+
+  // Restauration
+  "Restaurant": "restaurants",
+  "Café / Bar": "cafés et bars",
+  "Traiteur": "traiteurs",
+
+  // Services à la personne
+  "Aide à domicile": "aides à domicile",
+  "Assistant administratif": "assistants administratifs",
+  "Assistant informatique et Internet": "assistants informatique et Internet",
+  "Employé de ménage / Repassage": "employés de ménage et repassage",
+  "Garde d'animaux": "services de garde d'animaux",
+  "Garde d'enfants": "gardes d'enfants",
+  "Travaux de jardinerie": "professionnels des travaux de jardinerie",
+
+  // Sport & Fitness
+  "Coach sportif": "coachs sportifs",
+  "Salle de sport et de fitness": "salles de sport et de fitness",
+
+  // Transport de personnes
+  "Ambulance": "services d'ambulance",
+  "Déménagement": "entreprises de déménagement",
+  "Taxi": "taxis",
+  "Transport de groupe": "services de transport de groupe",
+};
+
+/**
+ * Texte d'ancre naturel pour un lien vers la page d'une sous-catégorie, ex:
+ * "Voir les experts en bâtiment dans les Landes" — utilisé notamment sur
+ * chaque fiche professionnelle pour renvoyer vers sa sous-catégorie.
+ */
+export function buildSubcategoryCtaLabel(subcategoryLabel: string): string {
+  const plural = SUBCATEGORY_PLURAL[subcategoryLabel] ?? `professionnels en ${subcategoryLabel}`;
+  return `Voir les ${plural} dans les Landes`;
+}
+
 export function buildSubcategoryFaq(params: {
   subcategoryLabel: string;
 }): FaqItem[] {

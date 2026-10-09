@@ -14,6 +14,7 @@ import { getBanner } from "@/lib/defaultBanners";
 import { phoneHref } from "@/lib/phone";
 import { categorySlug as categorySlugFor, subcategorySlugForUrl } from "@/lib/profileUrl";
 import { CITY_META } from "@/lib/cityData";
+import { buildSubcategoryCtaLabel } from "@/lib/subcategoryContent";
 
 const SingleMap     = dynamic(() => import("@/components/map/SingleMap"), { ssr: false });
 const ReviewSection = dynamic(() => import("@/components/professional/ReviewSection"), { ssr: false });
@@ -475,6 +476,19 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota 
                 </div>
               );
             })()}
+
+            {/* Lien de découverte vers la sous-catégorie — ancre naturelle
+                ("Voir les {métier au pluriel} dans les Landes") plutôt
+                qu'un intitulé générique, pour un maillage interne pertinent
+                à la fois pour le visiteur et pour le référencement. */}
+            {pro.subcategory && (
+              <Link
+                href={`/categories/${categorySlug}/${subcategorySlugForUrl(pro.subcategory)}`}
+                className="flex items-center justify-center gap-2 w-full bg-white text-landes-forest font-semibold py-3 px-4 rounded-xl border-2 border-landes-forest/30 hover:bg-landes-forest hover:text-white hover:border-landes-forest transition-colors text-sm"
+              >
+                {buildSubcategoryCtaLabel(pro.subcategory)}
+              </Link>
+            )}
 
             {/* Laisser un avis — sur écran de PC, juste sous "À propos" pour éviter tout vide.
                 Sur mobile, cette instance est masquée : le formulaire s'affiche alors tout en
