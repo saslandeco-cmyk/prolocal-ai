@@ -76,7 +76,7 @@ function AnnuaireContent() {
         if (!p.lat || !p.lng) return false;
         return haversine(geoLat, geoLng, p.lat, p.lng) <= geoRadius;
       });
-      // Tri : d'abord par ordre d'affichage (Gold > Premium > Standard avec coordonnées > sans coordonnées),
+      // Tri : d'abord par ordre d'affichage standard du site (voir getListingRank),
       // puis par distance croissante au sein d'un même niveau
       results.sort((a, b) => {
         const rankDiff = getListingRank(a) - getListingRank(b);
