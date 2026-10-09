@@ -86,7 +86,7 @@ export default async function HomePage() {
 
           <div className="mt-4 flex justify-center">
             <Link href="/annuaire" className="text-sm sm:text-base font-semibold text-white underline underline-offset-4 decoration-white/60 hover:decoration-white transition-colors">
-              Ou effectuer un recherche par métier
+              Voir tous les professionnels
             </Link>
           </div>
         </div>
