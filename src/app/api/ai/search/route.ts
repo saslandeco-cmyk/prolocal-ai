@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
   // Fallback LLM uniquement si l'interprétation locale est ambiguë — jamais systématique.
   if (need.categorieIncertaine || need.localisationManquante) {
-    const extraction = await tryLlmFallback(text.trim(), knownCities, categoryCatalog);
+    const extraction = await tryLlmFallback(text.trim(), knownCities.map((c) => c.city), categoryCatalog);
     need = mergeLlmExtraction(need, extraction);
   }
 

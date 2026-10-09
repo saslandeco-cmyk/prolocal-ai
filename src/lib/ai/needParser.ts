@@ -17,20 +17,37 @@ function toDisplayCase(raw: string): string {
     .join("");
 }
 
+export interface CityRef {
+  city: string;
+  postalCode: string;
+}
+
+const POSTAL_CODE_RE = /\b\d{5}\b/;
+
 /**
- * Cherche une commune des Landes mentionnée dans le texte. Vérifie d'abord la
- * liste éditorialisée CITY_META (contenu SEO/coordonnées GPS), puis, si aucune
- * correspondance, les communes réellement présentes dans la base
- * (`extraCities`, transmis par la route API) — pour ne jamais rater une
- * commune où des professionnels sont effectivement enregistrés simplement
- * parce qu'elle n'a pas encore de page SEO dédiée.
+ * Cherche une commune des Landes mentionnée dans le texte, par code postal
+ * d'abord (correspondance exacte et non ambiguë, ex: "40100" → Dax), puis par
+ * nom. Vérifie d'abord la liste éditorialisée CITY_META (contenu SEO/
+ * coordonnées GPS), puis, si aucune correspondance, les communes réellement
+ * présentes dans la base (`extraCities`, transmis par la route API) — pour ne
+ * jamais rater une commune où des professionnels sont effectivement
+ * enregistrés simplement parce qu'elle n'a pas encore de page SEO dédiée.
  */
-function detectCommune(normalizedText: string, extraCities: string[] = []): string | null {
+function detectCommune(normalizedText: string, extraCities: CityRef[] = []): string | null {
+  const postalMatch = normalizedText.match(POSTAL_CODE_RE);
+  if (postalMatch) {
+    const code = postalMatch[0];
+    const curated = Object.values(CITY_META).find((c) => c.postalCode === code);
+    if (curated) return curated.name;
+    const extra = extraCities.find((c) => c.postalCode === code);
+    if (extra) return toDisplayCase(extra.city);
+  }
+
   for (const meta of Object.values(CITY_META)) {
     const normName = normalize(meta.name);
     if (containsWholeWord(normalizedText, normName)) return meta.name;
   }
-  for (const raw of extraCities) {
+  for (const { city: raw } of extraCities) {
     if (!raw) continue;
     const normName = normalize(raw);
     if (containsWholeWord(normalizedText, normName)) return toDisplayCase(raw);
@@ -133,7 +150,7 @@ function extractKeywords(normalizedText: string): string[] {
  */
 export function parseNeedLocally(
   rawText: string,
-  extraCities: string[] = [],
+  extraCities: CityRef[] = [],
   categoryCatalog: CategoryLookup[] = []
 ): NeedRequest {
   const normalized = normalize(rawText);

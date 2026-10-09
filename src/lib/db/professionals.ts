@@ -186,15 +186,16 @@ export async function dbMarkMigrated(proId: string): Promise<void> {
 }
 
 /**
- * Liste des communes distinctes ayant au moins une fiche active — utilisée
- * par le moteur PROLOCAL AI (src/lib/ai/needParser.ts) pour détecter une
- * localisation même hors de la liste éditorialisée CITY_META (ex: communes
- * couvertes uniquement via un import SIRENE).
+ * Communes distinctes ayant au moins une fiche active, avec leur code postal
+ * — utilisée par le moteur PROLOCAL AI (src/lib/ai/needParser.ts) pour
+ * détecter une localisation par nom de commune ou par code postal, même hors
+ * de la liste éditorialisée CITY_META (ex: communes couvertes uniquement via
+ * un import SIRENE).
  */
-export async function dbGetDistinctActiveCities(): Promise<string[]> {
+export async function dbGetDistinctActiveCities(): Promise<{ city: string; postalCode: string }[]> {
   if (!isDbConfigured) return [];
-  const { rows } = await sql`SELECT DISTINCT city FROM professionals WHERE status = 'active' AND city <> ''`;
-  return rows.map(r => r.city as string);
+  const { rows } = await sql`SELECT DISTINCT city, postal_code FROM professionals WHERE status = 'active' AND city <> ''`;
+  return rows.map(r => ({ city: r.city as string, postalCode: (r.postal_code as string) || "" }));
 }
 
 /** Nombre de fiches migrées vs total en base (diagnostic pour l'admin). */
