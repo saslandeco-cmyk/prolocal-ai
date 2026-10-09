@@ -79,13 +79,14 @@ export default function NeedSearchBar({ initialValue = "", onSearch }: NeedSearc
             maxLength={500}
           />
         </div>
-        <div className="sm:w-64 sm:flex-none flex items-center gap-2 px-3 sm:px-4 py-3">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-3">
           <MapPin className="w-5 h-5 text-landes-sage flex-shrink-0" />
           <input
             value={cityInput}
             onChange={(e) => { setCityInput(e.target.value); setGeoCoords(null); }}
             placeholder="Ville ou code postal…"
-            className="w-full text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent min-w-0"
+            size={21}
+            className="text-gray-800 placeholder-gray-400 text-base focus:outline-none bg-transparent"
             autoComplete="off"
           />
           <button
