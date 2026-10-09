@@ -6,7 +6,7 @@ import { getProfessionalsWithImages } from "@/lib/storage";
 import { getListingRank } from "@/lib/listingOrder";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
-import SearchBar from "@/components/professional/SearchBar";
+import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import dynamic from "next/dynamic";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
@@ -138,8 +138,8 @@ function AnnuaireContent() {
             </div>
           </div>
 
-          {/* Same search form as hero */}
-          <SearchBar initialQuery={search} initialLocation={geoLat ? "📍 Ma position" : city} compact />
+          {/* Même formulaire de recherche IA que l'accueil */}
+          <NeedSearchBar initialValue={search} />
         </div>
       </div>
 
