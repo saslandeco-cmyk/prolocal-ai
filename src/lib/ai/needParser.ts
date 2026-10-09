@@ -1,7 +1,14 @@
 import { CITY_META } from "@/lib/cityData";
 import { NEED_RULES, STOPWORDS } from "./needDictionary";
-import { normalize, containsWholeWord } from "./textMatch";
+import { normalize, containsWholeWord, fuzzyContainsWord } from "./textMatch";
 import type { NeedRequest } from "@/types/needs";
+
+/**
+ * Fonction de correspondance mot-clé → texte, pour paramétrer les fonctions
+ * de détection ci-dessous selon qu'on cherche une correspondance exacte
+ * (containsWholeWord) ou tolérante aux fautes de frappe (fuzzyContainsWord).
+ */
+type Matcher = (text: string, keyword: string) => boolean;
 
 /** Met en forme un nom de commune importé en majuscules (ex: "SAINT-AVIT" → "Saint-Avit"). Laisse intact un nom déjà correctement casé. */
 const LOWERCASE_PARTICLES = new Set(["de", "du", "des", "la", "le", "les", "sur", "en", "et"]);
@@ -32,25 +39,31 @@ const POSTAL_CODE_RE = /\b\d{5}\b/;
  * présentes dans la base (`extraCities`, transmis par la route API) — pour ne
  * jamais rater une commune où des professionnels sont effectivement
  * enregistrés simplement parce qu'elle n'a pas encore de page SEO dédiée.
+ *
+ * `matcher` paramètre la comparaison nom ↔ texte : exacte par défaut, ou
+ * tolérante aux fautes de frappe (fuzzyContainsWord) en repli — voir
+ * parseNeedLocally(), qui ne tente ce repli que si la passe exacte échoue.
  */
-function detectCommune(normalizedText: string, extraCities: CityRef[] = []): string | null {
-  const postalMatch = normalizedText.match(POSTAL_CODE_RE);
-  if (postalMatch) {
-    const code = postalMatch[0];
-    const curated = Object.values(CITY_META).find((c) => c.postalCode === code);
-    if (curated) return curated.name;
-    const extra = extraCities.find((c) => c.postalCode === code);
-    if (extra) return toDisplayCase(extra.city);
+function detectCommune(normalizedText: string, extraCities: CityRef[] = [], matcher: Matcher = containsWholeWord): string | null {
+  if (matcher === containsWholeWord) {
+    const postalMatch = normalizedText.match(POSTAL_CODE_RE);
+    if (postalMatch) {
+      const code = postalMatch[0];
+      const curated = Object.values(CITY_META).find((c) => c.postalCode === code);
+      if (curated) return curated.name;
+      const extra = extraCities.find((c) => c.postalCode === code);
+      if (extra) return toDisplayCase(extra.city);
+    }
   }
 
   for (const meta of Object.values(CITY_META)) {
     const normName = normalize(meta.name);
-    if (containsWholeWord(normalizedText, normName)) return meta.name;
+    if (matcher(normalizedText, normName)) return meta.name;
   }
   for (const { city: raw } of extraCities) {
     if (!raw) continue;
     const normName = normalize(raw);
-    if (containsWholeWord(normalizedText, normName)) return toDisplayCase(raw);
+    if (matcher(normalizedText, normName)) return toDisplayCase(raw);
   }
   return null;
 }
@@ -80,17 +93,18 @@ function labelVariants(label: string): string[] {
 
 function detectCategoryFromCatalog(
   normalizedText: string,
-  catalog: CategoryLookup[]
+  catalog: CategoryLookup[],
+  matcher: Matcher = containsWholeWord
 ): { categorie: string; sousCategorie: string | null } | null {
   for (const cat of catalog) {
     for (const sub of cat.subcategories) {
-      if (labelVariants(sub).some(v => containsWholeWord(normalizedText, normalize(v)))) {
+      if (labelVariants(sub).some(v => matcher(normalizedText, normalize(v)))) {
         return { categorie: cat.label, sousCategorie: sub };
       }
     }
   }
   for (const cat of catalog) {
-    if (labelVariants(cat.label).some(v => containsWholeWord(normalizedText, normalize(v)))) {
+    if (labelVariants(cat.label).some(v => matcher(normalizedText, normalize(v)))) {
       return { categorie: cat.label, sousCategorie: null };
     }
   }
@@ -98,24 +112,45 @@ function detectCategoryFromCatalog(
 }
 
 /** Score chaque règle du dictionnaire par nombre de mots-clés trouvés, retient la meilleure. */
-function detectCategory(
-  normalizedText: string,
-  catalog: CategoryLookup[] = []
-): { categorie: string; sousCategorie: string | null; score: number } | null {
+function scoreRules(normalizedText: string, matcher: Matcher): { categorie: string; sousCategorie: string | null; score: number } | null {
   let best: { categorie: string; sousCategorie: string | null; score: number } | null = null;
   for (const rule of NEED_RULES) {
     let score = 0;
     for (const kw of rule.keywords) {
-      if (containsWholeWord(normalizedText, normalize(kw))) score += 1;
+      if (matcher(normalizedText, normalize(kw))) score += 1;
     }
     if (score > 0 && (!best || score > best.score)) {
       best = { categorie: rule.categorie, sousCategorie: rule.sousCategorie, score };
     }
   }
-  if (best) return best;
+  return best;
+}
 
-  const labelMatch = detectCategoryFromCatalog(normalizedText, catalog);
-  return labelMatch ? { ...labelMatch, score: 1 } : null;
+/**
+ * Détecte la catégorie/sous-catégorie du besoin exprimé — d'abord par
+ * correspondance exacte (dictionnaire NEED_RULES, puis catalogue réel), et
+ * UNIQUEMENT si cette passe exacte ne trouve rien du tout, par une seconde
+ * passe tolérante aux fautes de frappe (fuzzyContainsWord) sur ces mêmes
+ * sources. Ce repli ne change donc jamais le résultat d'une recherche qui
+ * fonctionnait déjà — il ne fait que rattraper les textes qui, avant lui,
+ * ne donnaient aucun résultat à cause d'une faute de frappe plausible
+ * (ex: "plombeir", "éléctricien").
+ */
+function detectCategory(
+  normalizedText: string,
+  catalog: CategoryLookup[] = []
+): { categorie: string; sousCategorie: string | null; score: number } | null {
+  const exactBest = scoreRules(normalizedText, containsWholeWord);
+  if (exactBest) return exactBest;
+
+  const exactLabelMatch = detectCategoryFromCatalog(normalizedText, catalog);
+  if (exactLabelMatch) return { ...exactLabelMatch, score: 1 };
+
+  const fuzzyBest = scoreRules(normalizedText, fuzzyContainsWord);
+  if (fuzzyBest) return fuzzyBest;
+
+  const fuzzyLabelMatch = detectCategoryFromCatalog(normalizedText, catalog, fuzzyContainsWord);
+  return fuzzyLabelMatch ? { ...fuzzyLabelMatch, score: 1 } : null;
 }
 
 function detectUrgence(normalizedText: string): NeedRequest["urgence"] {
@@ -154,7 +189,9 @@ export function parseNeedLocally(
   categoryCatalog: CategoryLookup[] = []
 ): NeedRequest {
   const normalized = normalize(rawText);
-  const commune = detectCommune(normalized, extraCities);
+  // Repli flou uniquement si la correspondance exacte ne trouve aucune
+  // commune — même logique que detectCategory (voir ci-dessus).
+  const commune = detectCommune(normalized, extraCities) ?? detectCommune(normalized, extraCities, fuzzyContainsWord);
   const categoryMatch = detectCategory(normalized, categoryCatalog);
 
   return {
