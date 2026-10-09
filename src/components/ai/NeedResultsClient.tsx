@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
@@ -18,8 +18,11 @@ interface GeoCoords {
 
 function NeedResultsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const texte = searchParams.get("texte") || "";
   const ville = searchParams.get("ville") || "";
+  const lat = searchParams.get("lat");
+  const lng = searchParams.get("lng");
 
   // Démarre en chargement s'il y a déjà une demande dans l'URL, pour ne pas
   // laisser apparaître un instant le bandeau de recherche vide avant que la
@@ -58,8 +61,6 @@ function NeedResultsContent() {
   }, []);
 
   useEffect(() => {
-    const lat = searchParams.get("lat");
-    const lng = searchParams.get("lng");
     const initialGeo = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
     setGeoCoords(initialGeo ?? null);
     // La ville n'est injectée dans le texte envoyé à l'IA que si aucune
@@ -67,7 +68,22 @@ function NeedResultsContent() {
     const query = ville && !initialGeo ? `${texte} à ${ville}` : texte;
     runSearch(query, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texte, ville]);
+  }, [texte, ville, lat, lng]);
+
+  // Point d'entrée unique pour toute recherche lancée depuis cette page (bandeau
+  // vide ou formulaire d'affinage) : on passe par l'URL plutôt que d'appeler
+  // runSearch directement, pour que texte/ville/géoloc — et donc le pré-remplissage
+  // du formulaire — restent toujours synchronisés avec la dernière saisie, même
+  // quand on n'arrive pas depuis l'accueil (recherche tapée directement ici).
+  const navigateSearch = useCallback((text: string, city: string, geo?: GeoCoords) => {
+    const params = new URLSearchParams({ texte: text });
+    if (city) params.set("ville", city);
+    if (geo) {
+      params.set("lat", String(geo.lat));
+      params.set("lng", String(geo.lng));
+    }
+    router.replace(`/besoin?${params.toString()}`);
+  }, [router]);
 
   const hasSignal = response ? response.need.categorie !== null || response.need.motsCles.length > 0 : false;
 
@@ -89,7 +105,7 @@ function NeedResultsContent() {
         <div className="w-full mx-auto text-center py-10">
           <h1 className="text-2xl sm:text-3xl font-bold text-landes-pine mb-2">De quoi avez-vous besoin ?</h1>
           <p className="text-gray-500 mb-6">Décrivez simplement votre besoin, nous trouvons le bon professionnel près de chez vous.</p>
-          <NeedSearchBar onSearch={(q, geo) => runSearch(q, geo)} />
+          <NeedSearchBar onSearch={navigateSearch} />
         </div>
       )}
 
@@ -101,7 +117,7 @@ function NeedResultsContent() {
               initialValue={texte}
               initialCity={ville}
               initialGeo={geoCoords ?? undefined}
-              onSearch={(q, geo) => { setGeoCoords(geo ?? null); runSearch(q, geo); }}
+              onSearch={navigateSearch}
             />
           </div>
 

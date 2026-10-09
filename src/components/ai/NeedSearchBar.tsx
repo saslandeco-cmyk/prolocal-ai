@@ -12,7 +12,7 @@ interface NeedSearchBarProps {
   initialValue?: string;
   initialCity?: string;
   initialGeo?: GeoCoords;
-  onSearch?: (text: string, geo?: GeoCoords) => void;
+  onSearch?: (text: string, city: string, geo?: GeoCoords) => void;
 }
 
 /**
@@ -54,17 +54,13 @@ export default function NeedSearchBar({ initialValue = "", initialCity = "", ini
     const trimmed = text.trim();
     if (trimmed.length < 3) return;
     const city = cityInput.trim();
-    // La position géolocalisée prime sur la ville tapée au clavier. Texte
-    // transmis à l'IA : la ville y est injectée seulement si aucune géoloc
-    // n'est active, pour que le moteur de recherche local puisse la détecter.
-    const query = city && !geoCoords ? `${trimmed} à ${city}` : trimmed;
+    // Le texte et la ville restent transmis séparément (jamais combinés en
+    // une seule phrase ici) pour que l'appelant — qui gère la navigation —
+    // puisse toujours retrouver exactement ce que le visiteur a saisi dans
+    // chaque champ, y compris pour pré-remplir le formulaire par la suite.
     if (onSearch) {
-      onSearch(query, geoCoords ?? undefined);
+      onSearch(trimmed, city, geoCoords ?? undefined);
     } else {
-      // Le texte et la ville restent transmis séparément dans l'URL (plutôt
-      // que la phrase combinée `query`) pour que la page de résultats puisse
-      // pré-remplir le formulaire avec exactement ce que le visiteur a saisi
-      // dans chaque champ, sans dépendre de l'interprétation IA.
       const params = new URLSearchParams({ texte: trimmed });
       if (city) params.set("ville", city);
       if (geoCoords) {
