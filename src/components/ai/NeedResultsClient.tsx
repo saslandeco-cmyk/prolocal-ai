@@ -1,17 +1,14 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, Locate, RotateCcw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import type { NeedSearchResponse } from "@/types/needs";
 
 const MultiMap = dynamic(() => import("@/components/map/MultiMap"), { ssr: false });
 
-const MIN_RADIUS_KM = 10;
-const MAX_RADIUS_KM = 150;
-const RADIUS_STEP_KM = 10;
 const DEFAULT_RADIUS_KM = 30;
 
 interface GeoCoords {
@@ -21,7 +18,6 @@ interface GeoCoords {
 
 function NeedResultsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const texte = searchParams.get("texte") || "";
 
   // Démarre en chargement s'il y a déjà une demande dans l'URL, pour ne pas
@@ -30,14 +26,6 @@ function NeedResultsContent() {
   const [loading, setLoading] = useState(Boolean(texte));
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cityInput, setCityInput] = useState("");
-
-  // Affinage par localisation — toujours proposé, jamais bloquant.
-  const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [geoError, setGeoError] = useState("");
-  const radiusChangedByUser = useRef(false);
 
   const runSearch = useCallback(async (query: string, geo?: GeoCoords, radius?: number) => {
     if (!query.trim()) return;
@@ -49,7 +37,7 @@ function NeedResultsContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: query,
-          ...(geo ? { lat: geo.lat, lng: geo.lng, radiusKm: radius ?? radiusKm } : {}),
+          ...(geo ? { lat: geo.lat, lng: geo.lng, radiusKm: radius ?? DEFAULT_RADIUS_KM } : {}),
         }),
       });
       const data = await res.json();
@@ -71,68 +59,9 @@ function NeedResultsContent() {
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
     const initialGeo = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
-    setGeoCoords(initialGeo ?? null);
-    setCityInput("");
     runSearch(texte, initialGeo, initialGeo ? DEFAULT_RADIUS_KM : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [texte]);
-
-  // Pré-remplit le champ ville avec la commune déjà détectée dans le texte,
-  // pour que l'affinage parte de ce qui a été compris plutôt que de zéro.
-  useEffect(() => {
-    if (response?.need.commune && !geoCoords) setCityInput(response.need.commune);
-  }, [response?.need.commune, geoCoords]);
-
-  // Relance la recherche quand l'utilisateur ajuste le curseur de rayon,
-  // avec un léger délai pour ne pas déclencher un appel à chaque pixel glissé.
-  useEffect(() => {
-    if (!geoCoords || !radiusChangedByUser.current) return;
-    const t = setTimeout(() => runSearch(texte, geoCoords, radiusKm), 400);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [radiusKm]);
-
-  const handlePreciserVille = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cityInput.trim()) return;
-    setGeoCoords(null);
-    // Repart du besoin déjà compris (sans mention de ville) plutôt que du
-    // texte brut original, pour éviter qu'une commune précédemment détectée
-    // ne reste mélangée à la nouvelle lors d'un second affinage.
-    runSearch(`${response?.need.besoin || texte} à ${cityInput.trim()}`);
-  };
-
-  const handleAutourDeMoi = () => {
-    if (!navigator.geolocation) {
-      setGeoError("La géolocalisation n'est pas disponible sur cet appareil.");
-      return;
-    }
-    setGeoLoading(true);
-    setGeoError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setGeoCoords(coords);
-        radiusChangedByUser.current = false;
-        setGeoLoading(false);
-        runSearch(texte, coords, radiusKm);
-      },
-      () => {
-        setGeoError("Position non disponible. Vérifiez l'autorisation de géolocalisation.");
-        setGeoLoading(false);
-      },
-      { timeout: 8000 }
-    );
-  };
-
-  const handleReset = () => {
-    setResponse(null);
-    setError(null);
-    setGeoCoords(null);
-    setCityInput("");
-    setRadiusKm(DEFAULT_RADIUS_KM);
-    router.replace("/besoin");
-  };
 
   const hasSignal = response ? response.need.categorie !== null || response.need.motsCles.length > 0 : false;
 
@@ -149,7 +78,7 @@ function NeedResultsContent() {
         <div className="text-center py-12 text-red-600">{error}</div>
       )}
 
-      {/* Bandeau de recherche — état initial ou après "Réinitialiser" : ni carte, ni fiches. */}
+      {/* Bandeau de recherche — état initial : ni carte, ni fiches. */}
       {!loading && !error && !response && (
         <div className="w-full mx-auto text-center py-10">
           <h1 className="text-2xl sm:text-3xl font-bold text-landes-pine mb-2">De quoi avez-vous besoin ?</h1>
@@ -160,64 +89,7 @@ function NeedResultsContent() {
 
       {!loading && !error && response && (
         <>
-          {/* 1. Affinage par localisation — "Affiner par localisation" et "Autour de moi" sur la même ligne, juste sous la recherche */}
-          {hasSignal && (
-            <div className="mb-6 space-y-3">
-              <p className="text-sm font-semibold text-landes-pine">Affiner par localisation</p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <form onSubmit={handlePreciserVille} className="flex-1 flex gap-2 max-w-md">
-                  <div className="flex-1 flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-white">
-                    <MapPin className="w-4 h-4 text-landes-sage flex-shrink-0" />
-                    <input
-                      value={cityInput}
-                      onChange={(e) => setCityInput(e.target.value)}
-                      placeholder="Ville ou code postal…"
-                      className="w-full text-gray-800 placeholder-gray-400 focus:outline-none bg-transparent"
-                    />
-                  </div>
-                  <button type="submit" className="btn-primary px-5 py-3 rounded-xl whitespace-nowrap">
-                    Valider
-                  </button>
-                </form>
-                <button
-                  type="button"
-                  onClick={handleAutourDeMoi}
-                  disabled={geoLoading}
-                  className="flex items-center justify-center gap-2 border-2 border-landes-forest/30 text-landes-forest font-medium px-6 py-3 rounded-xl hover:bg-landes-forest/5 transition-colors disabled:opacity-50 whitespace-nowrap"
-                >
-                  {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Locate className="w-4 h-4" />}
-                  Autour de moi
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="btn-primary flex items-center justify-center gap-2 sm:ml-auto px-5 py-3 rounded-xl whitespace-nowrap"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Nouvelle demande
-                </button>
-              </div>
-              {geoError && <p className="text-sm text-red-500">{geoError}</p>}
-
-              {geoCoords && (
-                <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 max-w-lg">
-                  <Locate className="w-4 h-4 text-landes-forest flex-shrink-0" />
-                  <span className="text-sm text-gray-600 whitespace-nowrap">Rayon : <strong className="text-landes-pine">{radiusKm} km</strong></span>
-                  <input
-                    type="range"
-                    min={MIN_RADIUS_KM}
-                    max={MAX_RADIUS_KM}
-                    step={RADIUS_STEP_KM}
-                    value={radiusKm}
-                    onChange={(e) => { radiusChangedByUser.current = true; setRadiusKm(Number(e.target.value)); }}
-                    className="flex-1 accent-landes-forest"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 2. Carte des professionnels trouvés — juste sous l'affinage par localisation */}
+          {/* 2. Carte des professionnels trouvés */}
           {response.results.length > 0 && (
             <div className="mb-8">
               <p className="text-sm font-semibold text-landes-pine mb-3">Localisation des professionnels trouvés</p>
