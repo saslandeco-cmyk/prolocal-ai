@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { Loader2, List, Map as MapIcon } from "lucide-react";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import type { NeedSearchResponse } from "@/types/needs";
@@ -31,6 +31,7 @@ function NeedResultsContent() {
   const [response, setResponse] = useState<NeedSearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [geoCoords, setGeoCoords] = useState<GeoCoords | null>(null);
+  const [view, setView] = useState<"list" | "map">("map");
 
   const runSearch = useCallback(async (query: string, geo?: GeoCoords, radius?: number) => {
     if (!query.trim()) return;
@@ -121,25 +122,52 @@ function NeedResultsContent() {
             />
           </div>
 
-          {/* 2. Carte des professionnels trouvés */}
+          {/* 2. Bascule Liste / Carte — juste sous le bandeau de recherche */}
           {response.results.length > 0 && (
-            <div className="mb-8">
-              <p className="text-sm font-semibold text-landes-pine mb-3">Localisation des professionnels trouvés</p>
-              <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: 480 }}>
-                <MultiMap professionals={response.results.map((r) => r.professional)} />
+            <div className="mb-6">
+              <div className="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setView("list")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === "list" ? "bg-white text-landes-forest shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <List className="w-4 h-4" /> Liste
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("map")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === "map" ? "bg-white text-landes-forest shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <MapIcon className="w-4 h-4" /> Carte
+                </button>
               </div>
             </div>
           )}
 
           {/* 3. Fiches des professionnels — jamais conditionnées par la localisation */}
           {response.results.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {response.results.map((r) => (
-                <div key={r.professional.id}>
-                  <ProfessionalCard pro={r.professional} />
+            view === "map" ? (
+              <div className="flex flex-col lg:flex-row gap-4 mb-8" style={{ height: "calc(100vh - 260px)", minHeight: 500 }}>
+                <div className="lg:w-80 xl:w-96 flex-shrink-0 overflow-y-auto space-y-3 pr-1">
+                  {response.results.map((r) => (
+                    <div key={r.professional.id}>
+                      <ProfessionalCard pro={r.professional} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div className="flex-1 rounded-2xl overflow-hidden border border-gray-200 shadow-sm" style={{ minHeight: 400 }}>
+                  <MultiMap professionals={response.results.map((r) => r.professional)} />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {response.results.map((r) => (
+                  <div key={r.professional.id}>
+                    <ProfessionalCard pro={r.professional} />
+                  </div>
+                ))}
+              </div>
+            )
           ) : hasSignal ? (
             <div className="text-center py-10 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
               Aucun professionnel correspondant référencé pour le moment.
