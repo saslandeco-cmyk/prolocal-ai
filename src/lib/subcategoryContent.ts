@@ -775,7 +775,7 @@ export function buildSubcategoryFaq(params: {
     ...specific,
     {
       q: `Je suis ${subcategoryLabel} : Comment référencer mon activité ?`,
-      a: `L'inscription est gratuite et rapide : rendez-vous sur la page d'inscription, renseignez votre numéro SIREN et les informations de votre entreprise. Votre fiche est visible immédiatement sur Prolocal-Landes.`,
+      a: `Rendez-vous sur la page d'inscription, renseignez votre numéro SIREN et complétez les informations demandées sur votre activité. Votre fiche sera visible sur Prolocal-Landes.fr dans les 24h.`,
     },
   ];
 }
