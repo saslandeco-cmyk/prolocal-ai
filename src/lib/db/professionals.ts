@@ -36,6 +36,20 @@ export async function dbGetProfessionalBySiren(siren: string): Promise<Professio
   return rows.length > 0 ? rowToProfessional(rows[0]) : null;
 }
 
+/**
+ * Retrouve le professionnel associé à un client Stripe — utilisé par le
+ * webhook Stripe (voir api/webhooks/stripe/route.ts) pour identifier qui a
+ * payé un renouvellement automatique. stripeCustomerId n'est pas une colonne
+ * dédiée (champ peu interrogé, stocké uniquement dans `data` comme la
+ * plupart des champs optionnels — voir schema.sql) : filtré ici via
+ * l'opérateur JSONB ->> plutôt que de rapatrier toutes les fiches.
+ */
+export async function dbGetProfessionalByStripeCustomerId(customerId: string): Promise<Professional | null> {
+  if (!isDbConfigured) return null;
+  const { rows } = await sql`SELECT data FROM professionals WHERE data->>'stripeCustomerId' = ${customerId} LIMIT 1`;
+  return rows.length > 0 ? rowToProfessional(rows[0]) : null;
+}
+
 export async function dbGetProfessionalsByCategory(category: string): Promise<Professional[]> {
   if (!isDbConfigured) return [];
   const { rows } = await sql`
