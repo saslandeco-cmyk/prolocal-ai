@@ -10,10 +10,13 @@ const CONTACT_RECIPIENT_EMAIL = "contact@prolocal-landes.fr";
  * visiteur : une simple réponse depuis contact@prolocal-landes.fr lui
  * répond donc directement.
  *
- * ⚠️ Nécessite la variable d'environnement RESEND_API_KEY pour un envoi
- * réel. Sans cette clé, la route répond en "mode démonstration" (aucun
- * envoi réel) — cohérent avec le reste du site (voir
- * /api/auth/send-registration-confirmation et /api/invoices/send-xml).
+ * ⚠️ Nécessite la variable d'environnement RESEND_API_KEY. Contrairement à
+ * /api/auth/send-registration-confirmation (où l'email n'est qu'une
+ * confirmation secondaire — l'inscription elle-même est déjà enregistrée),
+ * ici l'email EST l'action : sans clé configurée, le message du visiteur ne
+ * serait transmis nulle part. Pas de "mode démonstration" silencieux donc —
+ * la route répond une vraie erreur plutôt que de prétendre avoir envoyé un
+ * message qui serait en réalité perdu.
  *
  * Body attendu :
  * { firstName, lastName, email, subject, message } (requis),
@@ -31,8 +34,11 @@ export async function POST(req: NextRequest) {
 
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey) {
-      // Mode démonstration : aucun service d'envoi d'email configuré.
-      return NextResponse.json({ sent: false, demo: true });
+      console.error("[api/contact] RESEND_API_KEY n'est pas configurée — message non transmis.");
+      return NextResponse.json(
+        { error: "Le service d'envoi de messages n'est pas configuré. Merci de nous contacter directement par téléphone." },
+        { status: 503 }
+      );
     }
 
     const { Resend } = await import("resend");
@@ -60,7 +66,7 @@ ${message}`,
       return NextResponse.json({ error: error.message || "Erreur lors de l'envoi du message." }, { status: 500 });
     }
 
-    return NextResponse.json({ sent: true, demo: false });
+    return NextResponse.json({ sent: true });
   } catch (err: any) {
     console.error("[api/contact] Erreur:", err);
     return NextResponse.json({ error: err.message || "Erreur lors de l'envoi du message." }, { status: 500 });
