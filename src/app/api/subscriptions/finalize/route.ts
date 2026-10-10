@@ -3,6 +3,12 @@ import { stripe, isStripeConfigured, getOrCreateProduct } from "@/lib/stripeServ
 import { PLAN_PRICES, CONTACT_PACKS } from "@/lib/pricing";
 import { getEffectiveOptionPrices } from "@/lib/db/options";
 import { dbAddContactRecharge } from "@/lib/db/contactRecharges";
+import { dbGetProfessionalById } from "@/lib/db/professionals";
+import { notifyAdmin } from "@/lib/notifyAdmin";
+
+function formatEuros(cents: number): string {
+  return `${(cents / 100).toFixed(2)} €`;
+}
 
 /**
  * POST /api/subscriptions/finalize
@@ -28,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { customerId, paymentMethodId, planId, optionIds, contactQuantity, proId } = await req.json();
+    const { customerId, paymentMethodId, planId, optionIds, contactQuantity, proId, companyName } = await req.json();
     const options: string[] = Array.isArray(optionIds) ? optionIds : [];
 
     // Prix du pack "Mises en contact" réellement choisi — déterminé ici, côté
@@ -59,6 +65,10 @@ export async function POST(req: NextRequest) {
     });
 
     const result: { planSubscriptionId?: string; optionsSubscriptionId?: string; oneTimePaymentIntentId?: string } = {};
+    // Lignes lisibles de ce qui vient d'être payé, pour la notification
+    // interne envoyée en fin de route — jamais utilisées pour la logique
+    // de paiement elle-même (purement informatif).
+    const purchaseSummaryLines: string[] = [];
 
     // ── Abonnement dédié à la formule seule ──
     if (planId && PLAN_PRICES[planId]) {
@@ -75,6 +85,7 @@ export async function POST(req: NextRequest) {
         metadata: { type: "plan", planId },
       });
       result.planSubscriptionId = sub.id;
+      purchaseSummaryLines.push(`Formule : ${item.name} (${formatEuros(item.unitAmount)}/mois)`);
     }
 
     // ── Abonnement dédié aux options complémentaires mensuelles (séparé de la formule) ──
@@ -98,6 +109,9 @@ export async function POST(req: NextRequest) {
         metadata: { type: "options", optionIds: options.join(",") },
       });
       result.optionsSubscriptionId = sub.id;
+      purchaseSummaryLines.push(
+        `Options mensuelles : ${monthlyOptionItems.map(opt => `${opt.name} (${formatEuros(opt.unitAmount)}/mois)`).join(", ")}`
+      );
     }
 
     // ── Frais uniques (ex : pack "Mises en contact") — paiement immédiat, indépendant ──
@@ -124,6 +138,9 @@ export async function POST(req: NextRequest) {
         },
       });
       result.oneTimePaymentIntentId = paymentIntent.id;
+      purchaseSummaryLines.push(
+        `Achat ponctuel : ${oneTimeOptions.map(o => o.name).join(", ")} (${formatEuros(amount)})`
+      );
 
       // Crédite immédiatement le solde de mises en contact du professionnel
       // — le paiement vient de réussir (confirm: true, ci-dessus).
@@ -134,6 +151,23 @@ export async function POST(req: NextRequest) {
 
     // ── Inclusion automatique de "Gestion prospects/clients" (CRM) avec la formule Gold ──
     // (Fonctionnalité annulée — le CRM n'est plus activé automatiquement)
+
+    // Notification interne — attendue avant de répondre (voir la même
+    // remarque dans send-registration-confirmation/route.ts sur les
+    // fonctions serverless) ; un échec ne remet jamais en cause le paiement,
+    // déjà effectué à ce stade.
+    if (purchaseSummaryLines.length > 0) {
+      const displayName = companyName
+        || (proId ? (await dbGetProfessionalById(proId).catch(() => null))?.companyName : null)
+        || `client Stripe ${customerId}`;
+      await notifyAdmin(
+        `Nouveau paiement — ${displayName}`,
+        `Un paiement vient d'être effectué sur Prolocal-Landes.
+
+Professionnel : ${displayName}
+${purchaseSummaryLines.join("\n")}`
+      );
+    }
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err: any) {

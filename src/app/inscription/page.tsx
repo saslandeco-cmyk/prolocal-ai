@@ -502,6 +502,9 @@ function InscriptionForm() {
           paymentMethodId,
           planId: selectedPlan !== "standard" ? selectedPlan : undefined,
           optionIds: selectedOptions,
+          // Pas encore de fiche enregistrée à ce stade de l'inscription (voir
+          // plus bas) : transmis uniquement pour la notification interne.
+          companyName: form.companyName || undefined,
         }),
       });
       const data = await res.json();
@@ -616,7 +619,19 @@ function InscriptionForm() {
     fetch("/api/auth/send-registration-confirmation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pro.email, password: pro.password, companyName: pro.companyName }),
+      body: JSON.stringify({
+        email: pro.email,
+        password: pro.password,
+        companyName: pro.companyName,
+        // Champs supplémentaires utilisés uniquement pour la notification
+        // interne à l'équipe (voir la route) — n'affectent pas l'email de
+        // confirmation envoyé au professionnel.
+        category: pro.category,
+        subcategory: pro.subcategory,
+        city: pro.city,
+        phone: pro.phone,
+        plan: pro.plan,
+      }),
     }).catch(() => {
       // Silencieux : un échec d'envoi ne doit jamais bloquer l'inscription.
     });
