@@ -298,6 +298,7 @@ function InscriptionForm() {
     password:"", loginEmail:"",
     address:"", city:"", postalCode:"",
     logo:"", banner:"",
+    hpToken:"", // honeypot anti-spam — doit toujours rester vide (voir le champ caché plus bas)
   });
 
 
@@ -556,6 +557,11 @@ function InscriptionForm() {
 
   const submit = async () => {
     if (!selectedPlan) return;
+    // Honeypot anti-spam : un visiteur réel ne peut jamais remplir ce champ
+    // (invisible, hors du parcours au clavier) — un robot qui l'a rempli est
+    // silencieusement arrêté ici, sans message d'erreur qui l'aiderait à
+    // s'adapter.
+    if (form.hpToken) return;
     setLoading(true);
     let lat: number | undefined;
     let lng: number | undefined;
@@ -694,6 +700,22 @@ function InscriptionForm() {
                 {sirenStatus==="valid"   && <p className="text-green-600 text-xs mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{sirenMsg}</p>}
                 {sirenStatus==="invalid" && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{sirenMsg}</p>}
                 {errors.siren && sirenStatus!=="invalid" && <p className="text-red-500 text-xs mt-1">{errors.siren}</p>}
+              </div>
+
+              {/* Honeypot anti-spam : invisible et inatteignable pour un visiteur
+                  réel (positionné hors-écran, jamais display:none — certains
+                  robots ignorent ce champ précis), rempli uniquement par des
+                  robots qui remplissent tous les champs d'un formulaire. */}
+              <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+                <label htmlFor="website_url">Laisser ce champ vide</label>
+                <input
+                  id="website_url"
+                  name="website_url"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.hpToken}
+                  onChange={e => upd("hpToken", e.target.value)}
+                />
               </div>
 
               <div className="xl:col-span-4">

@@ -19,6 +19,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "",
     phone: "", subject: "", message: "",
+    hpToken: "", // honeypot anti-spam — doit toujours rester vide
   });
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [sent, setSent]       = useState(false);
@@ -44,6 +45,10 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Honeypot anti-spam : un visiteur réel ne peut jamais remplir ce champ
+    // (invisible, hors du parcours au clavier) — on affiche quand même le
+    // message de succès pour ne pas aider un robot à s'adapter.
+    if (form.hpToken) { setSent(true); return; }
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
@@ -189,6 +194,23 @@ export default function ContactPage() {
               <div className="card p-8">
                 <h2 className="text-xl font-bold text-landes-pine mb-6">Envoyer un message</h2>
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                  {/* Honeypot anti-spam : invisible et inatteignable pour un
+                      visiteur réel (positionné hors-écran, jamais
+                      display:none — certains robots ignorent ce champ
+                      précis), rempli uniquement par des robots qui
+                      remplissent tous les champs d'un formulaire. */}
+                  <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+                    <label htmlFor="website_url">Laisser ce champ vide</label>
+                    <input
+                      id="website_url"
+                      name="website_url"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={form.hpToken}
+                      onChange={e => upd("hpToken", e.target.value)}
+                    />
+                  </div>
+
 
                   {/* Nom / Prénom */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

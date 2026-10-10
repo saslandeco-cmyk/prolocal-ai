@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isRateLimited, getClientIp } from "@/lib/rateLimit";
 
 const CONTACT_RECIPIENT_EMAIL = "contact@prolocal-landes.fr";
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
  * POST /api/contact
@@ -20,11 +23,30 @@ const CONTACT_RECIPIENT_EMAIL = "contact@prolocal-landes.fr";
  *
  * Body attendu :
  * { firstName, lastName, email, subject, message } (requis),
- * { phone } (facultatif)
+ * { phone, hpToken } (facultatifs — hpToken est le champ honeypot : voir plus bas)
+ *
+ * Protection anti-spam légère (honeypot + limite de débit par IP) — voir
+ * src/lib/rateLimit.ts pour les limites de cette approche.
  */
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, phone, subject, message } = await req.json();
+    const { firstName, lastName, email, phone, subject, message, hpToken } = await req.json();
+
+    // Honeypot : un visiteur réel ne remplit jamais ce champ (invisible,
+    // hors du parcours au clavier). On répond un faux succès plutôt qu'une
+    // erreur, pour ne pas aider le robot à s'adapter.
+    if (hpToken) {
+      return NextResponse.json({ sent: true });
+    }
+
+    const ip = getClientIp(req);
+    if (isRateLimited(`contact:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+      return NextResponse.json(
+        { error: "Trop de messages envoyés récemment. Merci de réessayer dans quelques minutes." },
+        { status: 429 }
+      );
+    }
+
     if (!firstName || !lastName || !email || !subject || !message) {
       return NextResponse.json(
         { error: "firstName, lastName, email, subject et message sont requis." },

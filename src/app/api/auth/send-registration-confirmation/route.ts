@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { notifyAdmin } from "@/lib/notifyAdmin";
+import { isRateLimited, getClientIp } from "@/lib/rateLimit";
+
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * POST /api/auth/send-registration-confirmation
@@ -17,12 +21,34 @@ import { notifyAdmin } from "@/lib/notifyAdmin";
  * l'absence de ce service.
  *
  * Body attendu : { email, password, companyName } (requis), et
- * { category, subcategory, city, phone, plan } (optionnels, utilisés
- * uniquement pour la notification interne ci-dessous).
+ * { category, subcategory, city, phone, plan, hpToken } (optionnels —
+ * hpToken est le champ honeypot du formulaire d'inscription, voir
+ * inscription/page.tsx ; les autres servent uniquement à la notification
+ * interne ci-dessous).
+ *
+ * Protection anti-spam légère (honeypot + limite de débit par IP) — voir
+ * src/lib/rateLimit.ts pour les limites de cette approche.
  */
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, companyName, category, subcategory, city, phone, plan } = await req.json();
+    const { email, password, companyName, category, subcategory, city, phone, plan, hpToken } = await req.json();
+
+    // Honeypot : un visiteur réel ne remplit jamais ce champ. Le formulaire
+    // d'inscription bloque déjà l'envoi côté client (voir submit() dans
+    // inscription/page.tsx) — cette vérification est une seconde ligne de
+    // défense si la route est appelée directement.
+    if (hpToken) {
+      return NextResponse.json({ sent: true, demo: false });
+    }
+
+    const ip = getClientIp(req);
+    if (isRateLimited(`send-registration-confirmation:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+      return NextResponse.json(
+        { error: "Trop de tentatives récentes. Merci de réessayer dans quelques minutes." },
+        { status: 429 }
+      );
+    }
+
     if (!email || !password || !companyName) {
       return NextResponse.json({ error: "email, password et companyName sont requis." }, { status: 400 });
     }
