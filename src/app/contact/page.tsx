@@ -23,6 +23,7 @@ export default function ContactPage() {
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [sent, setSent]       = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const upd = (k: string, v: string) => {
     setForm(p => ({ ...p, [k]: v }));
@@ -46,11 +47,24 @@ export default function ContactPage() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    // Simulate send — replace with real API call (Resend, Nodemailer…)
-    await new Promise(r => setTimeout(r, 1200));
-    console.log("Contact form:", form);
-    setLoading(false);
-    setSent(true);
+    setSubmitError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitError(data.error || "Une erreur est survenue lors de l'envoi. Réessayez.");
+        return;
+      }
+      setSent(true);
+    } catch {
+      setSubmitError("Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -262,6 +276,10 @@ export default function ContactPage() {
                   <p className="text-xs text-gray-400 leading-relaxed">
                     En soumettant ce formulaire, vous acceptez que vos données soient utilisées pour traiter votre demande conformément à notre politique de confidentialité. Elles ne seront jamais partagées avec des tiers.
                   </p>
+
+                  {submitError && (
+                    <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{submitError}</p>
+                  )}
 
                   {/* Submit */}
                   <button
