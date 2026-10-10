@@ -21,13 +21,7 @@ interface Props {
   initialPros: Professional[];
 }
 
-/** Formate une liste de catégories en énumération française naturelle ("A, B et C"). */
-function joinCategories(cats: string[]): string {
-  if (cats.length === 1) return cats[0];
-  return `${cats.slice(0, -1).join(", ")} et ${cats[cats.length - 1]}`;
-}
-
-/** Même énumération française, mais chaque élément est un lien cliquable vers sa page dédiée. */
+/** Énumération française ("A, B et C"), chaque élément étant un lien cliquable vers sa page dédiée. */
 function joinLinkList(items: { label: string; href: string }[]): ReactNode {
   return items.map((item, i) => (
     <span key={item.href}>
@@ -123,24 +117,6 @@ export default function CityPage({ meta, categoryFilter, initialPros }: Props) {
       </section>
 
       <section id="resultats" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 scroll-mt-20">
-        {/* Texte d'introduction — court paragraphe local unique + paragraphe
-            dynamique ciblé par métier (les vraies catégories présentes dans
-            la ville), pour capter les recherches type "métier + ville" */}
-        {!categoryFilter && (
-          <div className="card p-6 mb-8 space-y-3 text-gray-700 leading-relaxed">
-            {meta.intro.map((p, i) => <p key={i}>{p}</p>)}
-            {availableCategories.length > 0 && (
-              <p>
-                Vous cherchez un professionnel à {meta.name} ? Prolocal-Landes référence notamment
-                des professionnels en {joinCategories(availableCategories)} à {meta.name}.
-                Que vous ayez besoin d&apos;un devis rapide ou d&apos;un service de proximité, retrouvez
-                ci-dessous tous les professionnels de {meta.name} classés par catégorie, avec leurs
-                coordonnées, avis clients et disponibilités.
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Texte d'introduction — page ville + catégorie : paragraphe dynamique
             ciblé par SOUS-catégorie (les vraies spécialités présentes), pour
             capter des recherches encore plus précises type "coiffeur à Dax" */}
