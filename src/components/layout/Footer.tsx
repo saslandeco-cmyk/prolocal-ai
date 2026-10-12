@@ -55,7 +55,6 @@ export default function Footer() {
                 <Link key={city.slug} href={`/annuaire/${city.slug}`} className="hover:text-white transition-colors">{city.name}</Link>
               ))}
             </div>
-            <Link href="/annuaire" className="inline-block mt-3 text-landes-sand hover:text-white transition-colors text-sm font-medium">Toute la plateforme des professionnels landais →</Link>
           </div>
         </div>
 
