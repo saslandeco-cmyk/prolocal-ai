@@ -314,7 +314,7 @@ export function buildSubcategoryLandingContent(params: {
 
   return {
     intro,
-    seoTitle: `Trouver ${subcategoryLabel} dans les Landes`,
+    seoTitle: `Trouver un ${subcategoryLabel} dans les Landes`,
     seoText,
     ctaText,
   };
