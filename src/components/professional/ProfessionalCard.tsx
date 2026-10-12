@@ -5,7 +5,7 @@ import { Professional } from "@/types";
 import { MapPin, Phone, Mail, ArrowRight, Award } from "lucide-react";
 import StarDisplay from "@/components/ui/StarDisplay";
 import { getProRating } from "@/lib/reviewUtils";
-import { combineRatings, type GoogleRating } from "@/lib/googlePlaces";
+import type { GoogleRating } from "@/lib/googlePlaces";
 import { getBanner } from "@/lib/defaultBanners";
 import { rehydrateAsync } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
@@ -21,7 +21,12 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
   const initials = pro.companyName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [internalRating, setInternalRating] = useState<{ avg: number; count: number } | null>(null);
   const [googleRating, setGoogleRating] = useState<GoogleRating | null>(null);
-  const rating = combineRatings(internalRating, googleRating);
+  // Un professionnel ayant renseigné son identifiant Google Business Profile
+  // affiche exclusivement sa note Google (jamais combinée à la note interne
+  // Prolocal-Landes) — les autres affichent leur note interne.
+  const rating = pro.googlePlaceId
+    ? (googleRating ? { avg: googleRating.rating, count: googleRating.reviewCount } : null)
+    : internalRating;
   const bannerSrc = getBanner(pro.banner, pro.category, pro.subcategory);
 
   useEffect(() => {
