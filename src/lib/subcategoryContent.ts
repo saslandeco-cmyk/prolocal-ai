@@ -417,6 +417,23 @@ const SUBCATEGORY_ARTICLE: Record<string, "un" | "une"> = {
   "Transport de groupe": "un",
 };
 
+/**
+ * Texte "À propos" (3 paragraphes) rédigé spécifiquement pour une
+ * sous-catégorie (clé = libellé exact) — en fonction des villes où des
+ * professionnels sont réellement référencés, pour ne jamais se périmer.
+ * Une sous-catégorie absente de cette liste retombe sur le texte générique
+ * (voir buildSubcategoryLandingContent ci-dessous).
+ */
+const SUBCATEGORY_SEOTEXT: Record<string, (cities: string[]) => string[]> = {
+  "Caviste / Marchand de boissons": (cities) => [
+    `Vous recherchez un caviste dans les Landes ou un marchand de boissons près de chez vous ? Prolocal-Landes vous aide à trouver des professionnels de la vente de vins, de spiritueux, de bières et d'autres boissons dans le département des Landes. Consultez les fiches des professionnels pour découvrir leurs coordonnées, leurs horaires d'ouverture, leurs services et les avis clients disponibles.`,
+    cities.length > 0
+      ? `Retrouvez des cavistes et marchands de boissons à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre annuaire local, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
+      : `Aucun caviste ni marchand de boissons n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
+    `Pour trouver un caviste ou un spécialiste des boissons dans les Landes, consultez les fiches détaillées et contactez directement les professionnels selon les moyens de contact disponibles : téléphone, WhatsApp ou email. Vous pouvez également préciser votre besoin dans le formulaire de recherche afin de faciliter votre mise en relation avec les professionnels correspondant à votre demande.`,
+  ],
+};
+
 export function buildSubcategoryLandingContent(params: {
   categoryLabel: string;
   subcategoryLabel: string;
@@ -429,7 +446,7 @@ export function buildSubcategoryLandingContent(params: {
     ? `Prolocal-Landes référence ${proCount} professionnel${proCount > 1 ? "s" : ""} en ${subcategoryLabel} dans le département des Landes${cities.length > 0 ? `, notamment à ${joinFrenchList(cities)}` : ""}. Consultez leurs fiches pour comparer leurs coordonnées, leurs avis clients et leur zone d'intervention avant de les contacter directement.`
     : null);
 
-  const seoText = [
+  const seoText = SUBCATEGORY_SEOTEXT[subcategoryLabel]?.(cities) ?? [
     `Le secteur « ${subcategoryLabel} » regroupe les entreprises et artisans spécialisés dans ce domaine au sein de la catégorie ${categoryLabel}. Sur Prolocal-Landes, chaque fiche professionnelle est vérifiée avant publication : coordonnées, horaires d'ouverture, zone d'intervention et avis clients sont centralisés au même endroit pour faciliter votre recherche.`,
     cities.length > 0
       ? `Nos professionnels en ${subcategoryLabel} sont présents notamment à ${joinFrenchList(cities)}. Grâce à la carte interactive et au moteur de recherche ci-dessus, filtrez les résultats par ville, par rayon de distance ou par mot-clé pour trouver rapidement l'interlocuteur le plus proche de chez vous.`
