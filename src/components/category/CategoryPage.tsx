@@ -525,7 +525,6 @@ export default function CategoryPage({ meta, initialPros }: Props) {
         {/* ── SEO TEXT ── */}
         <div className="mt-10 sm:mt-14 space-y-4 sm:space-y-5">
           <div>
-            <p className="text-sm font-semibold text-landes-sage uppercase tracking-wider mb-1">À propos</p>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-landes-pine">{meta.seoTitle}</h2>
           </div>
           <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed space-y-4">
