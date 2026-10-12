@@ -80,7 +80,7 @@ export default function NeedSearchBar({ initialValue = "", initialCity = "", ini
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Recherche par métier ou décrivez votre besoin en quelques mots…"
-            className="w-full text-gray-800 placeholder-gray-400 text-[0.76rem] italic focus:outline-none bg-transparent"
+            className="w-full text-gray-800 placeholder-gray-400 text-base not-italic focus:outline-none bg-transparent"
             autoComplete="off"
             maxLength={500}
           />
