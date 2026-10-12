@@ -32,7 +32,10 @@ export async function getGoogleRating(placeId: string | undefined | null): Promi
   if (!placeId) return null;
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn(`[googlePlaces] GOOGLE_PLACES_API_KEY non configurée — note Google ignorée pour ${placeId}.`);
+    return null;
+  }
 
   const cached = cache.get(placeId);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
@@ -48,12 +51,15 @@ export async function getGoogleRating(placeId: string | undefined | null): Promi
     });
 
     if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[googlePlaces] Erreur API Places pour ${placeId} (HTTP ${res.status}):`, body.slice(0, 500));
       cache.set(placeId, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;
     }
 
     const data = await res.json();
     if (typeof data.rating !== "number" || typeof data.userRatingCount !== "number") {
+      console.error(`[googlePlaces] Réponse inattendue pour ${placeId} (rating/userRatingCount manquants):`, JSON.stringify(data).slice(0, 500));
       cache.set(placeId, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;
     }
@@ -103,7 +109,10 @@ export async function getGoogleReviews(placeId: string | undefined | null): Prom
   if (!placeId) return null;
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn(`[googlePlaces] GOOGLE_PLACES_API_KEY non configurée — avis Google ignorés pour ${placeId}.`);
+    return null;
+  }
 
   const cached = reviewsCache.get(placeId);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
@@ -118,12 +127,15 @@ export async function getGoogleReviews(placeId: string | undefined | null): Prom
     });
 
     if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[googlePlaces] Erreur API Places (avis) pour ${placeId} (HTTP ${res.status}):`, body.slice(0, 500));
       reviewsCache.set(placeId, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;
     }
 
     const data = await res.json();
     if (typeof data.rating !== "number" || typeof data.userRatingCount !== "number") {
+      console.error(`[googlePlaces] Réponse inattendue (avis) pour ${placeId} (rating/userRatingCount manquants):`, JSON.stringify(data).slice(0, 500));
       reviewsCache.set(placeId, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;
     }
