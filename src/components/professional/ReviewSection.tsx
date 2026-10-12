@@ -379,7 +379,7 @@ function ReviewCarousel({ proId }: { proId: string }) {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-bold text-landes-pine text-base">
-            Avis clients
+            Avis clients Prolocal-landes.fr
             <span className="ml-2 text-sm font-normal text-gray-400">({reviews.length})</span>
           </p>
           {reviews.length > 0 && (
