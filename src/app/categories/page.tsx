@@ -108,7 +108,7 @@ export default async function CategoriesPage() {
           <div className="text-4xl mb-4">📍</div>
           <h2 className="text-2xl font-bold mb-3">Votre activité n&apos;est pas encore référencée&nbsp;?</h2>
           <p className="text-gray-300 mb-6 max-w-xl mx-auto text-sm leading-relaxed">
-            Inscrivez votre entreprise dans notre annuaire des professionnels des Landes et soyez trouvé par des milliers de clients locaux.
+            Inscrivez votre entreprise sur notre plateforme des professionnels landais et soyez trouvé par des milliers de clients locaux.
           </p>
           <Link
             href="/inscription"

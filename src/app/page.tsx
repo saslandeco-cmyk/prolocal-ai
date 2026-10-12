@@ -61,7 +61,7 @@ export default async function HomePage() {
             <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-landes-sand flex-shrink-0" />
-                <span>Annuaire local — Département des Landes (40)</span>
+                <span>Plateforme des professionnels landais — Département des Landes (40)</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-5">
                 De quoi avez-vous<br />
@@ -166,7 +166,7 @@ export default async function HomePage() {
               Que vous soyez à <strong className="text-landes-pine">Mont-de-Marsan</strong>, <strong className="text-landes-pine">Dax</strong>, <strong className="text-landes-pine">Biscarrosse</strong>, <strong className="text-landes-pine">Capbreton</strong>, <strong className="text-landes-pine">Saint-Paul-lès-Dax</strong>, <strong className="text-landes-pine">Tarnos</strong> ou dans une autre commune des Landes, accédez rapidement aux coordonnées de professionnels proches de chez vous.
             </p>
             <p>
-              Comparez les prestations, contactez directement les entreprises locales et choisissez le professionnel qui répond le mieux à votre projet. Grâce à notre annuaire local, il devient simple de trouver un expert fiable dans les Landes tout en favorisant les entreprises de proximité.
+              Comparez les prestations, contactez directement les entreprises locales et choisissez le professionnel qui répond le mieux à votre projet. Grâce à notre plateforme des professionnels landais, il devient simple de trouver un expert fiable dans les Landes tout en favorisant les entreprises de proximité.
             </p>
           </div>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -212,10 +212,10 @@ export default async function HomePage() {
 
           <div className="space-y-4 text-gray-300 text-sm sm:text-base leading-relaxed mb-8">
             <p>
-              Vous êtes artisan, commerçant, entrepreneur, profession libérale ou dirigeant d&apos;une entreprise dans les Landes ? Rejoignez notre annuaire local et donnez davantage de visibilité à votre activité. En vous inscrivant, vous améliorez votre présence sur Internet et augmentez vos chances d&apos;être trouvé par des particuliers et des professionnels qui recherchent un prestataire près de chez eux.
+              Vous êtes artisan, commerçant, entrepreneur, profession libérale ou dirigeant d&apos;une entreprise dans les Landes ? Rejoignez notre plateforme des professionnels landais et donnez davantage de visibilité à votre activité. En vous inscrivant, vous améliorez votre présence sur Internet et augmentez vos chances d&apos;être trouvé par des particuliers et des professionnels qui recherchent un prestataire près de chez eux.
             </p>
             <p>
-              Chaque jour, de nombreux internautes recherchent un artisan, une entreprise ou un professionnel de confiance dans les Landes pour réaliser un projet, demander un devis ou bénéficier d&apos;un service de proximité. Grâce à notre annuaire, votre entreprise apparaît auprès d&apos;une audience locale qualifiée, prête à entrer en contact avec un professionnel compétent.
+              Chaque jour, de nombreux internautes recherchent un artisan, une entreprise ou un professionnel de confiance dans les Landes pour réaliser un projet, demander un devis ou bénéficier d&apos;un service de proximité. Grâce à notre plateforme des professionnels landais, votre entreprise apparaît auprès d&apos;une audience locale qualifiée, prête à entrer en contact avec un professionnel compétent.
             </p>
             <p>
               Notre plateforme référence des entreprises de tous les secteurs d&apos;activité : bâtiment, rénovation, immobilier, automobile, santé, beauté, restauration, commerce, services à la personne, informatique, communication, métiers du numérique, professions libérales et bien d&apos;autres encore. Que vous soyez installé à <strong className="text-landes-sand">Mont-de-Marsan</strong>, <strong className="text-landes-sand">Dax</strong>, <strong className="text-landes-sand">Biscarrosse</strong>, <strong className="text-landes-sand">Capbreton</strong>, <strong className="text-landes-sand">Hossegor</strong>, <strong className="text-landes-sand">Mimizan</strong>, <strong className="text-landes-sand">Saint-Paul-lès-Dax</strong>, <strong className="text-landes-sand">Tarnos</strong> ou dans toute autre commune des Landes, votre fiche professionnelle permet à vos futurs clients de vous découvrir rapidement.
@@ -224,10 +224,10 @@ export default async function HomePage() {
               En créant votre profil, vous pouvez présenter votre entreprise, mettre en avant vos compétences, vos prestations, vos coordonnées et les informations essentielles qui faciliteront la prise de contact. Une fiche complète inspire davantage confiance et améliore vos opportunités de recevoir de nouvelles demandes.
             </p>
             <p>
-              Être présent dans un annuaire spécialisé dédié aux professionnels landais constitue également un véritable atout pour votre visibilité locale. Votre entreprise bénéficie d&apos;une présence renforcée sur les recherches effectuées par les internautes souhaitant trouver un professionnel dans les Landes, ce qui contribue à développer votre notoriété et à générer davantage de contacts qualifiés.
+              Être présent sur une plateforme spécialisée dédiée aux professionnels landais constitue également un véritable atout pour votre visibilité locale. Votre entreprise bénéficie d&apos;une présence renforcée sur les recherches effectuées par les internautes souhaitant trouver un professionnel dans les Landes, ce qui contribue à développer votre notoriété et à générer davantage de contacts qualifiés.
             </p>
             <p className="font-medium text-white">
-              N&apos;attendez plus pour faire connaître votre activité. Inscrivez-vous dans notre annuaire des professionnels des Landes, valorisez votre savoir-faire et soyez trouvé plus facilement par vos futurs clients. Rejoignez dès aujourd&apos;hui les entreprises qui font confiance à notre plateforme pour développer leur visibilité locale et attirer de nouvelles opportunités commerciales.
+              N&apos;attendez plus pour faire connaître votre activité. Inscrivez-vous sur notre plateforme des professionnels landais, valorisez votre savoir-faire et soyez trouvé plus facilement par vos futurs clients. Rejoignez dès aujourd&apos;hui les entreprises qui font confiance à notre plateforme pour développer leur visibilité locale et attirer de nouvelles opportunités commerciales.
             </p>
           </div>
 

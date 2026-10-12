@@ -133,7 +133,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   // ── Repli : fiche pas encore en base, métadonnées dérivées de l'URL seule ──
   const title = `${fallbackName} — ${subcategoryLabel || categoryLabel} | Prolocal-Landes`;
-  const description = `Retrouvez les coordonnées, avis et informations de ${fallbackName}, professionnel référencé dans la catégorie ${categoryLabel}${subcategoryLabel ? ` (${subcategoryLabel})` : ""} sur l'annuaire des Landes.`;
+  const description = `Retrouvez les coordonnées, avis et informations de ${fallbackName}, professionnel référencé dans la catégorie ${categoryLabel}${subcategoryLabel ? ` (${subcategoryLabel})` : ""} sur la plateforme des professionnels landais.`;
 
   return {
     title,

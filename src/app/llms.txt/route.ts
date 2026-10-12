@@ -21,14 +21,14 @@ export async function GET() {
 
   const content = `# Prolocal-Landes
 
-> Annuaire en ligne des professionnels, artisans, commerçants et prestataires de services du département des Landes (40), France. Recherche par catégorie, sous-catégorie et ville, avec fiches détaillées : coordonnées, horaires d'ouverture, avis clients, géolocalisation.
+> Plateforme des professionnels landais, artisans, commerçants et prestataires de services du département des Landes (40), France. Recherche par catégorie, sous-catégorie et ville, avec fiches détaillées : coordonnées, horaires d'ouverture, avis clients, géolocalisation.
 
 Prolocal-Landes référence des professionnels réels et vérifiés du département des Landes (40), chacun avec une fiche dédiée (adresse, téléphone, email, site web, horaires, avis clients vérifiés par email). Le site propose aussi un formulaire de recherche en langage naturel : un visiteur décrit son besoin en une phrase et est mis en relation avec les professionnels correspondants les plus proches.
 
 ## Pages principales
 
 - [Accueil](${baseUrl}/): présentation du site et recherche de professionnel par besoin exprimé en langage naturel
-- [Annuaire complet](${baseUrl}/annuaire): liste de tous les professionnels référencés, filtrable par catégorie et ville
+- [Plateforme complète](${baseUrl}/annuaire): liste de tous les professionnels référencés, filtrable par catégorie et ville
 - [Toutes les catégories](${baseUrl}/categories): index de toutes les catégories et sous-catégories de métiers
 - [Inscription professionnelle](${baseUrl}/inscription): pour qu'un professionnel des Landes référence gratuitement son entreprise
 

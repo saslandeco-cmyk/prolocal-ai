@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
   title: "Mentions légales — Prolocal-landes.fr",
-  description: "Mentions légales du site Prolocal-landes.fr, annuaire des professionnels des Landes.",
+  description: "Mentions légales du site Prolocal-landes.fr, plateforme des professionnels landais.",
 };
 
 export default function MentionsLegalesPage() {

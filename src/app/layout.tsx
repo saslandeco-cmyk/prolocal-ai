@@ -32,10 +32,10 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Prolocal-landes.fr — Annuaire des professionnels des Landes",
+    default: "Prolocal-landes.fr — Plateforme des professionnels landais",
     template: "%s",
   },
-  description: "Trouvez tous les professionnels et commerçants du département des Landes (40). Annuaire local avec géolocalisation.",
+  description: "Trouvez tous les professionnels et commerçants du département des Landes (40). Plateforme locale avec géolocalisation.",
   openGraph: {
     siteName: "Prolocal-Landes",
     locale: "fr_FR",
@@ -62,7 +62,7 @@ const organizationJsonLd = {
   legalName: "Landeco SAS",
   url: baseUrl,
   logo: `${baseUrl}/logo.jpg`,
-  description: "Annuaire des professionnels et commerçants du département des Landes (40).",
+  description: "Plateforme des professionnels et commerçants du département des Landes (40).",
   address: {
     "@type": "PostalAddress",
     streetAddress: "Grand Dax Développement, 1 avenue de la Gare",

@@ -166,7 +166,7 @@ export default function ContactPage() {
                 <p className="font-semibold text-landes-pine text-sm">Vous êtes un professionnel ?</p>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Inscrivez votre entreprise dans notre annuaire et soyez trouvé par vos futurs clients dans les Landes.
+                Inscrivez votre entreprise sur notre plateforme des professionnels landais et soyez trouvé par vos futurs clients dans les Landes.
               </p>
               <Link href="/inscription" className="btn-primary text-sm py-2.5 flex items-center justify-center gap-2">
                 Inscrire mon entreprise

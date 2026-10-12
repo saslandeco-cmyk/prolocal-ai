@@ -294,9 +294,16 @@ export default function ProfessionalProfileView({ id, initialData, contactQuota,
   const openStatus  = isOpenNow(pro);
   const hasHours    = pro.openingHours && Object.keys(pro.openingHours).length > 0;
   const approvedReviews = getApprovedReviewsByPro(pro.id);
-  const proRating = approvedReviews.length
+  const internalRating = approvedReviews.length
     ? { avg: Math.round(approvedReviews.reduce((s,r) => s + r.rating, 0) / approvedReviews.length * 10) / 10, count: approvedReviews.length }
     : null;
+  // Un professionnel ayant renseigné son identifiant Google Business Profile
+  // affiche exclusivement sa note Google (jamais combinée à la note interne
+  // Prolocal-Landes), à côté de l'intitulé de la sous-catégorie — les
+  // autres affichent leur note interne.
+  const proRating = pro.googlePlaceId
+    ? (googleReviews ? { avg: googleReviews.rating, count: googleReviews.reviewCount } : null)
+    : internalRating;
 
   const categorySlug = categorySlugFor(pro.category);
   const citySlug = Object.values(CITY_META).find(c => c.name.toLowerCase() === pro.city.toLowerCase())?.slug ?? null;

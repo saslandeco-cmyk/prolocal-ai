@@ -428,7 +428,7 @@ const SUBCATEGORY_SEOTEXT: Record<string, (cities: string[]) => string[]> = {
   "Caviste / Marchand de boissons": (cities) => [
     `Vous recherchez un caviste dans les Landes ou un marchand de boissons près de chez vous ? Prolocal-Landes vous aide à trouver des professionnels de la vente de vins, de spiritueux, de bières et d'autres boissons dans le département des Landes. Consultez les fiches des professionnels pour découvrir leurs coordonnées, leurs horaires d'ouverture, leurs services et les avis clients disponibles.`,
     cities.length > 0
-      ? `Retrouvez des cavistes et marchands de boissons à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre annuaire local, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
+      ? `Retrouvez des cavistes et marchands de boissons à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre plateforme des professionnels landais, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
       : `Aucun caviste ni marchand de boissons n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
     `Pour trouver un caviste ou un spécialiste des boissons dans les Landes, consultez les fiches détaillées et contactez directement les professionnels selon les moyens de contact disponibles : téléphone, WhatsApp ou email. Vous pouvez également préciser votre besoin dans le formulaire de recherche afin de faciliter votre mise en relation avec les professionnels correspondant à votre demande.`,
   ],
@@ -581,7 +581,7 @@ export function buildSubcategoryLandingContent(params: {
   const seoText = SUBCATEGORY_SEOTEXT[subcategoryLabel]?.(cities) ?? (activity ? [
     `Vous recherchez ${article} ${subcategoryLabel} dans les Landes ? Prolocal-Landes vous aide à trouver ${activity} dans le département des Landes. Consultez les fiches des professionnels pour découvrir leurs coordonnées, leurs horaires d'ouverture, leurs services et les avis clients disponibles.`,
     cities.length > 0
-      ? `Retrouvez des ${plural} à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre annuaire local, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
+      ? `Retrouvez des ${plural} à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre plateforme des professionnels landais, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
       : `Aucun professionnel en ${subcategoryLabel} n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
     `Pour trouver ${article} ${subcategoryLabel} dans les Landes, consultez les fiches détaillées et contactez directement les professionnels selon les moyens de contact disponibles : téléphone, WhatsApp ou email. Vous pouvez également préciser votre besoin dans le formulaire de recherche afin de faciliter votre mise en relation avec les professionnels correspondant à votre demande.`,
   ] : [
@@ -627,7 +627,7 @@ export function buildSubcategoryMetaDescription(params: {
 
   const text = proCount > 0
     ? `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Prolocal-Landes recense ${proCount} professionnel${proCount > 1 ? "s" : ""} de confiance${cityCount > 0 ? `, réparti${proCount > 1 ? "s" : ""} dans ${cityCount} commune${cityCount > 1 ? "s" : ""} du département` : ""}, avec coordonnées et avis clients, pour trouver facilement la bonne personne près de chez vous.`
-    : `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Aucune fiche n'est encore publiée pour ce secteur, mais notre annuaire s'enrichit chaque semaine. Vous exercez ce métier ? Référencez gratuitement votre entreprise dès maintenant.`;
+    : `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Aucune fiche n'est encore publiée pour ce secteur, mais notre plateforme s'enrichit chaque semaine. Vous exercez ce métier ? Référencez gratuitement votre entreprise dès maintenant.`;
 
   return truncate(text, META_DESCRIPTION_MAX);
 }

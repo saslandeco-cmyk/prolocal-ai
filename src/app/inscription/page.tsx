@@ -652,7 +652,7 @@ function InscriptionForm() {
     <div className="w-[90%] mx-auto px-4 sm:px-6 py-10">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-landes-pine mb-2">Inscrire mon entreprise</h1>
-        <p className="text-gray-500">Référencez votre activité dans l&apos;annuaire Prolocal-Landes</p>
+        <p className="text-gray-500">Référencez votre activité sur la plateforme Prolocal-Landes</p>
       </div>
 
       {/* ── STEP 1 : Entreprise & Coordonnées ── */}

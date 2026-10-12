@@ -21,7 +21,7 @@ export default function Footer() {
               <span className="text-xl font-bold">Prolocal-landes.fr</span>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs">
-              L'annuaire de référence des professionnels et commerçants du département des Landes (40).
+              La plateforme de référence des professionnels et commerçants du département des Landes (40).
               Trouvez les entreprises locales près de chez vous.
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-gray-400">
@@ -55,12 +55,12 @@ export default function Footer() {
                 <Link key={city.slug} href={`/annuaire/${city.slug}`} className="hover:text-white transition-colors">{city.name}</Link>
               ))}
             </div>
-            <Link href="/annuaire" className="inline-block mt-3 text-landes-sand hover:text-white transition-colors text-sm font-medium">Tout l'annuaire des Landes →</Link>
+            <Link href="/annuaire" className="inline-block mt-3 text-landes-sand hover:text-white transition-colors text-sm font-medium">Toute la plateforme des professionnels landais →</Link>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-8 pt-6 border-t border-white/10">
-          <p className="text-sm text-gray-400">© 2024 Prolocal-landes.fr — Annuaire des Landes (40)</p>
+          <p className="text-sm text-gray-400">© 2024 Prolocal-landes.fr — Plateforme des professionnels landais (40)</p>
           <div className="flex gap-4 text-sm text-gray-400">
             <Link href="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
             <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>

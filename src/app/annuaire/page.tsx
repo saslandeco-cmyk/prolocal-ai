@@ -31,7 +31,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
   return {
     title,
-    description: "Résultats de recherche sur l'annuaire des professionnels des Landes.",
+    description: "Résultats de recherche sur la plateforme des professionnels landais.",
     robots: { index: false, follow: true },
   };
 }

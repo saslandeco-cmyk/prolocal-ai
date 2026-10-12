@@ -188,7 +188,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
 
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-landes-sand flex-shrink-0" />
-                <span>Annuaire local — Département des Landes (40)</span>
+                <span>Plateforme des professionnels landais — Département des Landes (40)</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3 sm:mb-4 flex items-center gap-3">
