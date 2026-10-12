@@ -290,6 +290,133 @@ const SUBCATEGORY_DESCRIPTIONS: Record<string, string> = {
   "Transport de groupe": "Ce prestataire assure le transport collectif de groupes (minibus ou autocar), pour des événements ponctuels ou des déplacements réguliers.",
 };
 
+/**
+ * Article indéfini singulier à utiliser devant le libellé de la
+ * sous-catégorie (clé = libellé exact) — ex: "un Plombier-chauffagiste",
+ * "une Esthéticienne". Déterminé par le genre grammatical du mot employé
+ * dans le libellé lui-même (profession épicène ou nom de commerce), pas
+ * par le genre de la personne qui exerce le métier. Repli sur "un" pour
+ * toute sous-catégorie absente (ex: ajoutée depuis l'admin).
+ */
+const SUBCATEGORY_ARTICLE: Record<string, "un" | "une"> = {
+  // Alimentation & Épicerie
+  "Alimentation générale": "une",
+  "Boucherie / Charcuterie": "une",
+  "Boulangerie / Pâtisserie": "une",
+  "Caviste / Marchand de boissons": "un",
+  "Épicerie fine": "une",
+  "Fromagerie / Crèmerie": "une",
+  "Poissonnerie": "une",
+  "Primeurs": "un",
+
+  // Artisanat & Métiers d'art
+  "Archetier": "un",
+  "Bijoutier-Joaillier": "un",
+  "Céramiste": "un",
+  "Chaudronnier": "un",
+  "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "un",
+  "Doreur à la feuille": "un",
+  "Ébéniste": "un",
+  "Encadreur": "un",
+  "Ferronnier d'art": "un",
+  "Horloger": "un",
+  "Luthier": "un",
+  "Maroquinier": "un",
+  "Souffleur de verre / Verrier à la main": "un",
+  "Tailleur de pierre": "un",
+  "Tapissier d'ameublement": "un",
+  "Vitrailliste": "un",
+
+  // Bâtiment & Travaux
+  "Architecte": "un",
+  "Carreleur": "un",
+  "Charpentier": "un",
+  "Couvreur": "un",
+  "Électricien": "un",
+  "Expert en bâtiment": "un",
+  "Maçon": "un",
+  "Menuisier": "un",
+  "Peintre en bâtiment": "un",
+  "Plaquiste": "un",
+  "Plombier-chauffagiste": "un",
+
+  // Beauté & Bien-être
+  "Coiffeur": "un",
+  "Esthéticienne": "une",
+  "Maquilleur professionnel": "un",
+  "Naturopathe": "un",
+  "Praticien en massage bien-être": "un",
+  "Prothésiste ongulaire": "une",
+  "Sophrologue / Réflexologue": "un",
+
+  // Commerce & Vente
+  "Ameublement": "un",
+  "Décoration": "une",
+  "Électroménager / Multimédia": "un",
+  "Ésotérique": "une",
+  "Fleuriste": "un",
+  "Friperie": "une",
+  "Garage automobile": "un",
+  "Habillement": "un",
+  "Jardinerie": "une",
+  "Librairie": "une",
+  "Motoculture": "une",
+  "Parfumerie": "une",
+  "Pharmacie": "une",
+  "Tabac / Presse": "un",
+  "Troc / Dépôt vente": "un",
+
+  // Culture & Élevage
+  "Apiculteur / Apicultrice": "un",
+  "Aquaculteur / Aquacultrice": "un",
+  "Arboriculteur / Arboricultrice": "un",
+  "Éleveur / Éleveuse": "un",
+  "Horticulteur / Horticultrice": "un",
+  "Maraîcher / Maraîchère": "un",
+  "Viticulteur / Viticultrice": "un",
+
+  // Immobilier
+  "Agence immobilière": "une",
+  "Conciergerie": "une",
+  "Diagnostique technique": "un",
+  "Gestionnaire de bien": "un",
+  "Mandataire immobilier": "un",
+  "Syndic de copropriété": "un",
+
+  // Informatique & Numérique
+  "Agence Web": "une",
+  "Community manager": "un",
+  "Cybersécurité": "une",
+  "Graphiste": "un",
+  "Informaticien": "un",
+  "Webdesigner": "un",
+  "Webmaster indépendant": "un",
+
+  // Restauration
+  "Restaurant": "un",
+  "Café / Bar": "un",
+  "Traiteur": "un",
+
+  // Services à la personne
+  "Aide à domicile": "une",
+  "Assistant administratif": "un",
+  "Assistant informatique et Internet": "un",
+  "Employé de ménage / Repassage": "un",
+  "Garde d'animaux": "une",
+  "Garde d'enfants": "une",
+  "Travaux de jardinerie": "un",
+
+  // Sport & Fitness
+  "Coach sportif": "un",
+  "Salle de sport et de fitness": "une",
+
+  // Transport de personnes
+  "Ambulance": "une",
+  "Déménagement": "un",
+  "Taxi": "un",
+  "Transport de groupe": "un",
+};
+
 export function buildSubcategoryLandingContent(params: {
   categoryLabel: string;
   subcategoryLabel: string;
@@ -314,7 +441,7 @@ export function buildSubcategoryLandingContent(params: {
 
   return {
     intro,
-    seoTitle: `Trouver un ${subcategoryLabel} dans les Landes`,
+    seoTitle: `Trouver ${SUBCATEGORY_ARTICLE[subcategoryLabel] ?? "un"} ${subcategoryLabel} dans les Landes`,
     seoText,
     ctaText,
   };
