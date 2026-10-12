@@ -5,6 +5,7 @@ import { Professional } from "@/types";
 import { MapPin, Phone, Mail, ArrowRight, Award } from "lucide-react";
 import StarDisplay from "@/components/ui/StarDisplay";
 import { getProRating } from "@/lib/reviewUtils";
+import { combineRatings, type GoogleRating } from "@/lib/googlePlaces";
 import { getBanner } from "@/lib/defaultBanners";
 import { rehydrateAsync } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
@@ -18,12 +19,26 @@ interface ProfessionalCardProps {
 export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }: ProfessionalCardProps) {
   const [pro, setPro] = useState<Professional>(propPro);
   const initials = pro.companyName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
+  const [internalRating, setInternalRating] = useState<{ avg: number; count: number } | null>(null);
+  const [googleRating, setGoogleRating] = useState<GoogleRating | null>(null);
+  const rating = combineRatings(internalRating, googleRating);
   const bannerSrc = getBanner(pro.banner, pro.category, pro.subcategory);
 
   useEffect(() => {
-    setRating(getProRating(pro.id));
+    setInternalRating(getProRating(pro.id));
   }, [pro.id]);
+
+  // Note Google — récupérée côté serveur (clé API jamais exposée au
+  // client) uniquement si le professionnel a renseigné son identifiant
+  // Google Business Profile ; silencieuse si absente/non configurée (voir
+  // /api/google-rating et src/lib/googlePlaces.ts).
+  useEffect(() => {
+    if (!pro.googlePlaceId) { setGoogleRating(null); return; }
+    fetch(`/api/google-rating?placeId=${encodeURIComponent(pro.googlePlaceId)}`)
+      .then(res => res.json())
+      .then(data => setGoogleRating(data.rating ?? null))
+      .catch(() => {});
+  }, [pro.googlePlaceId]);
 
   // Charge le logo et la bannière depuis IndexedDB si absents
   useEffect(() => {
@@ -85,7 +100,7 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
             <p className="text-sm text-landes-sage font-medium">{pro.subcategory || pro.category}</p>
             {rating && rating.avg > 0 && (
-              <StarDisplay rating={rating.avg} count={rating.count} size="xs" />
+              <StarDisplay rating={rating.avg} count={rating.count} size="sm" />
             )}
           </div>
 
