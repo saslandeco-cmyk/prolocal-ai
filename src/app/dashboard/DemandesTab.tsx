@@ -24,7 +24,7 @@ const STATUS_STYLES: Record<DemandeStatus, string> = {
 };
 
 const CANAL_LABELS: Record<DemandeCanal, string> = {
-  prolocal_ai: "PROLOCAL AI",
+  prolocal_ai: "Formulaire de recherche",
   question: "Poser une question",
   appel: "Appel",
   whatsapp: "WhatsApp",
@@ -140,7 +140,7 @@ export default function DemandesTab({ proId, onUpgradeClick, onCountChange }: De
         )}
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Demandes de devis ou de contact envoyées via la recherche PROLOCAL AI, le formulaire de la fiche ou un clic Appeler/WhatsApp/Email.
+        Demandes de devis ou de contact envoyées via le formulaire de recherche, le formulaire de la fiche ou un clic Appeler/WhatsApp/Email.
       </p>
 
       {lockedIds.size > 0 && (

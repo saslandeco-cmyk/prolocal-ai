@@ -10,8 +10,8 @@ import NeedResultsClient from "@/components/ai/NeedResultsClient";
  */
 export function generateMetadata(): Metadata {
   return {
-    title: "Votre recherche | PROLOCAL AI",
-    description: "Décrivez votre besoin, PROLOCAL AI vous met en relation avec les professionnels correspondants dans les Landes.",
+    title: "Votre recherche | Formulaire de recherche",
+    description: "Décrivez votre besoin, le formulaire de recherche vous met en relation avec les professionnels correspondants dans les Landes.",
     robots: { index: false, follow: true },
   };
 }

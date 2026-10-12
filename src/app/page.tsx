@@ -68,7 +68,7 @@ export default async function HomePage() {
                 <span className="text-landes-sand">besoin ?</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-300 max-w-md">
-                Décrivez simplement votre besoin. PROLOCAL AI vous aide à trouver le bon professionnel près de chez vous, dans les Landes.
+                Décrivez simplement votre besoin. Le formulaire de recherche vous aide à trouver le bon professionnel près de chez vous, dans les Landes.
               </p>
             </div>
 

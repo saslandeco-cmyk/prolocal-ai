@@ -434,7 +434,7 @@ export function buildSubcategoryLandingContent(params: {
     cities.length > 0
       ? `Nos professionnels en ${subcategoryLabel} sont présents notamment à ${joinFrenchList(cities)}. Grâce à la carte interactive et au moteur de recherche ci-dessus, filtrez les résultats par ville, par rayon de distance ou par mot-clé pour trouver rapidement l'interlocuteur le plus proche de chez vous.`
       : `Aucun professionnel en ${subcategoryLabel} n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
-    `Contactez directement un professionnel par téléphone, WhatsApp ou email depuis sa fiche, ou utilisez PROLOCAL AI pour décrire votre besoin en quelques mots et être mis en relation avec les professionnels les plus pertinents.`,
+    `Contactez directement un professionnel par téléphone, WhatsApp ou email depuis sa fiche, ou utilisez le formulaire de recherche pour décrire votre besoin en quelques mots et être mis en relation avec les professionnels les plus pertinents.`,
   ];
 
   const ctaText = `Vous exercez en ${subcategoryLabel} dans les Landes ? Référencez gratuitement votre entreprise sur Prolocal-Landes pour gagner en visibilité auprès des habitants du département et recevoir vos premières demandes de contact.`;
