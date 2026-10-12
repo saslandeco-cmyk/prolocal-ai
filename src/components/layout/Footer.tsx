@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail } from "lucide-react";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { CITY_META } from "@/lib/cityData";
@@ -17,7 +18,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.jpg" alt="Prolocal-landes.fr" className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
+              <Image src="/logo.jpg" alt="Prolocal-landes.fr" width={40} height={40} className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
               <span className="text-xl font-bold">Prolocal-landes.fr</span>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs">

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X, LogIn, UserPlus, LogOut, User, ChevronDown, LayoutDashboard, Grid3X3, ShieldCheck } from "lucide-react";
@@ -89,7 +90,14 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/logo.jpg" alt="Prolocal-landes.fr" className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
+            {/* next/image plutôt qu'un <img> brut : /logo.jpg source fait
+                1254x1254 (275 Kio) pour un affichage à 44x44 — Lighthouse
+                flaguait ce seul fichier comme principale économie possible
+                (LCP/FCP) sur mobile. next/image sert une version
+                redimensionnée/WebP au lieu du fichier brut, sans toucher au
+                diaporama hero (seul élément LCP spécifiquement calibré pour
+                desktop, voir HeroPubSlideshow.tsx). */}
+            <Image src="/logo.jpg" alt="Prolocal-landes.fr" width={44} height={44} priority className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
             <div>
               <span className="text-lg font-bold text-landes-pine">Prolocal</span>
               <span className="text-lg font-bold text-landes-sage">-landes</span>
