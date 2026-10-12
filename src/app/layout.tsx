@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -11,14 +11,18 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 // (chaîne de requêtes bloquant le rendu : HTML → CSS → CSS distant → police
 // distante — identifiée comme la cause principale du retard de peinture du
 // texte, plus grand élément visible sur mobile où le diaporama hero est
-// masqué par `hidden lg:block`). next/font télécharge la police au build et
-// l'auto-héberge sur le même domaine, sans aucune requête réseau externe au
-// chargement — voir aussi tailwind.config.ts (fontFamily.sans) et
-// globals.css (body) qui référencent désormais var(--font-inter) au lieu du
-// nom littéral "Inter".
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+// masqué par `hidden lg:block`).
+//
+// Fichier vendu directement dans le dépôt (next/font/local) plutôt que
+// next/font/google : ce dernier télécharge la police depuis Google Fonts au
+// moment du build, une dépendance réseau qui a fait échouer un déploiement
+// Vercel (timeout/erreur réseau vers fonts.gstatic.com pendant le build,
+// aucun rapport avec le code applicatif). Le fichier ci-dessous est le même
+// woff2 variable (300 à 700, subset latin) que servait next/font/google —
+// aucun changement visuel, juste plus de dépendance réseau au build.
+const inter = localFont({
+  src: "./fonts/InterVariable-latin.woff2",
+  weight: "300 700",
   display: "swap",
   variable: "--font-inter",
 });
