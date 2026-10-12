@@ -17,6 +17,11 @@
  *
  * Résultat mis en cache en mémoire (process) pendant 24h par Place ID,
  * pour éviter un appel Google à chaque génération de page.
+ *
+ * Requêtes envoyées avec `languageCode=fr` : Google traduit automatiquement
+ * le texte des avis (et les dates relatives, "il y a 2 mois") en français
+ * quand une traduction est disponible, plutôt que de renvoyer la langue
+ * d'origine de chaque avis.
  */
 
 export interface GoogleRating {
@@ -41,7 +46,7 @@ export async function getGoogleRating(placeId: string | undefined | null): Promi
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
   try {
-    const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=fr`, {
       headers: {
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask": "rating,userRatingCount,googleMapsUri",
@@ -118,7 +123,7 @@ export async function getGoogleReviews(placeId: string | undefined | null): Prom
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
   try {
-    const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=fr`, {
       headers: {
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask": "rating,userRatingCount,googleMapsUri,reviews",
