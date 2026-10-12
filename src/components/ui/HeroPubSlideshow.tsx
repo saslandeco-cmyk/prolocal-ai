@@ -6,6 +6,7 @@ import { ImageIcon, Star, ChevronLeft, ChevronRight, ArrowRight } from "lucide-r
 import { getHeroSlideshowIds } from "@/lib/storage";
 import { buildProfileUrl } from "@/lib/profileUrl";
 import { getProRating } from "@/lib/reviewUtils";
+import type { GoogleRating } from "@/lib/googlePlaces";
 import type { Professional } from "@/types";
 
 const SLIDE_DURATION_MS = 5000;
@@ -81,6 +82,21 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
     return () => clearInterval(timer);
   }, [pros.length]);
 
+  // Note Google de l'encart actuellement affiché — récupérée côté serveur
+  // (clé API jamais exposée au client), uniquement si ce professionnel a
+  // renseigné son identifiant Google Business Profile. Même logique que
+  // ProfessionalCard.tsx : un professionnel avec identifiant Google affiche
+  // exclusivement sa note Google, jamais la note interne Prolocal-Landes.
+  const currentPlaceId = pros[index]?.googlePlaceId;
+  const [googleRating, setGoogleRating] = useState<GoogleRating | null>(null);
+  useEffect(() => {
+    if (!currentPlaceId) { setGoogleRating(null); return; }
+    fetch(`/api/google-rating?placeId=${encodeURIComponent(currentPlaceId)}`)
+      .then(res => res.json())
+      .then(data => setGoogleRating(data.rating ?? null))
+      .catch(() => {});
+  }, [currentPlaceId]);
+
   if (pros.length === 0) {
     if (fallback) return <>{fallback}</>;
     return (
@@ -99,7 +115,9 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
   const goNext = () => setIndex(i => (i + 1) % pros.length);
 
   const pro = pros[index];
-  const rating = getProRating(pro.id);
+  const rating = pro.googlePlaceId
+    ? (googleRating ? { avg: googleRating.rating, count: googleRating.reviewCount } : null)
+    : getProRating(pro.id);
 
   return (
     <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl group flex flex-col">
@@ -157,7 +175,7 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
           <p className="font-bold text-xl leading-tight truncate">{pro.companyName}</p>
           <p className="text-white/80 text-sm truncate">{pro.subcategory || pro.category} — {pro.city}</p>
 
-          {rating.count > 0 && (
+          {rating && rating.count > 0 && (
             <div className="flex items-center gap-1 mt-1.5 text-sm">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               <span className="font-semibold">{rating.avg.toFixed(1)}</span>
