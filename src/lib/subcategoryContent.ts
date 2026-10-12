@@ -434,6 +434,134 @@ const SUBCATEGORY_SEOTEXT: Record<string, (cities: string[]) => string[]> = {
   ],
 };
 
+/**
+ * Ce que Prolocal-Landes aide à trouver pour chaque sous-catégorie (clé =
+ * libellé exact) — un complément de phrase inséré après "Prolocal-Landes
+ * vous aide à trouver...", décrivant concrètement l'offre plutôt que de
+ * répéter le libellé de la sous-catégorie. Utilisé par le texte "À propos"
+ * généré pour toute sous-catégorie sans entrée dédiée dans
+ * SUBCATEGORY_SEOTEXT (voir buildSubcategoryLandingContent ci-dessous) —
+ * repli sur un texte entièrement générique si absente aussi d'ici (ex:
+ * sous-catégorie ajoutée depuis l'admin).
+ */
+const SUBCATEGORY_ACTIVITY: Record<string, string> = {
+  // Alimentation & Épicerie
+  "Alimentation générale": "des commerces de proximité proposant des produits alimentaires et de consommation courante",
+  "Boucherie / Charcuterie": "des bouchers-charcutiers proposant de la viande et des produits de charcuterie de qualité",
+  "Boulangerie / Pâtisserie": "des boulangers-pâtissiers proposant du pain, des viennoiseries et des pâtisseries artisanales",
+  "Épicerie fine": "des épiceries fines proposant des produits gourmets et des spécialités du terroir landais",
+  "Fromagerie / Crèmerie": "des fromagers-affineurs proposant fromages et produits laitiers de qualité",
+  "Poissonnerie": "des poissonniers proposant des produits de la mer frais",
+  "Primeurs": "des primeurs proposant des fruits et légumes frais et de saison",
+
+  // Artisanat & Métiers d'art
+  "Archetier": "des archetiers spécialisés dans la fabrication et la réparation d'archets pour instruments à cordes",
+  "Bijoutier-Joaillier": "des bijoutiers-joailliers proposant création, vente et réparation de bijoux",
+  "Céramiste": "des céramistes créant des pièces artisanales en terre ou en porcelaine",
+  "Chaudronnier": "des chaudronniers spécialisés dans la fabrication et la réparation de pièces métalliques",
+  "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "des artisans spécialisés dans la décoration et la peinture sur céramique, faïence ou porcelaine",
+  "Doreur à la feuille": "des doreurs à la feuille spécialisés dans la dorure de cadres, meubles et objets",
+  "Ébéniste": "des ébénistes spécialisés dans la création et la restauration de meubles en bois",
+  "Encadreur": "des encadreurs réalisant des encadrements sur-mesure pour œuvres, photos et objets",
+  "Ferronnier d'art": "des ferronniers d'art spécialisés dans la création et la restauration d'éléments en fer forgé",
+  "Horloger": "des horlogers spécialisés dans la réparation, l'entretien et la vente de montres et horloges",
+  "Luthier": "des luthiers spécialisés dans la fabrication et la réparation d'instruments à cordes",
+  "Maroquinier": "des maroquiniers spécialisés dans la création et la réparation d'articles en cuir",
+  "Souffleur de verre / Verrier à la main": "des souffleurs de verre créant des pièces artisanales et décoratives uniques",
+  "Tailleur de pierre": "des tailleurs de pierre spécialisés dans la taille et la restauration d'éléments en pierre",
+  "Tapissier d'ameublement": "des tapissiers d'ameublement spécialisés dans la restauration de sièges et fauteuils",
+  "Vitrailliste": "des vitraillistes spécialisés dans la création et la restauration de vitraux",
+
+  // Bâtiment & Travaux
+  "Architecte": "des architectes pour la conception de constructions neuves, d'extensions ou de rénovations",
+  "Carreleur": "des carreleurs spécialisés dans la pose de carrelage et de faïence",
+  "Charpentier": "des charpentiers spécialisés dans la construction et la rénovation de charpentes",
+  "Couvreur": "des couvreurs spécialisés dans la réfection et l'entretien de toitures",
+  "Électricien": "des électriciens pour vos installations, mises aux normes et dépannages électriques",
+  "Expert en bâtiment": "des experts en bâtiment pour l'évaluation technique indépendante de constructions",
+  "Maçon": "des maçons spécialisés dans les travaux de gros œuvre et de construction",
+  "Menuisier": "des menuisiers spécialisés dans la pose et la fabrication de portes, fenêtres et aménagements en bois",
+  "Peintre en bâtiment": "des peintres en bâtiment pour la rénovation et la mise en valeur de vos intérieurs et façades",
+  "Plaquiste": "des plaquistes spécialisés dans la pose de cloisons, de faux plafonds et l'isolation intérieure",
+  "Plombier-chauffagiste": "des plombiers-chauffagistes pour vos installations sanitaires et de chauffage, y compris en urgence",
+
+  // Beauté & Bien-être
+  "Coiffeur": "des coiffeurs proposant coupes, colorations et soins capillaires",
+  "Esthéticienne": "des esthéticiennes proposant soins du visage, épilations et prestations de bien-être",
+  "Maquilleur professionnel": "des maquilleurs professionnels pour vos mariages, séances photo et événements",
+  "Naturopathe": "des naturopathes proposant un accompagnement naturel de votre hygiène de vie",
+  "Praticien en massage bien-être": "des praticiens en massage bien-être pour la détente et le soulagement des tensions",
+  "Prothésiste ongulaire": "des prothésistes ongulaires proposant pose, soin et décoration d'ongles",
+  "Sophrologue / Réflexologue": "des sophrologues et réflexologues pour la gestion du stress et des tensions",
+
+  // Commerce & Vente
+  "Ameublement": "des magasins d'ameublement proposant meubles et conseils d'agencement",
+  "Décoration": "des boutiques de décoration proposant objets et conseils d'aménagement intérieur",
+  "Électroménager / Multimédia": "des magasins d'électroménager et de multimédia pour équiper votre logement",
+  "Ésotérique": "des boutiques ésotériques proposant objets, soins et consultations liés au bien-être spirituel",
+  "Fleuriste": "des fleuristes proposant bouquets et compositions florales pour toutes les occasions",
+  "Friperie": "des friperies proposant des vêtements de seconde main à petit prix",
+  "Garage automobile": "des garages automobiles pour l'entretien, la réparation et le contrôle de votre véhicule",
+  "Habillement": "des boutiques de vêtements pour toutes les occasions et tous les styles",
+  "Jardinerie": "des jardineries proposant plantes, outils et conseils d'aménagement extérieur",
+  "Librairie": "des librairies proposant livres et conseils de lecture personnalisés",
+  "Motoculture": "des spécialistes en motoculture pour l'achat et l'entretien de matériel de jardinage motorisé",
+  "Parfumerie": "des parfumeries proposant parfums et produits de beauté",
+  "Pharmacie": "des pharmacies pour vos médicaments, conseils santé et produits de parapharmacie",
+  "Tabac / Presse": "des bureaux de tabac et de presse pour vos achats de proximité",
+  "Troc / Dépôt vente": "des trocs et dépôts-vente pour acheter, vendre ou échanger des objets d'occasion",
+
+  // Culture & Élevage
+  "Apiculteur / Apicultrice": "des apiculteurs proposant du miel et des produits de la ruche en vente directe",
+  "Aquaculteur / Aquacultrice": "des aquaculteurs proposant des produits issus de l'élevage aquacole en vente directe",
+  "Arboriculteur / Arboricultrice": "des arboriculteurs proposant des fruits de saison en vente directe ou en cueillette",
+  "Éleveur / Éleveuse": "des éleveurs proposant des produits de la ferme et de la viande en vente directe",
+  "Horticulteur / Horticultrice": "des horticulteurs proposant plantes, fleurs et conseils d'aménagement paysager",
+  "Maraîcher / Maraîchère": "des maraîchers proposant des fruits et légumes frais et de saison en vente directe",
+  "Viticulteur / Viticultrice": "des viticulteurs proposant dégustations et vente directe de vin au domaine",
+
+  // Immobilier
+  "Agence immobilière": "des agences immobilières pour l'achat, la vente ou la location de votre bien",
+  "Conciergerie": "des conciergeries pour la gestion locative et l'entretien de votre bien, notamment en location saisonnière",
+  "Diagnostique technique": "des diagnostiqueurs immobiliers pour la réalisation des diagnostics obligatoires avant une vente ou une location",
+  "Gestionnaire de bien": "des gestionnaires de biens pour l'administration de votre patrimoine locatif",
+  "Mandataire immobilier": "des mandataires immobiliers indépendants pour l'achat ou la vente de votre bien",
+  "Syndic de copropriété": "des syndics de copropriété pour la gestion administrative, financière et technique de votre immeuble",
+
+  // Informatique & Numérique
+  "Agence Web": "des agences web pour la création ou la refonte de votre site internet",
+  "Community manager": "des community managers pour animer vos réseaux sociaux et développer votre visibilité en ligne",
+  "Cybersécurité": "des experts en cybersécurité pour sécuriser vos données et vos systèmes informatiques",
+  "Graphiste": "des graphistes pour la création de votre identité visuelle et de vos supports de communication",
+  "Informaticien": "des informaticiens pour le dépannage, l'installation et la maintenance de votre matériel",
+  "Webdesigner": "des webdesigners pour concevoir l'interface et l'expérience utilisateur de votre site",
+  "Webmaster indépendant": "des webmasters indépendants pour la gestion et la maintenance de votre site internet",
+
+  // Restauration
+  "Restaurant": "des restaurants pour un repas entre amis, en famille ou en tête-à-tête",
+  "Café / Bar": "des cafés et des bars pour une pause ou une soirée conviviale",
+  "Traiteur": "des traiteurs pour l'organisation de vos repas, mariages et événements professionnels",
+
+  // Services à la personne
+  "Aide à domicile": "des aides à domicile pour accompagner un proche ou vous-même au quotidien",
+  "Assistant administratif": "des assistants administratifs indépendants pour la gestion de vos démarches et de votre secrétariat",
+  "Assistant informatique et Internet": "des assistants informatique et Internet pour vous accompagner dans l'utilisation de vos appareils et démarches en ligne",
+  "Employé de ménage / Repassage": "des services de ménage et de repassage pour l'entretien de votre logement et de votre linge",
+  "Garde d'animaux": "des services de garde d'animaux pour prendre soin de votre compagnon en votre absence",
+  "Garde d'enfants": "des gardes d'enfants pour un accompagnement ponctuel ou régulier",
+  "Travaux de jardinerie": "des professionnels des travaux de jardinerie pour l'entretien de votre extérieur",
+
+  // Sport & Fitness
+  "Coach sportif": "des coachs sportifs pour un programme d'entraînement personnalisé",
+  "Salle de sport et de fitness": "des salles de sport et de fitness proposant équipements et cours collectifs",
+
+  // Transport de personnes
+  "Ambulance": "des services d'ambulance pour le transport médicalisé, y compris en urgence",
+  "Déménagement": "des entreprises de déménagement pour transporter vos meubles et effets personnels",
+  "Taxi": "des taxis pour vos trajets ponctuels ou réservés à l'avance",
+  "Transport de groupe": "des services de transport de groupe pour vos événements et déplacements collectifs",
+};
+
 export function buildSubcategoryLandingContent(params: {
   categoryLabel: string;
   subcategoryLabel: string;
@@ -446,13 +574,23 @@ export function buildSubcategoryLandingContent(params: {
     ? `Prolocal-Landes référence ${proCount} professionnel${proCount > 1 ? "s" : ""} en ${subcategoryLabel} dans le département des Landes${cities.length > 0 ? `, notamment à ${joinFrenchList(cities)}` : ""}. Consultez leurs fiches pour comparer leurs coordonnées, leurs avis clients et leur zone d'intervention avant de les contacter directement.`
     : null);
 
-  const seoText = SUBCATEGORY_SEOTEXT[subcategoryLabel]?.(cities) ?? [
+  const article = SUBCATEGORY_ARTICLE[subcategoryLabel] ?? "un";
+  const activity = SUBCATEGORY_ACTIVITY[subcategoryLabel];
+  const plural = SUBCATEGORY_PLURAL[subcategoryLabel] ?? `professionnels en ${subcategoryLabel}`;
+
+  const seoText = SUBCATEGORY_SEOTEXT[subcategoryLabel]?.(cities) ?? (activity ? [
+    `Vous recherchez ${article} ${subcategoryLabel} dans les Landes ? Prolocal-Landes vous aide à trouver ${activity} dans le département des Landes. Consultez les fiches des professionnels pour découvrir leurs coordonnées, leurs horaires d'ouverture, leurs services et les avis clients disponibles.`,
+    cities.length > 0
+      ? `Retrouvez des ${plural} à ${joinFrenchList(cities)} et dans les autres communes des Landes. Utilisez notre annuaire local, la carte interactive et les filtres de recherche pour identifier les professionnels situés dans votre ville ou à proximité de votre domicile.`
+      : `Aucun professionnel en ${subcategoryLabel} n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
+    `Pour trouver ${article} ${subcategoryLabel} dans les Landes, consultez les fiches détaillées et contactez directement les professionnels selon les moyens de contact disponibles : téléphone, WhatsApp ou email. Vous pouvez également préciser votre besoin dans le formulaire de recherche afin de faciliter votre mise en relation avec les professionnels correspondant à votre demande.`,
+  ] : [
     `Le secteur « ${subcategoryLabel} » regroupe les entreprises et artisans spécialisés dans ce domaine au sein de la catégorie ${categoryLabel}. Sur Prolocal-Landes, chaque fiche professionnelle est vérifiée avant publication : coordonnées, horaires d'ouverture, zone d'intervention et avis clients sont centralisés au même endroit pour faciliter votre recherche.`,
     cities.length > 0
       ? `Nos professionnels en ${subcategoryLabel} sont présents notamment à ${joinFrenchList(cities)}. Grâce à la carte interactive et au moteur de recherche ci-dessus, filtrez les résultats par ville, par rayon de distance ou par mot-clé pour trouver rapidement l'interlocuteur le plus proche de chez vous.`
       : `Aucun professionnel en ${subcategoryLabel} n'est pour l'instant référencé dans les Landes — soyez parmi les premiers à y apparaître en référençant gratuitement votre entreprise.`,
     `Contactez directement un professionnel par téléphone, WhatsApp ou email depuis sa fiche, ou utilisez le formulaire de recherche pour décrire votre besoin en quelques mots et être mis en relation avec les professionnels les plus pertinents.`,
-  ];
+  ]);
 
   const ctaText = `Vous exercez en ${subcategoryLabel} dans les Landes ? Référencez gratuitement votre entreprise sur Prolocal-Landes pour gagner en visibilité auprès des habitants du département et recevoir vos premières demandes de contact.`;
 
