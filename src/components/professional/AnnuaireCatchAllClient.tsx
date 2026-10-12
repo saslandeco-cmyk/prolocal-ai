@@ -9,6 +9,7 @@ import CityPage from "@/components/category/CityPage";
 import { Loader2 } from "lucide-react";
 import type { Professional } from "@/types";
 import type { CategoryRecord } from "@/lib/categories";
+import type { GoogleReviewsData } from "@/lib/googlePlaces";
 
 /**
  * Route unique gérant à la fois :
@@ -32,7 +33,7 @@ interface ContactQuota {
   used: number;
 }
 
-export default function AnnuaireCatchAllClient({ initialData, categories, initialPros, contactQuota }: { initialData?: Professional | null; categories?: CategoryRecord[]; initialPros?: Professional[]; contactQuota?: ContactQuota | null }) {
+export default function AnnuaireCatchAllClient({ initialData, categories, initialPros, contactQuota, googleReviews }: { initialData?: Professional | null; categories?: CategoryRecord[]; initialPros?: Professional[]; contactQuota?: ContactQuota | null; googleReviews?: GoogleReviewsData | null }) {
   const params = useParams<{ slug: string[] }>();
   const router = useRouter();
   const [notFound, setNotFound] = useState(false);
@@ -101,5 +102,5 @@ export default function AnnuaireCatchAllClient({ initialData, categories, initia
   }
 
   // ── Format SEO fiche pro : affiche directement la fiche ──
-  return <ProfessionalProfileView id={resolvedId} initialData={initialData} contactQuota={contactQuota} />;
+  return <ProfessionalProfileView id={resolvedId} initialData={initialData} contactQuota={contactQuota} googleReviews={googleReviews} />;
 }

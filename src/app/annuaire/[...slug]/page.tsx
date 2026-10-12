@@ -9,7 +9,7 @@ import { dbGetTotalContactCredits } from "@/lib/db/contactRecharges";
 import { dbGetCategories } from "@/lib/db/categories";
 import { isDbConfigured } from "@/lib/db/client";
 import { computeContactLimit } from "@/lib/contactQuota";
-import { getGoogleRating, combineRatings } from "@/lib/googlePlaces";
+import { getGoogleRating, combineRatings, getGoogleReviews } from "@/lib/googlePlaces";
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
 import { normalizeFrPhone } from "@/lib/phone";
@@ -237,6 +237,11 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
   // "Mises en contact"), sans aller-retour client supplémentaire vers
   // /api/demandes.
   let contactQuota: { limit: number; used: number } | null = null;
+  // Avis Google affichés sur la fiche (colonne de droite) — uniquement si
+  // le professionnel a renseigné son identifiant Google Business Profile ;
+  // voir googlePlaces.ts pour les garanties de repli silencieux (clé API
+  // absente, établissement sans avis, erreur réseau...).
+  let googleReviews: Awaited<ReturnType<typeof getGoogleReviews>> = null;
 
   if (parsed) {
     const { categorySlugSeg, categoryLabel, subcategoryLabel, id, fallbackName } = parsed;
@@ -249,6 +254,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
         dbGetTotalContactCredits(pro.id),
       ]);
       contactQuota = { limit: computeContactLimit(pro.plan, totalRecharged), used };
+      googleReviews = await getGoogleReviews(pro.googlePlaceId);
     }
 
     if (pro) {
@@ -368,7 +374,7 @@ export default async function AnnuaireCatchAllPage({ params }: { params: Promise
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <AnnuaireCatchAllClient initialData={initialData} contactQuota={contactQuota} />
+      <AnnuaireCatchAllClient initialData={initialData} contactQuota={contactQuota} googleReviews={googleReviews} />
     </>
   );
 }
