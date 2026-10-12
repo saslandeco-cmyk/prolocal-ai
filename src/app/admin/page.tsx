@@ -2826,6 +2826,16 @@ export default function AdminPage() {
                     <label className="label">Site web</label>
                     <input value={fullEditForm.website || ""} onChange={e => updFull("website", e.target.value)} className="input-field" placeholder="https://" />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="label">Identifiant Google Business Profile <span className="text-gray-400 font-normal text-xs">(facultatif — affiche les avis Google sur la fiche)</span></label>
+                    <input value={fullEditForm.googlePlaceId || ""} onChange={e => updFull("googlePlaceId", e.target.value)} className="input-field" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4" />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Pour le trouver : cherchez l&apos;établissement sur{" "}
+                      <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-landes-forest underline">
+                        l&apos;outil Place ID Finder de Google
+                      </a>, et copiez l&apos;identifiant obtenu ici.
+                    </p>
+                  </div>
                   <div>
                     <label className="label">Instagram</label>
                     <input value={fullEditForm.socialLink || ""} onChange={e => updFull("socialLink", e.target.value)} className="input-field" placeholder="https://" />
