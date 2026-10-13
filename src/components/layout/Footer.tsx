@@ -30,6 +30,7 @@ export default function Footer() {
               <span>contact@prolocal-landes.fr</span>
             </div>
             <ul className="mt-4 space-y-2 text-sm text-gray-300">
+              <li><Link href="/services-professionnels" className="hover:text-white transition-colors">Services pour les professionnels</Link></li>
               <li><Link href="/inscription" className="hover:text-white transition-colors">Référencer mon entreprise</Link></li>
               <li><Link href="/connexion" className="hover:text-white transition-colors">Se connecter</Link></li>
             </ul>
