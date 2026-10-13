@@ -27,6 +27,7 @@ export const DEFAULT_SUBCATEGORY_BANNERS: Record<string, string> = {
   "Boucherie / Charcuterie":   "/banners/boucherie-charcuterie.png",
   "Boulangerie / Pâtisserie":  "/banners/boulangerie-patisserie.png",
   "Caviste / Marchand de boissons": "/banners/cavites.png",
+  "Primeurs":                  "/banners/primeur.png",
 };
 
 /**
