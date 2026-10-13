@@ -29,6 +29,7 @@ export const DEFAULT_SUBCATEGORY_BANNERS: Record<string, string> = {
   "Caviste / Marchand de boissons": "/banners/cavites.png",
   "Primeurs":                  "/banners/primeur.png",
   "Poissonnerie":               "/banners/poissonerie.png",
+  "Épicerie fine":              "/banners/epicerie-fine.png",
 };
 
 /**
