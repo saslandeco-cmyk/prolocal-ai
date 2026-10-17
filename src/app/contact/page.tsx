@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Mail, Phone, MapPin, Send, CheckCircle,
+  Mail, MapPin, Send, CheckCircle,
   ChevronRight, MessageSquare, Clock, Building2,
 } from "lucide-react";
 
@@ -127,15 +127,9 @@ export default function ContactPage() {
                 href: "mailto:contact@prolocal-landes.fr",
               },
               {
-                icon: Phone,
-                label: "Téléphone",
-                value: "05 58 00 00 00",
-                href: "tel:0558000000",
-              },
-              {
                 icon: MapPin,
                 label: "Adresse",
-                value: "Mont-de-Marsan, Landes (40)",
+                value: "1 avenue de la gare 40100 Dax Landes (40)",
                 href: undefined,
               },
               {
