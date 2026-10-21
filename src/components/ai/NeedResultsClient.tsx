@@ -122,9 +122,11 @@ function NeedResultsContent() {
             />
           </div>
 
-          {/* 2. Bascule Liste / Carte — juste sous le bandeau de recherche */}
+          {/* 2. Bascule Liste / Carte — réservée au desktop (≥ lg) : sur mobile,
+              carte et fiches sont toujours affichées ensemble, sans bascule,
+              comme sur les pages catégories/sous-catégories (voir ci-dessous). */}
           {response.results.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-6 hidden lg:block">
               <div className="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                 <button
                   type="button"
@@ -144,30 +146,29 @@ function NeedResultsContent() {
             </div>
           )}
 
-          {/* 3. Fiches des professionnels — jamais conditionnées par la localisation */}
+          {/* 3. Fiches des professionnels — jamais conditionnées par la localisation.
+              Sur mobile (< lg), toujours carte pleine largeur (hauteur fixe) puis
+              grille de fiches en dessous, comme les pages catégories/sous-catégories
+              — la bascule Liste/Carte ci-dessus ne s'applique qu'à partir de lg. */}
           {response.results.length > 0 ? (
-            view === "map" ? (
-              <div className="flex flex-col lg:flex-row gap-4 mb-8" style={{ height: "calc(100vh - 260px)", minHeight: 500 }}>
-                <div className="lg:w-80 xl:w-96 flex-shrink-0 overflow-y-auto space-y-3 pr-1">
-                  {response.results.map((r) => (
-                    <div key={r.professional.id}>
-                      <ProfessionalCard pro={r.professional} />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex-1 rounded-2xl overflow-hidden border border-gray-200 shadow-sm" style={{ minHeight: 400 }}>
-                  <MultiMap professionals={response.results.map((r) => r.professional)} />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            <div className={`flex flex-col gap-4 mb-8 ${view === "map" ? "lg:flex-row lg:h-[calc(100vh-260px)]" : ""}`}>
+              <div className={`order-2 grid grid-cols-1 sm:grid-cols-2 gap-4 ${
+                view === "map"
+                  ? "lg:order-1 lg:flex lg:flex-col lg:gap-3 lg:w-80 xl:w-96 lg:flex-shrink-0 lg:overflow-y-auto lg:pr-1"
+                  : "lg:order-1 lg:grid-cols-3 xl:grid-cols-4"
+              }`}>
                 {response.results.map((r) => (
                   <div key={r.professional.id}>
                     <ProfessionalCard pro={r.professional} />
                   </div>
                 ))}
               </div>
-            )
+              <div className={`order-1 rounded-2xl overflow-hidden border border-gray-200 shadow-sm h-72 sm:h-96 ${
+                view === "map" ? "lg:order-2 lg:flex-1 lg:h-auto lg:min-h-[400px]" : "lg:hidden"
+              }`}>
+                <MultiMap professionals={response.results.map((r) => r.professional)} />
+              </div>
+            </div>
           ) : hasSignal ? (
             <div className="text-center py-10 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
               Aucun professionnel correspondant référencé pour le moment.

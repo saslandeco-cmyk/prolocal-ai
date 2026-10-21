@@ -121,8 +121,9 @@ function AnnuaireContent() {
                 {geoLat !== null && <span className="ml-2 text-xs bg-landes-forest/30 text-landes-sand px-2 py-0.5 rounded-full">📍 Autour de moi · {geoRadius} km</span>}
               </p>
             </div>
-            {/* View toggle */}
-            <div className="flex items-center gap-1 bg-white/10 p-1 rounded-lg">
+            {/* View toggle — desktop uniquement (≥ lg) : sur mobile, carte et
+                fiches sont toujours affichées ensemble, sans bascule. */}
+            <div className="hidden lg:flex items-center gap-1 bg-white/10 p-1 rounded-lg">
               <button
                 onClick={() => setView("list")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === "list" ? "bg-white text-landes-forest shadow-sm" : "text-white/70 hover:text-white"}`}
@@ -163,23 +164,17 @@ function AnnuaireContent() {
             <h3 className="text-lg font-medium text-gray-500 mb-2">Aucun résultat</h3>
             <p className="text-gray-400">Essayez de modifier vos critères.</p>
           </div>
-        ) : view === "list" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map(pro => (
-              <div
-                key={pro.id}
-                id={`pro-${pro.id}`}
-                className={`transition-all duration-300 ${highlightId === pro.id ? "ring-2 ring-landes-forest ring-offset-2 rounded-2xl" : ""}`}
-              >
-                <ProfessionalCard pro={pro} />
-              </div>
-            ))}
-          </div>
         ) : (
-          /* MAP VIEW — split: list left, map right */
-          <div className="flex flex-col lg:flex-row gap-4" style={{ height: "calc(100vh - 260px)", minHeight: 500 }}>
-            {/* List panel */}
-            <div className="lg:w-80 xl:w-96 flex-shrink-0 overflow-y-auto space-y-3 pr-1">
+          /* Sur mobile (< lg), carte pleine largeur (hauteur fixe) puis grille de
+             fiches en dessous, toujours ensemble et sans bascule — comme les pages
+             catégories/sous-catégories. La bascule Liste/Carte ci-dessus (boutons
+             dans l'en-tête) ne change la mise en page qu'à partir de lg. */
+          <div className={`flex flex-col gap-4 ${view === "map" ? "lg:flex-row lg:h-[calc(100vh-260px)]" : ""}`}>
+            <div className={`order-2 grid grid-cols-1 sm:grid-cols-2 gap-4 ${
+              view === "map"
+                ? "lg:order-1 lg:flex lg:flex-col lg:gap-3 lg:w-80 xl:w-96 lg:flex-shrink-0 lg:overflow-y-auto lg:pr-1"
+                : "lg:order-1 lg:grid-cols-3"
+            }`}>
               {filtered.map(pro => (
                 <div
                   key={pro.id}
@@ -191,9 +186,9 @@ function AnnuaireContent() {
                 </div>
               ))}
             </div>
-
-            {/* Map panel */}
-            <div className="flex-1 rounded-2xl overflow-hidden border border-gray-200 shadow-sm" style={{ minHeight: 400 }}>
+            <div className={`order-1 rounded-2xl overflow-hidden border border-gray-200 shadow-sm h-72 sm:h-96 ${
+              view === "map" ? "lg:order-2 lg:flex-1 lg:h-auto lg:min-h-[400px]" : "lg:hidden"
+            }`}>
               <MultiMap professionals={filtered} onSelectPro={handleSelectPro} />
             </div>
           </div>
