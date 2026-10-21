@@ -88,6 +88,77 @@ export async function POST(req: NextRequest) {
     // de paiement elle-même (purement informatif).
     const purchaseSummaryLines: string[] = [];
 
+    // ── Frais uniques (ex : pack "Mises en contact") — paiement immédiat,
+    // indépendant. Traité EN PREMIER, avant les abonnements ci-dessous : il
+    // est le seul élément de la commande qui peut échouer à cause d'une
+    // authentification 3D Secure requise (voir plus bas) — le faire
+    // échouer une fois les abonnements déjà créés laisserait le client
+    // facturé pour sa formule/ses options mensuelles sans que l'échec de
+    // cet achat ponctuel soit rattrapable proprement dans la réponse.
+    const oneTimeOptions = options
+      .map(id => OPTION_PRICES[id])
+      .filter(opt => opt && opt.cadence === "once");
+
+    if (oneTimeOptions.length > 0) {
+      const amount = oneTimeOptions.reduce(
+        (sum, opt) => sum + (opt.id === "contact" ? contactPack.unitAmount : opt.unitAmount),
+        0
+      );
+      // Pas de `off_session: true` ici : contrairement aux abonnements (
+      // prélèvements récurrents futurs, client absent), cet achat ponctuel a
+      // lieu PENDANT que le client est présent sur le site, en train de
+      // finaliser sa commande. `off_session: true` indique explicitement à
+      // Stripe que le client n'est pas là pour s'authentifier — pour une
+      // carte européenne nécessitant la double authentification (3D Secure,
+      // obligatoire sous DSP2/SCA pour la grande majorité des cartes
+      // françaises), Stripe refuse alors le paiement avec une erreur dure
+      // (`authentication_required`) au lieu de permettre l'authentification,
+      // faisant échouer tout l'achat (formule + options incluses dans la
+      // même commande) alors que le client était bel et bien présent.
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: "eur",
+        customer: customerId,
+        payment_method: paymentMethodId,
+        confirm: true,
+        // Confirmation directe avec un moyen de paiement déjà attaché (pas de
+        // Stripe Elements ici) : exclut explicitement les moyens de paiement
+        // à redirection (iDEAL, Bancontact...), qui exigeraient un
+        // `return_url` sans quoi Stripe refuse la création avec une erreur de
+        // configuration — sans `off_session`, il retombe sinon sur les
+        // moyens de paiement automatiques activés dans le Dashboard.
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+        metadata: {
+          type: "one-time-options",
+          optionIds: oneTimeOptions.map(o => o.id).join(","),
+          ...(options.includes("contact") ? { contactQuantity: String(contactPack.quantity) } : {}),
+        },
+      });
+      result.oneTimePaymentIntentId = paymentIntent.id;
+
+      // Ne crédite le solde et ne compte la vente comme aboutie que si le
+      // paiement a réellement réussi — jamais sur la seule foi de l'appel
+      // ayant abouti sans exception (un statut "requires_action" ou
+      // "processing" n'est pas un paiement confirmé).
+      if (paymentIntent.status !== "succeeded") {
+        return NextResponse.json(
+          {
+            error: paymentIntent.status === "requires_action"
+              ? "Votre banque demande une vérification supplémentaire (3D Secure) pour cet achat ponctuel. Veuillez réessayer avec une autre carte, ou contactez-nous si le problème persiste."
+              : `Le paiement de "${oneTimeOptions.map(o => o.name).join(", ")}" n'a pas pu être confirmé (statut : ${paymentIntent.status}).`,
+          },
+          { status: 402 }
+        );
+      }
+
+      purchaseSummaryLines.push(
+        `Achat ponctuel : ${oneTimeOptions.map(o => o.name).join(", ")} (${formatEuros(amount)})`
+      );
+      if (options.includes("contact")) {
+        await dbAddContactRecharge(proId, contactPack.quantity);
+      }
+    }
+
     // ── Abonnement dédié à la formule seule ──
     if (planId && PLAN_PRICES[planId]) {
       const item = PLAN_PRICES[planId];
@@ -150,41 +221,6 @@ export async function POST(req: NextRequest) {
       purchaseSummaryLines.push(
         `Options mensuelles : ${monthlyOptionItems.map(opt => `${opt.name} (${formatEuros(opt.unitAmount)}/mois)`).join(", ")}`
       );
-    }
-
-    // ── Frais uniques (ex : pack "Mises en contact") — paiement immédiat, indépendant ──
-    const oneTimeOptions = options
-      .map(id => OPTION_PRICES[id])
-      .filter(opt => opt && opt.cadence === "once");
-
-    if (oneTimeOptions.length > 0) {
-      const amount = oneTimeOptions.reduce(
-        (sum, opt) => sum + (opt.id === "contact" ? contactPack.unitAmount : opt.unitAmount),
-        0
-      );
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount,
-        currency: "eur",
-        customer: customerId,
-        payment_method: paymentMethodId,
-        off_session: true,
-        confirm: true,
-        metadata: {
-          type: "one-time-options",
-          optionIds: oneTimeOptions.map(o => o.id).join(","),
-          ...(options.includes("contact") ? { contactQuantity: String(contactPack.quantity) } : {}),
-        },
-      });
-      result.oneTimePaymentIntentId = paymentIntent.id;
-      purchaseSummaryLines.push(
-        `Achat ponctuel : ${oneTimeOptions.map(o => o.name).join(", ")} (${formatEuros(amount)})`
-      );
-
-      // Crédite immédiatement le solde de mises en contact du professionnel
-      // — le paiement vient de réussir (confirm: true, ci-dessus).
-      if (options.includes("contact")) {
-        await dbAddContactRecharge(proId, contactPack.quantity);
-      }
     }
 
     // ── Inclusion automatique de "Gestion prospects/clients" (CRM) avec la formule Gold ──
