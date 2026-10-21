@@ -54,10 +54,16 @@ function InnerForm({ intentType, submitLabel, onSuccess, onError }: StripePaymen
     setErrorMsg("");
 
     // redirect: "if_required" garde le client sur le site tant qu'aucune
-    // authentification forte (3D Secure) n'est strictement nécessaire par sa banque.
+    // authentification forte (3D Secure) n'est strictement nécessaire par sa
+    // banque. Stripe exige malgré tout un `return_url` dès la création de
+    // l'intent (voir /api/subscriptions/create et /finalize) : fournie ici
+    // en repli, au cas où un parcours imposerait quand même une redirection
+    // complète — jamais utilisée en pratique puisque seul le paiement par
+    // carte est proposé (aucun moyen de paiement à redirection activé).
+    const confirmParams = { return_url: window.location.href };
     const result = intentType === "payment"
-      ? await stripe.confirmPayment({ elements, redirect: "if_required" })
-      : await stripe.confirmSetup({ elements, redirect: "if_required" });
+      ? await stripe.confirmPayment({ elements, confirmParams, redirect: "if_required" })
+      : await stripe.confirmSetup({ elements, confirmParams, redirect: "if_required" });
 
     if (result.error) {
       setErrorMsg(result.error.message || "Le paiement n'a pas pu être confirmé.");

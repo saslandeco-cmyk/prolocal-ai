@@ -174,9 +174,15 @@ export async function POST(req: NextRequest) {
     // ── SetupIntent : enregistre la carte, sans créer d'abonnement pour l'instant.
     // La création réelle (et dissociée) des abonnements se fait dans /finalize,
     // une fois la carte confirmée côté client.
+    // `allow_redirects: "never"` exclut les moyens de paiement à redirection
+    // (PayPal, iDEAL, Bancontact...) du Payment Element affiché au client :
+    // sans ça, Stripe.js exige un `return_url` dès que l'un de ces moyens de
+    // paiement est proposé, provoquant une erreur de configuration (le site
+    // n'affiche que "Paiement par carte" partout, aucun flux de redirection
+    // n'est implémenté côté client — voir StripePaymentForm.tsx).
     const setupIntent = await stripe.setupIntents.create({
       customer: customerId,
-      automatic_payment_methods: { enabled: true },
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
       usage: "off_session",
       metadata: {
         companyName, planId: planId || "", optionIds: optionIds.join(","),
