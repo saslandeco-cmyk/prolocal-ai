@@ -11,6 +11,24 @@ function formatEuros(cents: number): string {
 }
 
 /**
+ * Cherche, parmi les abonnements actifs DE CE CLIENT STRIPE PRÉCIS, celui
+ * qui contient déjà ce produit — via subscriptions.list (API directe,
+ * fortement cohérente), jamais via customers/subscriptions.search (API de
+ * recherche, cohérence différée de plusieurs secondes à minutes chez
+ * Stripe). Protège contre la création d'un second abonnement en double si
+ * cette route est rappelée pour le même client (ex : l'inscription a été
+ * interrompue juste après un premier appel réussi — page fermée, réseau
+ * coupé — et le visiteur réessaie).
+ */
+async function findExistingActiveSubscriptionForProduct(customerId: string, productId: string): Promise<string | null> {
+  const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 100 });
+  for (const sub of subs.data) {
+    if (sub.items.data.some(li => li.price.product === productId)) return sub.id;
+  }
+  return null;
+}
+
+/**
  * POST /api/subscriptions/finalize
  *
  * À appeler juste après la confirmation réussie du SetupIntent renvoyé par
@@ -74,17 +92,25 @@ export async function POST(req: NextRequest) {
     if (planId && PLAN_PRICES[planId]) {
       const item = PLAN_PRICES[planId];
       const productId = await getOrCreateProduct(item.stripeProductId, item.name);
-      const sub = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{
-          price_data: { currency: "eur", unit_amount: item.unitAmount, recurring: { interval: "month" }, product: productId },
-          quantity: 1,
-        }],
-        default_payment_method: paymentMethodId,
-        payment_settings: { save_default_payment_method: "on_subscription" },
-        metadata: { type: "plan", planId },
-      });
-      result.planSubscriptionId = sub.id;
+      const existingSubId = await findExistingActiveSubscriptionForProduct(customerId, productId);
+      if (existingSubId) {
+        // Déjà actif pour ce client (ex : appel précédent de cette route déjà
+        // abouti, inscription relancée après interruption) — on le réutilise
+        // au lieu d'en créer un second.
+        result.planSubscriptionId = existingSubId;
+      } else {
+        const sub = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{
+            price_data: { currency: "eur", unit_amount: item.unitAmount, recurring: { interval: "month" }, product: productId },
+            quantity: 1,
+          }],
+          default_payment_method: paymentMethodId,
+          payment_settings: { save_default_payment_method: "on_subscription" },
+          metadata: { type: "plan", planId },
+        });
+        result.planSubscriptionId = sub.id;
+      }
       purchaseSummaryLines.push(`Formule : ${item.name} (${formatEuros(item.unitAmount)}/mois)`);
     }
 
@@ -94,21 +120,33 @@ export async function POST(req: NextRequest) {
       .filter(opt => opt && opt.cadence === "month");
 
     if (monthlyOptionItems.length > 0) {
-      const items = await Promise.all(monthlyOptionItems.map(async opt => {
-        const productId = await getOrCreateProduct(opt.stripeProductId, opt.name);
-        return {
-          price_data: { currency: "eur", unit_amount: opt.unitAmount, recurring: { interval: "month" as const }, product: productId },
-          quantity: 1,
-        };
-      }));
-      const sub = await stripe.subscriptions.create({
-        customer: customerId,
-        items,
-        default_payment_method: paymentMethodId,
-        payment_settings: { save_default_payment_method: "on_subscription" },
-        metadata: { type: "options", optionIds: options.join(",") },
-      });
-      result.optionsSubscriptionId = sub.id;
+      const optionIdsKey = options.join(",");
+      // Même garde-fou que pour la formule : évite de recréer un abonnement
+      // "options" en double si cette route est rappelée pour le même client
+      // avec exactement le même jeu d'options.
+      const existingOptionsSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 100 });
+      const existingOptionsSub = existingOptionsSubs.data.find(
+        s => s.metadata?.type === "options" && s.metadata?.optionIds === optionIdsKey
+      );
+      if (existingOptionsSub) {
+        result.optionsSubscriptionId = existingOptionsSub.id;
+      } else {
+        const items = await Promise.all(monthlyOptionItems.map(async opt => {
+          const productId = await getOrCreateProduct(opt.stripeProductId, opt.name);
+          return {
+            price_data: { currency: "eur", unit_amount: opt.unitAmount, recurring: { interval: "month" as const }, product: productId },
+            quantity: 1,
+          };
+        }));
+        const sub = await stripe.subscriptions.create({
+          customer: customerId,
+          items,
+          default_payment_method: paymentMethodId,
+          payment_settings: { save_default_payment_method: "on_subscription" },
+          metadata: { type: "options", optionIds: optionIdsKey },
+        });
+        result.optionsSubscriptionId = sub.id;
+      }
       purchaseSummaryLines.push(
         `Options mensuelles : ${monthlyOptionItems.map(opt => `${opt.name} (${formatEuros(opt.unitAmount)}/mois)`).join(", ")}`
       );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured } from "@/lib/stripeServer";
 import { PLAN_PRICES, CONTACT_PACKS } from "@/lib/pricing";
 import { getEffectiveOptionPrices } from "@/lib/db/options";
+import { dbGetProfessionalBySiren } from "@/lib/db/professionals";
 
 /**
  * POST /api/subscriptions/create
@@ -67,32 +68,65 @@ export async function POST(req: NextRequest) {
           limit: 100,
         });
 
-        const activeProductIds = new Set<string>();
+        // Associe chaque abonnement actif trouvé au(x) produit(s) qu'il
+        // contient, pour pouvoir le résilier individuellement si besoin
+        // (voir plus bas) plutôt que de ne garder qu'un Set de productIds.
+        const activeSubsByProduct = new Map<string, { subscriptionId: string }[]>();
         for (const cust of matchingCustomers.data) {
           const subs = await stripe.subscriptions.list({ customer: cust.id, status: "active", limit: 100 });
           for (const sub of subs.data) {
             for (const li of sub.items.data) {
               const productRef = li.price.product;
-              if (typeof productRef === "string") activeProductIds.add(productRef);
+              if (typeof productRef === "string") {
+                const list = activeSubsByProduct.get(productRef) || [];
+                list.push({ subscriptionId: sub.id });
+                activeSubsByProduct.set(productRef, list);
+              }
             }
           }
         }
+        const activeProductIds = new Set(activeSubsByProduct.keys());
 
-        const alreadyActiveLabels: string[] = [];
+        const alreadyActive: { label: string; productId: string }[] = [];
         if (planId && PLAN_PRICES[planId] && activeProductIds.has(PLAN_PRICES[planId].stripeProductId)) {
-          alreadyActiveLabels.push(PLAN_PRICES[planId].name);
+          alreadyActive.push({ label: PLAN_PRICES[planId].name, productId: PLAN_PRICES[planId].stripeProductId });
         }
         for (const id of optionIds) {
           const opt = OPTION_PRICES[id];
           if (opt && activeProductIds.has(opt.stripeProductId)) {
-            alreadyActiveLabels.push(opt.name);
+            alreadyActive.push({ label: opt.name, productId: opt.stripeProductId });
           }
         }
 
-        if (alreadyActiveLabels.length > 0) {
-          return NextResponse.json(
-            { error: `Déjà actif pour ce SIREN (limité à 1 exemplaire) : ${alreadyActiveLabels.join(", ")}.` },
-            { status: 409 }
+        // Un abonnement Stripe actif ne doit bloquer une nouvelle tentative que
+        // s'il existe réellement une fiche professionnelle pour ce SIREN. Sans
+        // cette vérification, une inscription interrompue juste après le
+        // paiement (onglet fermé, réseau coupé, navigateur mobile suspendu
+        // avant la fin de l'écriture en base — voir submit() dans
+        // app/inscription/page.tsx) laisse un abonnement Stripe "orphelin" :
+        // l'entreprise a payé mais n'a aucune fiche, et toute nouvelle
+        // tentative échouait ici indéfiniment, sans aucun moyen de s'en sortir.
+        if (alreadyActive.length > 0) {
+          const existingPro = await dbGetProfessionalBySiren(siren).catch(() => null);
+          if (existingPro) {
+            return NextResponse.json(
+              { error: `Déjà actif pour ce SIREN (limité à 1 exemplaire) : ${alreadyActive.map(a => a.label).join(", ")}.` },
+              { status: 409 }
+            );
+          }
+          // Pas de fiche : l'abonnement est orphelin. On le résilie avant
+          // d'autoriser la nouvelle tentative, pour ne jamais facturer deux
+          // abonnements actifs du même produit en parallèle.
+          for (const { productId, label } of alreadyActive) {
+            const orphanSubs = activeSubsByProduct.get(productId) || [];
+            for (const { subscriptionId } of orphanSubs) {
+              await stripe.subscriptions.cancel(subscriptionId).catch(err =>
+                console.error(`[api/subscriptions/create] Échec de résiliation de l'abonnement orphelin ${subscriptionId} (${label}):`, err)
+              );
+            }
+          }
+          console.warn(
+            `[api/subscriptions/create] Abonnement(s) Stripe orphelin(s) résilié(s) pour le SIREN ${siren} (${alreadyActive.map(a => a.label).join(", ")}) — aucune fiche professionnelle correspondante (inscription précédente probablement interrompue après paiement). Nouvelle tentative autorisée.`
           );
         }
       } catch (searchErr) {
