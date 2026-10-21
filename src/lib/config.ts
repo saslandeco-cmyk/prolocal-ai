@@ -12,4 +12,4 @@
  *
  * Pour réactiver la validation manuelle : passer REQUIRE_VALIDATION à true.
  */
-export const REQUIRE_VALIDATION = false;
+export const REQUIRE_VALIDATION = true;
