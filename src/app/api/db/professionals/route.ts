@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { isDbConfigured } from "@/lib/db/client";
 import { dbGetAllProfessionals, dbSaveProfessional, dbGetProfessionalsByCategory, dbMarkMigrated } from "@/lib/db/professionals";
 import { uploadProfessionalImages } from "@/lib/blob";
@@ -41,6 +42,14 @@ export async function POST(req: NextRequest) {
     // colonne JSONB lue par toutes les pages publiques (voir src/lib/blob.ts).
     await dbSaveProfessional(await uploadProfessionalImages(pro));
     await dbMarkMigrated(pro.id);
+    // Les pages publiques (accueil, catégories, sous-catégories, villes,
+    // fiches) sont statiques avec ISR (revalidate = 3600) : sans cette
+    // invalidation, une fiche importée/éditée reste invisible côté front
+    // jusqu'à 1h, alors qu'elle apparaît immédiatement en admin (lecture
+    // live, non cachée) — ce qui donne l'impression à tort d'un bug de
+    // catégorie ou de statut. Toutes les pages partagent le layout racine,
+    // donc 'layout' les régénère en une seule fois à la prochaine visite.
+    revalidatePath("/", "layout");
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("[api/db/professionals POST] Erreur:", err);

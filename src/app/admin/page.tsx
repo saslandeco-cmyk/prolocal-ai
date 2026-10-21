@@ -33,6 +33,23 @@ async function ensureGeocoded(pro: Professional): Promise<Professional> {
   return coords ? { ...pro, lat: coords.lat, lng: coords.lng } : pro;
 }
 
+/**
+ * Normalise un libellé de catégorie/sous-catégorie avant comparaison lors
+ * d'un import CSV : un fichier passé par Excel/Numbers remplace souvent les
+ * apostrophes droites par des apostrophes typographiques (ex. "Métiers
+ * d'art" → "Métiers d’art"), ce qui faisait échouer la comparaison stricte
+ * et provoquait un classement silencieux dans la mauvaise catégorie (voir
+ * handleImportCsv ci-dessous).
+ */
+function normalizeLabelForMatch(s: string): string {
+  return s
+    .normalize("NFKC")
+    .replace(/[‘’ʼ`]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 // Bouton "Enregistrer" pour la photo hero — lit l'état depuis le storage
 // Colonnes disponibles pour l'export / import CSV — sélectionnables individuellement
 const COLUMN_DEFS: { label: string; getValue: (p: Professional) => string }[] = [
@@ -1326,6 +1343,55 @@ function MaintenanceManager() {
   );
 }
 
+// Vidage manuel du cache ISR des pages publiques — complète la
+// revalidation automatique déclenchée à chaque écriture d'une fiche (voir
+// src/app/api/db/professionals/route.ts) pour les cas où une page semble
+// afficher des données périmées (ex: juste après une modification en base
+// hors du flux normal de l'admin, comme une migration ou un script).
+function ClearCacheManager() {
+  const [clearing, setClearing] = useState(false);
+  const [cleared, setCleared] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const clearCache = async () => {
+    setClearing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/cache/clear", { method: "POST" });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setCleared(true);
+      setTimeout(() => setCleared(false), 3000);
+    } catch {
+      setError("Erreur réseau lors du vidage du cache.");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="card p-6 border border-gray-100">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-bold text-landes-pine">Cache du site</h2>
+        {cleared && <span className="text-green-600 text-xs font-medium flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Cache vidé</span>}
+      </div>
+      <p className="text-sm text-gray-500 mb-4">
+        Les pages publiques (accueil, catégories, sous-catégories, villes, fiches...) sont mises en cache jusqu&apos;à 1h pour accélérer le site. Utilisez ce bouton pour forcer leur régénération immédiate si une modification récente n&apos;apparaît pas encore côté visiteurs.
+      </p>
+      {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+      <button
+        type="button"
+        onClick={clearCache}
+        disabled={clearing}
+        className="flex items-center gap-2 px-4 py-2 bg-landes-forest text-white rounded-xl text-sm font-medium hover:bg-landes-pine transition-colors disabled:opacity-50"
+      >
+        {clearing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+        {clearing ? "Vidage en cours…" : "Vider le cache du site"}
+      </button>
+    </div>
+  );
+}
+
 // Gestion manuelle du diaporama hero (professionnels avec l'option
 // "Encart publicitaire ciblé"), sélection et ordre entièrement contrôlés
 // par l'administrateur.
@@ -1888,6 +1954,7 @@ export default function AdminPage() {
       {adminSection === "site" && (
         <div className="space-y-6">
           <MaintenanceManager />
+          <ClearCacheManager />
           <HeroSlideshowManager />
         </div>
       )}
@@ -2176,6 +2243,7 @@ export default function AdminPage() {
               let updatedCount = 0;
               let unchangedCount = 0;
               const malformedLines: number[] = [];
+              const unmatchedCategoryLines: number[] = [];
 
               for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -2219,11 +2287,40 @@ export default function AdminPage() {
 
                 const id = existing?.id || csvId || generateId();
 
-                // Normalise la catégorie (insensible à la casse)
+                // Normalise la catégorie (casse, espaces, apostrophes
+                // typographiques introduites par Excel/Numbers) avant
+                // comparaison — voir normalizeLabelForMatch ci-dessus.
                 const csvCat = gatedVal("Catégorie");
                 const categoryLabels = categories.map(c => c.label);
                 const matchedCat = csvCat
-                  ? (categoryLabels.find(c => c === csvCat) ?? categoryLabels.find(c => c.toLowerCase().trim() === csvCat.toLowerCase().trim()))
+                  ? categoryLabels.find(c => normalizeLabelForMatch(c) === normalizeLabelForMatch(csvCat))
+                  : undefined;
+                // Une catégorie fournie mais non reconnue ne doit jamais
+                // classer silencieusement une nouvelle fiche sous la
+                // première catégorie du catalogue (categoryLabels[0]) —
+                // elle serait alors invisible sur la catégorie attendue sans
+                // aucune erreur visible. On ignore la ligne et on la
+                // signale, comme pour les lignes mal formées.
+                if (csvCat && !matchedCat && !existing) {
+                  unmatchedCategoryLines.push(i + 1);
+                  continue;
+                }
+
+                // Sous-catégorie : même normalisation, comparée aux
+                // sous-catégories connues de la catégorie résolue. Si elle
+                // correspond, on retient le libellé canonique de la base —
+                // indispensable car les pages publiques filtrent par
+                // égalité stricte (voir dbGetProfessionalsBySubcategory) ;
+                // un texte CSV même légèrement différent (apostrophe, casse)
+                // rendrait la fiche invisible sans erreur. Si elle ne
+                // correspond à rien de connu, on garde la valeur telle que
+                // saisie plutôt que de la rejeter (sous-catégorie facultative
+                // et pas définie pour toutes les catégories).
+                const csvSub = gatedVal("Sous-catégorie");
+                const resolvedCategoryLabel = matchedCat ?? existing?.category;
+                const knownSubLabels = categories.find(c => c.label === resolvedCategoryLabel)?.subcategories.map(s => s.label) ?? [];
+                const matchedSub = csvSub
+                  ? knownSubLabels.find(s => normalizeLabelForMatch(s) === normalizeLabelForMatch(csvSub))
                   : undefined;
 
                 const service1 = gatedVal("Service 1");
@@ -2238,7 +2335,7 @@ export default function AdminPage() {
                   companyName,
                   activityTitle:    gatedVal("Titre de l'activité")  || existing?.activityTitle,
                   category:         matchedCat ?? existing?.category ?? categoryLabels[0],
-                  subcategory:      gatedVal("Sous-catégorie")        || existing?.subcategory,
+                  subcategory:      (csvSub ? (matchedSub ?? csvSub) : undefined) || existing?.subcategory,
                   email:            gatedVal("Email")                || existing?.email            || "",
                   phone:            gatedVal("Téléphone")            || existing?.phone             || "",
                   whatsapp:         gatedVal("Whatsapp")             || existing?.whatsapp,
@@ -2291,7 +2388,10 @@ export default function AdminPage() {
               const malformedMsg = malformedLines.length > 0
                 ? `\n⚠️ ${malformedLines.length} ligne(s) ignorée(s) car mal formée(s) (nombre de colonnes incohérent avec l'en-tête — vérifiez les virgules/points-virgules non protégés par des guillemets) : lignes ${malformedLines.join(", ")}.`
                 : "";
-              alert(`✅ ${imported} créé(s), ${updatedCount} mis à jour, ${unchangedCount} inchangé(s) — aucun doublon créé (colonnes sélectionnées : ${selectedColumns.size}/${ALL_COLUMN_LABELS.length}).${malformedMsg}`);
+              const unmatchedCatMsg = unmatchedCategoryLines.length > 0
+                ? `\n⚠️ ${unmatchedCategoryLines.length} ligne(s) ignorée(s) car la catégorie ne correspond à aucune catégorie existante (vérifiez l'orthographe exacte, notamment les apostrophes) : lignes ${unmatchedCategoryLines.join(", ")}.`
+                : "";
+              alert(`✅ ${imported} créé(s), ${updatedCount} mis à jour, ${unchangedCount} inchangé(s) — aucun doublon créé (colonnes sélectionnées : ${selectedColumns.size}/${ALL_COLUMN_LABELS.length}).${malformedMsg}${unmatchedCatMsg}`);
               e.target.value = "";
             }} />
           </label>

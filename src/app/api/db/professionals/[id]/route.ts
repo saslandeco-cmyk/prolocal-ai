@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { isDbConfigured } from "@/lib/db/client";
 import { dbGetProfessionalById, dbDeleteProfessional } from "@/lib/db/professionals";
 
@@ -28,6 +29,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const { id } = await params;
     await dbDeleteProfessional(id);
+    // Voir la note dans POST /api/db/professionals : sans ça, la fiche
+    // supprimée resterait visible côté front jusqu'à 1h (ISR).
+    revalidatePath("/", "layout");
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("[api/db/professionals/[id] DELETE] Erreur:", err);
