@@ -272,7 +272,14 @@ export default function FeaturedProfessionals({ initialPros }: Props) {
   const stats = useMemo(() => ({
     companies: activePros.length,
     communes: new Set(activePros.map(p => p.city).filter(Boolean)).size,
-    activities: new Set(activePros.map(p => p.category).filter(Boolean)).size,
+    // Une "activité" = un métier précis (sous-catégorie), pas la catégorie
+    // large qui le contient — sinon ce compteur plafonne dès que toutes les
+    // ~12 catégories ont au moins une fiche et ne bouge plus jamais, même en
+    // ajoutant de nouveaux métiers/professionnels (voir la route sous-
+    // catégorie, qui utilise la même notion de "métier précis"). Composé
+    // avec la catégorie pour rester unique si une fiche n'a pas de
+    // sous-catégorie renseignée (champ facultatif).
+    activities: new Set(activePros.map(p => `${p.category}::${p.subcategory || p.category}`).filter(Boolean)).size,
   }), [activePros]);
 
   const mergedTabs = useMemo(() => {
