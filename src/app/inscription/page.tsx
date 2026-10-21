@@ -1,7 +1,7 @@
 "use client";
 import {
   CheckCircle, AlertCircle, Loader2, ArrowRight, ArrowLeft,
-  ImagePlus, X, CreditCard, Mail, UserCheck,
+  ImagePlus, X, UserCheck,
 } from "lucide-react";
 import { useState, useRef, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -279,7 +279,6 @@ function InscriptionForm() {
   const [sirenMsg,     setSirenMsg]     = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [paymentChoice, setPaymentChoice] = useState<"card" | "cheque">("card");
   const [stripePaid, setStripePaid] = useState(false);
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
@@ -604,7 +603,7 @@ function InscriptionForm() {
       services: services.filter(s => s.trim()).length > 0 ? services.filter(s => s.trim()) : undefined,
       plan: selectedPlan,
       complementaryOptions: selectedOptions.length > 0 ? selectedOptions : undefined,
-      paymentMethod: needsPayment ? paymentChoice : undefined,
+      paymentMethod: needsPayment ? "card" : undefined,
       stripeCustomerId: stripeCustomerId || claimingPro?.stripeCustomerId || undefined,
       stripeSubscriptionId: stripeSubscriptionId || claimingPro?.stripeSubscriptionId || undefined,
       // L'option "Encart publicitaire ciblé" utilise la bannière de la
@@ -1107,25 +1106,68 @@ function InscriptionForm() {
               </div>
             </div>
 
-            {/* Les méthodes de paiement sont temporairement masquées : les
-                inscriptions ne sont pas encore ouvertes au public. Le choix
-                de méthode (carte/chèque) et les flux Stripe/chèque associés
-                restent dans le code (voir git) pour réactivation ultérieure. */}
-            <div className="border-2 border-amber-300 bg-amber-50 rounded-xl p-5 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-landes-pine text-sm">Les inscriptions ne sont pas encore ouvertes</p>
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Si vous souhaitez inscrire votre entreprise sur la plateforme, envoyez-nous votre
-                  demande à{" "}
-                  <a href="mailto:contact@prolocal-landes.fr" className="font-semibold text-landes-forest hover:underline">
-                    contact@prolocal-landes.fr
-                  </a>.
-                </p>
+            {/* Paiement par carte bancaire (Stripe Elements, embarqué, mode test) — seul mode de paiement proposé */}
+            <div className="border-2 border-landes-forest bg-landes-forest/5 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-amber-500 px-2 py-0.5 rounded-full">MODE TEST</span>
+                <p className="font-semibold text-landes-pine text-sm">Paiement par carte, directement sur le site</p>
               </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 p-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Récapitulatif</p>
+                <ul className="space-y-1">
+                  {selectedPlan !== "standard" && (
+                    <li className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700">Formule {PLANS.find(p => p.id === selectedPlan)?.name}</span>
+                      <span className="text-gray-500">{PLANS.find(p => p.id === selectedPlan)?.price}€/mois</span>
+                    </li>
+                  )}
+                  {selectedOptions.map(id => {
+                    const opt = COMPLEMENTARY_OPTIONS.find(o => o.id === id);
+                    if (!opt) return null;
+                    return (
+                      <li key={id} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">{opt.label}</span>
+                        <span className="text-gray-500">{opt.price} {opt.unit}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {stripePaid ? (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <p className="text-sm text-green-700 font-medium">Paiement confirmé — finalisation en cours…</p>
+                </div>
+              ) : preparingPayment ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500 py-4 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Préparation du paiement sécurisé…
+                </div>
+              ) : !stripeClientSecret ? (
+                <button
+                  type="button"
+                  onClick={() => preparePayment()}
+                  className="w-full flex items-center justify-center gap-2 bg-landes-forest text-white font-semibold py-3 rounded-xl hover:bg-landes-pine transition-colors"
+                >
+                  Continuer vers le paiement sécurisé <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <StripePaymentForm
+                  clientSecret={stripeClientSecret}
+                  intentType="setup"
+                  submitLabel="Payer et activer mon abonnement"
+                  onSuccess={handleStripeSuccess}
+                />
+              )}
+
+              <p className="text-[11px] text-gray-400 pt-1">
+                Utilisez une carte de test Stripe (ex : 4242 4242 4242 4242, date future, CVC quelconque) — aucun débit réel n&apos;est effectué en mode test. Vous restez sur ce site du début à la fin.
+              </p>
             </div>
           </div>
 
+          {/* Le paiement Stripe Elements avance automatiquement à l'étape suivante. */}
           <div className="flex justify-start">
             <button type="button" onClick={() => goPrevFromSequence(3)} className="btn-secondary flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" /> Retour
