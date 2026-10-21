@@ -2,12 +2,19 @@
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
 /**
- * Client Stripe côté navigateur (clé publique, mode TEST).
- * Nécessite NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY dans .env.local
- * (clé commençant par pk_test_..., disponible dans le Dashboard Stripe
- * → Développeurs → Clés API).
+ * Client Stripe côté navigateur. Nécessite NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+ * (clé publique Stripe — pk_test_... en mode test, pk_live_... en mode réel,
+ * disponible dans le Dashboard Stripe → Développeurs → Clés API).
  */
 let stripePromise: Promise<Stripe | null> | null = null;
+
+/**
+ * true tant que la clé publique configurée est une clé de test (pk_test_...).
+ * Permet de n'afficher le badge "MODE TEST" et les indications de carte
+ * factice (voir inscription/page.tsx) que lorsque c'est réellement le cas —
+ * jamais à un vrai client une fois la bascule faite vers des clés pk_live_.
+ */
+export const isStripeTestMode = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "").startsWith("pk_test_");
 
 export function getStripeClient(): Promise<Stripe | null> {
   if (!stripePromise) {

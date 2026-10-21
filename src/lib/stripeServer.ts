@@ -1,11 +1,14 @@
 import Stripe from "stripe";
 
 /**
- * Client Stripe côté serveur (mode TEST).
+ * Client Stripe côté serveur.
  *
  * Nécessite la variable d'environnement STRIPE_SECRET_KEY (clé secrète
- * commençant par sk_test_... en mode test, disponible dans votre
- * Dashboard Stripe → Développeurs → Clés API).
+ * Stripe — sk_test_... en mode test, sk_live_... en mode réel, disponible
+ * dans le Dashboard Stripe → Développeurs → Clés API). ⚠️ En production,
+ * vérifier qu'il s'agit bien d'une clé sk_live_ : avec une clé sk_test_,
+ * aucun paiement réel n'est traité (les vrais visiteurs se font rejeter
+ * leur carte) et rien n'apparaît sur le tableau de bord Stripe en mode Live.
  *
  * ⚠️ Ce fichier ne doit JAMAIS être importé depuis un composant client
  * ("use client") : la clé secrète ne doit jamais transiter côté navigateur.

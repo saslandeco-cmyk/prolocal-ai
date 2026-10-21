@@ -15,6 +15,7 @@ import RichTextEditor from "@/components/ui/RichTextEditor";
 import OpeningHoursEditor from "@/components/ui/OpeningHoursEditor";
 import type { OpeningHours } from "@/types";
 import StripePaymentForm from "@/components/professional/StripePaymentForm";
+import { isStripeTestMode } from "@/lib/stripeClient";
 import BannerCropper from "@/components/ui/BannerCropper";
 
 type PlanType = "standard" | "premium" | "gold";
@@ -1115,10 +1116,12 @@ function InscriptionForm() {
               </div>
             </div>
 
-            {/* Paiement par carte bancaire (Stripe Elements, embarqué, mode test) — seul mode de paiement proposé */}
+            {/* Paiement par carte bancaire (Stripe Elements, embarqué) — seul mode de paiement proposé */}
             <div className="border-2 border-landes-forest bg-landes-forest/5 rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-amber-500 px-2 py-0.5 rounded-full">MODE TEST</span>
+                {isStripeTestMode && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-amber-500 px-2 py-0.5 rounded-full">MODE TEST</span>
+                )}
                 <p className="font-semibold text-landes-pine text-sm">Paiement par carte, directement sur le site</p>
               </div>
 
@@ -1171,7 +1174,9 @@ function InscriptionForm() {
               )}
 
               <p className="text-[11px] text-gray-400 pt-1">
-                Utilisez une carte de test Stripe (ex : 4242 4242 4242 4242, date future, CVC quelconque) — aucun débit réel n&apos;est effectué en mode test. Vous restez sur ce site du début à la fin.
+                {isStripeTestMode
+                  ? "Utilisez une carte de test Stripe (ex : 4242 4242 4242 4242, date future, CVC quelconque) — aucun débit réel n'est effectué en mode test. Vous restez sur ce site du début à la fin."
+                  : "Vos coordonnées bancaires ne transitent jamais par nos serveurs. Vous restez sur ce site du début à la fin."}
               </p>
             </div>
           </div>
