@@ -556,6 +556,11 @@ function InscriptionForm() {
 
   const submit = async () => {
     if (!selectedPlan) return;
+    // Un second clic avant que le bouton ne se désactive (ex: double-clic
+    // rapide, pas encore de re-rendu) créerait une fiche en double — chaque
+    // appel génère un nouvel id via generateId() tant qu'il ne s'agit pas
+    // d'une revendication de fiche existante.
+    if (loading) return;
     // Honeypot anti-spam : un visiteur réel ne peut jamais remplir ce champ
     // (invisible, hors du parcours au clavier) — un robot qui l'a rempli est
     // silencieusement arrêté ici, sans message d'erreur qui l'aiderait à
@@ -641,7 +646,11 @@ function InscriptionForm() {
       // Silencieux : un échec d'envoi ne doit jamais bloquer l'inscription.
     });
 
-    setLoading(false);
+    // Ne pas repasser loading à false ici : la page va être démontée par la
+    // navigation qui suit immédiatement — le remettre à false rouvrirait
+    // brièvement le bouton "Finaliser" avant que le changement de page ne
+    // soit effectif, laissant une fenêtre pour un second clic (double
+    // soumission, voir le garde-fou `if (loading) return;` plus haut).
     router.push(claimingPro ? "/dashboard?claimed=1" : "/dashboard?welcome=1");
   };
 
@@ -1018,10 +1027,10 @@ function InscriptionForm() {
             </button>
             <button type="button"
               onClick={() => goNextFromSequence(2)}
-              disabled={!selectedPlan}
+              disabled={!selectedPlan || loading}
               className="btn-primary flex items-center gap-2 disabled:opacity-50">
               {isLastStepInSequence(2)
-                ? <>Finaliser l&apos;inscription <ArrowRight className="w-4 h-4" /></>
+                ? (loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Finalisation…</> : <>Finaliser l&apos;inscription <ArrowRight className="w-4 h-4" /></>)
                 : <>Suivant <ArrowRight className="w-4 h-4" /></>
               }
             </button>
