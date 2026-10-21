@@ -108,7 +108,7 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
         setShowRadius(true);
       },
       () => { setGeoError("Position non disponible"); setGeoLoading(false); },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   }, []);
 
@@ -149,6 +149,17 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
     setFiltered(result);
     setTimeout(() => document.getElementById("resultats")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }, [pros, query, location, userLat, userLng, radius]);
+
+  // Relance automatiquement la recherche dès que la géolocalisation est
+  // acquise, que le rayon est changé, ou qu'elle est désactivée — sans ça,
+  // le bouton "Autour de moi" semblait ne rien faire : il fallait deviner
+  // qu'il fallait aussi cliquer sur "Rechercher" pour voir l'effet.
+  const didMountGeo = useRef(false);
+  useEffect(() => {
+    if (!didMountGeo.current) { didMountGeo.current = true; return; }
+    runSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLat, userLng, radius]);
 
   const citySuggestions = location.trim()
     ? citiesWithPros.filter(c => c.toLowerCase().includes(location.toLowerCase())).slice(0, 5)

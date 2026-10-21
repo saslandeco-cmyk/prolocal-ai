@@ -45,7 +45,7 @@ export default function NeedSearchBar({ initialValue = "", initialCity = "", ini
         setGeoError("Position non disponible. Vérifiez l'autorisation de géolocalisation.");
         setGeoLoading(false);
       },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
 

@@ -85,7 +85,7 @@ export default function CategoryPage({ meta, initialPros }: Props) {
         setGeoError("Position non disponible");
         setGeoLoading(false);
       },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   }, []);
 
@@ -171,6 +171,17 @@ export default function CategoryPage({ meta, initialPros }: Props) {
       return getListingRank(a) - getListingRank(b);
     }));
   }, [pros, userLat, userLng, radius]);
+
+  // Relance automatiquement le filtrage dès que la géolocalisation est
+  // acquise, que le rayon est changé, ou qu'elle est désactivée — sans ça,
+  // le bouton "Autour de moi" semblait ne rien faire : il fallait deviner
+  // qu'il fallait aussi cliquer sur "Rechercher" pour voir l'effet.
+  const didMountGeo = useRef(false);
+  useEffect(() => {
+    if (!didMountGeo.current) { didMountGeo.current = true; return; }
+    applyFilter(query, location, activeSub);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLat, userLng, radius]);
 
   const handleSearch = useCallback((q: string) => {
     setQuery(q); // Saisie uniquement : les résultats ne sont mis à jour qu'au clic sur "Rechercher"
