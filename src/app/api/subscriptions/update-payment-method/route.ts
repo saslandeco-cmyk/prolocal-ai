@@ -21,9 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "customerId manquant." }, { status: 400 });
     }
 
+    // `allow_redirects: "never"` exclut les moyens de paiement à redirection
+    // (PayPal, iDEAL...) du formulaire proposé au client — voir la même
+    // remarque dans /api/subscriptions/create.
     const setupIntent = await stripe.setupIntents.create({
       customer: customerId,
-      automatic_payment_methods: { enabled: true },
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
     });
 
     return NextResponse.json({ clientSecret: setupIntent.client_secret });
