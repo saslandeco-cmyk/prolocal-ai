@@ -1641,10 +1641,32 @@ export default function AdminPage() {
   const updateStatus = async (id: string, status: StatusType) => {
     const pro = pros.find((p) => p.id === id);
     if (!pro) return;
+    // Uniquement le tout premier passage "pending" → "active" : jamais lors
+    // d'une simple réactivation après suspension, pour ne jamais annoncer à
+    // tort une "première mise en ligne" à une fiche déjà connue du pro.
+    const isFirstValidation = pro.status === "pending" && status === "active";
     const updated = { ...pro, status, updatedAt: new Date().toISOString(), ...(status === "active" ? { validatedAt: new Date().toISOString() } : {}) };
     await saveProfessional(updated);
     refresh();
     if (selectedPro?.id === id) setSelectedPro(updated);
+
+    if (isFirstValidation) {
+      // Notification au professionnel — en arrière-plan, sans jamais
+      // bloquer ni faire échouer la validation si l'envoi échoue (ex:
+      // service email non configuré → mode démonstration).
+      fetch("/api/auth/send-validation-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: pro.email,
+          companyName: pro.companyName,
+          plan: pro.plan,
+          complementaryOptions: (pro as any).complementaryOptions || [],
+        }),
+      }).catch(() => {
+        // Silencieux : voir commentaire ci-dessus.
+      });
+    }
   };
 
   // ── Migration en masse vers la base de données (étape 4) ──
