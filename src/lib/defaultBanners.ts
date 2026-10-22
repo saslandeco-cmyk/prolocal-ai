@@ -32,6 +32,7 @@ export const DEFAULT_SUBCATEGORY_BANNERS: Record<string, string> = {
   "Épicerie fine":              "/banners/epicerie-fine.png",
   "Fromagerie / Crèmerie":      "/banners/fromagerie.png",
   "Coiffeur":                   "/banners/coiffure.jpg",
+  "Toilettage":                 "/banners/Toilettage.jpg",
 };
 
 /**
