@@ -2358,6 +2358,14 @@ export default function AdminPage() {
                   activityTitle:    gatedVal("Titre de l'activité")  || existing?.activityTitle,
                   category:         matchedCat ?? existing?.category ?? categoryLabels[0],
                   subcategory:      (csvSub ? (matchedSub ?? csvSub) : undefined) || existing?.subcategory,
+                  // Aucune colonne CSV prévue pour le prénom/nom du dirigeant
+                  // (champ facultatif, modifiable ensuite dans l'admin ou par
+                  // le professionnel lui-même) — repli sur une chaîne vide
+                  // plutôt que `undefined`, qui faisait planter l'indexation
+                  // [0] des initiales dans la barre de navigation après
+                  // connexion (voir Navbar.tsx).
+                  firstName:        existing?.firstName || "",
+                  lastName:         existing?.lastName  || "",
                   email:            gatedVal("Email")                || existing?.email            || "",
                   phone:            gatedVal("Téléphone")            || existing?.phone             || "",
                   whatsapp:         gatedVal("Whatsapp")             || existing?.whatsapp,
@@ -2379,7 +2387,7 @@ export default function AdminPage() {
                     ? [service1, service2, service3].filter(s => s.trim())
                     : existing?.services,
                   shortDescription: gatedVal("Description courte")    || existing?.shortDescription,
-                  description:      gatedVal("Description longue")   || existing?.description,
+                  description:      gatedVal("Description longue")   || existing?.description      || "",
                   password:         existing?.password   || "changeme2024",
                   logo:             gatedVal("Logo (URL)")     || existing?.logo,
                   banner:           gatedVal("Bannière (URL)") || existing?.banner,

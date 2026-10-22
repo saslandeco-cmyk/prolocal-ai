@@ -79,8 +79,14 @@ export default function Navbar() {
     clearSession(); setProSession(null); setAdminSession(null); setDropOpen(false); setAdminDropOpen(false); setOpen(false); router.push("/");
   };
 
+  // Repli robuste : une fiche créée par import CSV depuis l'admin n'a pas
+  // de prénom/nom (aucune colonne prévue pour ça dans l'import) — sans ces
+  // `?.`, l'indexation [0] sur `undefined` plantait toute l'application au
+  // premier rendu de la barre de navigation après connexion.
   const initials = proSession
-    ? `${proSession.firstName[0]}${proSession.lastName[0]}`.toUpperCase()
+    ? (`${proSession.firstName?.[0] ?? ""}${proSession.lastName?.[0] ?? ""}`.toUpperCase()
+        || proSession.companyName?.[0]?.toUpperCase()
+        || "?")
     : "";
 
   return (
