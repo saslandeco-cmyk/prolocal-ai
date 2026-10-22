@@ -88,7 +88,7 @@ Fiche en attente de validation dans l'admin.`
 
     const [{ error }] = await Promise.all([
       resend.emails.send({
-        from: process.env.INVOICE_SENDER_EMAIL || "contact@prolocal-landes.fr",
+        from: `Prolocal Landes <${process.env.INVOICE_SENDER_EMAIL || "contact@prolocal-landes.fr"}>`,
         to: [email],
         subject: "Votre inscription a bien été prise en compte — Prolocal-Landes",
         text:

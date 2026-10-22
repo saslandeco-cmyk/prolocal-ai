@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(resendKey);
 
     const { error } = await resend.emails.send({
-      from: process.env.INVOICE_SENDER_EMAIL || "contact@prolocal-landes.fr",
+      from: `Prolocal Landes <${process.env.INVOICE_SENDER_EMAIL || "contact@prolocal-landes.fr"}>`,
       to: [email],
       subject: "Réinitialisation de votre mot de passe — Prolocal-Landes",
       text: `Bonjour${companyName ? ` (${companyName})` : ""},\n\nVoici votre code de réinitialisation de mot de passe : ${code}\n\nCe code est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
