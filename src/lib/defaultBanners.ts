@@ -31,6 +31,7 @@ export const DEFAULT_SUBCATEGORY_BANNERS: Record<string, string> = {
   "Poissonnerie":               "/banners/poissonerie.png",
   "Épicerie fine":              "/banners/epicerie-fine.png",
   "Fromagerie / Crèmerie":      "/banners/fromagerie.png",
+  "Coiffeur":                   "/banners/coiffure.jpg",
 };
 
 /**
