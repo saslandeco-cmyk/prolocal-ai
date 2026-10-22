@@ -268,6 +268,11 @@ function InscriptionForm() {
   }, []);
 
   const [step,         setStep]         = useState<Step>(1);
+  // Remonte en haut de page à chaque changement d'étape (Suivant comme
+  // Retour) : sans ça, un visiteur ayant défilé loin dans une étape longue
+  // atterrissait au même endroit du scroll sur l'étape suivante, parfois en
+  // plein milieu du formulaire plutôt qu'à son titre.
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const [loading,      setLoading]      = useState(false);
   const [sirenStatus,  setSirenStatus]  = useState<"idle"|"loading"|"valid"|"invalid">("idle");
   const [showDuplicateSirenModal, setShowDuplicateSirenModal] = useState(false);
