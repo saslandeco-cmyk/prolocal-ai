@@ -102,7 +102,7 @@ Pour rappel, voici vos identifiants de connexion à votre tableau de bord :
 - Email de connexion : ${email}
 - Mot de passe : ${password}
 
-Vous pouvez dès à présent vous connecter et compléter votre fiche depuis votre tableau de bord.
+Vous pouvez dès à présent vous connecter et compléter votre fiche depuis votre tableau de bord en cliquant sur le lien ci-dessous : https://www.prolocal-landes.fr/connexion.
 
 À bientôt sur Prolocal-Landes !`,
       }),
