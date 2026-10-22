@@ -37,6 +37,20 @@ export async function dbGetProfessionalBySiren(siren: string): Promise<Professio
 }
 
 /**
+ * Recherche par email de connexion — utilisée par la page de connexion
+ * (connexion/page.tsx) pour la connexion elle-même et le mot de passe
+ * oublié. Indispensable pour une fiche créée directement depuis l'admin
+ * (jamais passée par cette inscription dans CE navigateur) : sans lecture
+ * en base, elle resterait introuvable depuis l'appareil du professionnel,
+ * qui ne l'a jamais eue en localStorage.
+ */
+export async function dbGetProfessionalByEmail(email: string): Promise<Professional | null> {
+  if (!isDbConfigured) return null;
+  const { rows } = await sql`SELECT data FROM professionals WHERE email = ${email} LIMIT 1`;
+  return rows.length > 0 ? rowToProfessional(rows[0]) : null;
+}
+
+/**
  * Retrouve le professionnel associé à un client Stripe — utilisé par le
  * webhook Stripe (voir api/webhooks/stripe/route.ts) pour identifier qui a
  * payé un renouvellement automatique. stripeCustomerId n'est pas une colonne

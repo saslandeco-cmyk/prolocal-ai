@@ -34,7 +34,7 @@ export default function ConnexionPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 500));
 
-    const pro = getProfessionalByEmail(email);
+    const pro = await getProfessionalByEmail(email);
     if (!pro || pro.password !== password) {
       setError("Email ou mot de passe incorrect.");
       setLoading(false);
@@ -48,7 +48,7 @@ export default function ConnexionPage() {
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetError("");
-    const pro = getProfessionalByEmail(resetEmail);
+    const pro = await getProfessionalByEmail(resetEmail);
     if (!pro) {
       setResetError("Aucun compte ne correspond à cette adresse email.");
       return;
@@ -71,7 +71,7 @@ export default function ConnexionPage() {
 
   const handleResend = async () => {
     if (cooldown > 0) return;
-    const pro = getProfessionalByEmail(resetEmail);
+    const pro = await getProfessionalByEmail(resetEmail);
     if (!pro) return;
     setResetLoading(true);
     const result = await sendResetCode(resetEmail, pro.companyName);
@@ -96,7 +96,7 @@ export default function ConnexionPage() {
     const result = verifyResetCode(resetEmail, code.trim());
     if (!result.ok) { setResetError(result.error || "Code invalide."); return; }
 
-    const pro = getProfessionalByEmail(resetEmail);
+    const pro = await getProfessionalByEmail(resetEmail);
     if (!pro) { setResetError("Compte introuvable."); return; }
 
     saveProfessional({ ...pro, password: newPassword, updatedAt: new Date().toISOString() });

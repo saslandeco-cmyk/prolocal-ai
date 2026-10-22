@@ -300,7 +300,31 @@ export async function getProfessionalByIdWithImages(id: string): Promise<Profess
   return rehydrateAsync(p);
 }
 
-export function getProfessionalByEmail(email: string): Professional | null {
+/**
+ * Retourne le professionnel associé à cet email de connexion — en priorité
+ * depuis la base (accessible depuis n'importe quel navigateur/appareil),
+ * avec repli sur le localStorage.
+ *
+ * ⚠️ Correctif important (même nature que getProfessionalsWithImages
+ * ci-dessus) : une fiche créée directement depuis l'admin n'existe qu'en
+ * base — jamais dans le localStorage de l'appareil du professionnel, qui
+ * ne s'y est jamais connecté auparavant. Sans cette lecture en base, la
+ * connexion et le mot de passe oublié (voir connexion/page.tsx) échouaient
+ * avec "Aucun compte ne correspond à cette adresse email" pour toute fiche
+ * créée depuis l'admin, même valide et bien enregistrée.
+ */
+export async function getProfessionalByEmail(email: string): Promise<Professional | null> {
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch(`/api/db/professionals/by-email?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.professional) return data.professional as Professional;
+      }
+    } catch {
+      // Réseau indisponible ou base non configurée : repli silencieux ci-dessous.
+    }
+  }
   return getRawProfessionals().find(p => p.email === email) ?? null;
 }
 
