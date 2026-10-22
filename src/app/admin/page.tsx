@@ -71,6 +71,8 @@ const COLUMN_DEFS: { label: string; getValue: (p: Professional) => string }[] = 
   { label: "Formule",               getValue: p => p.plan },
   { label: "Statut",                getValue: p => p.status },
   { label: "Revendiquée",           getValue: p => (p as any).claimed ? "Oui" : "Non" },
+  { label: "Option Encart publicitaire",      getValue: p => (p.complementaryOptions || []).includes("pub") ? "Oui" : "Non" },
+  { label: "Option Gestion prospects/clients", getValue: p => (p.complementaryOptions || []).includes("crm") ? "Oui" : "Non" },
   { label: "Site web",              getValue: p => p.website ?? "" },
   { label: "Service 1",             getValue: p => p.services?.[0] ?? "" },
   { label: "Service 2",             getValue: p => p.services?.[1] ?? "" },
@@ -2191,6 +2193,9 @@ export default function AdminPage() {
                   if (selectedColumns.has("Lng"))                    merged.lng = pro.lng;
                   if (selectedColumns.has("Formule"))                merged.plan = pro.plan;
                   if (selectedColumns.has("Statut"))                 merged.status = pro.status;
+                  if (selectedColumns.has("Option Encart publicitaire") || selectedColumns.has("Option Gestion prospects/clients")) {
+                    merged.complementaryOptions = pro.complementaryOptions;
+                  }
                   if (selectedColumns.has("Site web"))               merged.website = pro.website;
                   if (selectedColumns.has("Service 1") || selectedColumns.has("Service 2") || selectedColumns.has("Service 3")) {
                     merged.services = pro.services;
@@ -2350,6 +2355,24 @@ export default function AdminPage() {
                 const service3 = gatedVal("Service 3");
                 const hasServiceColumn = selectedColumns.has("Service 1") || selectedColumns.has("Service 2") || selectedColumns.has("Service 3");
 
+                // Options complémentaires : chaque colonne ("Oui"/"Non") est
+                // gatée indépendamment — si une seule des deux est
+                // sélectionnée à l'import, l'autre option conserve sa valeur
+                // existante plutôt que d'être désactivée silencieusement.
+                const isTruthyCell = (v: string) => ["oui", "yes", "true", "1", "vrai"].includes(v.trim().toLowerCase());
+                const existingOptions = existing?.complementaryOptions || [];
+                const nextOptions: string[] = [];
+                if (selectedColumns.has("Option Encart publicitaire")) {
+                  if (isTruthyCell(rawVal("Option Encart publicitaire"))) nextOptions.push("pub");
+                } else if (existingOptions.includes("pub")) {
+                  nextOptions.push("pub");
+                }
+                if (selectedColumns.has("Option Gestion prospects/clients")) {
+                  if (isTruthyCell(rawVal("Option Gestion prospects/clients"))) nextOptions.push("crm");
+                } else if (existingOptions.includes("crm")) {
+                  nextOptions.push("crm");
+                }
+
                 const now = new Date().toISOString();
                 const updated: Professional = {
                   ...(existing ?? {}),
@@ -2382,6 +2405,7 @@ export default function AdminPage() {
                   status:           (["pending", "active", "suspended", "rejected"].includes(gatedVal("Statut").toLowerCase())
                                         ? gatedVal("Statut").toLowerCase()
                                         : existing?.status || "active") as Professional["status"],
+                  complementaryOptions: nextOptions,
                   website:          gatedVal("Site web")               || existing?.website,
                   services:         hasServiceColumn
                     ? [service1, service2, service3].filter(s => s.trim())
