@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PLANS, type Professional } from "@/types";
 import { getCategoriesAsync, DEFAULT_CATEGORIES, type CategoryRecord } from "@/lib/categories";
-import { saveProfessional, setSession, generateId, getProfessionals, getProfessionalById } from "@/lib/storage";
+import { saveProfessional, setSession, generateId, getProfessionals, getProfessionalById, mirrorProfessionalToDb } from "@/lib/storage";
 import { REQUIRE_VALIDATION } from "@/lib/config";
 import { lookupSiren } from "@/lib/siren";
 import RichTextEditor from "@/components/ui/RichTextEditor";
@@ -277,6 +277,13 @@ function InscriptionForm() {
   const [secondarySiretError, setSecondarySiretError] = useState("");
   const [seoOpen,      setSeoOpen]      = useState(false);
   const [claimingPro,  setClaimingPro]  = useState<Professional | null>(null);
+  // Identifiant pré-généré pour une nouvelle inscription (pas de revendication
+  // de fiche existante) — stable dès le montage, pour pouvoir être transmis
+  // comme proId à /api/subscriptions/finalize (nécessaire pour créditer
+  // l'option "Mises en contact" si elle est choisie) AVANT que la fiche ne
+  // soit réellement enregistrée en base, puis réutilisé comme id définitif
+  // dans submit() ci-dessous — le crédit et la fiche partagent ainsi le même id.
+  const [newProId] = useState(() => generateId());
   const [sirenMsg,     setSirenMsg]     = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -495,6 +502,41 @@ function InscriptionForm() {
     }
     setPreparingPayment(true);
     try {
+      // L'option "Mises en contact" doit créditer le solde d'une fiche
+      // existante (contrainte de clé étrangère sur contact_recharges.pro_id,
+      // voir src/lib/db/schema.sql) — or aucune fiche n'existe encore à ce
+      // stade de l'inscription. On en enregistre donc une version minimale
+      // dès maintenant, sous newProId, AVANT d'appeler /finalize : submit()
+      // la complétera ensuite (photos, horaires, géocodage...) via un simple
+      // upsert sur le même id, une fois le paiement confirmé.
+      if (!claimingPro && selectedOptions.includes("contact")) {
+        const preCreated = await mirrorProfessionalToDb({
+          id: newProId,
+          companyName: form.companyName,
+          siren: form.siren.replace(/\s/g, ""),
+          legalForm: form.legalForm,
+          category: form.category,
+          subcategory: form.subcategory || undefined,
+          description: form.description,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.loginEmail,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          postalCode: form.postalCode,
+          plan: selectedPlan || "standard",
+          status: REQUIRE_VALIDATION ? "pending" : "active",
+          claimed: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        if (!preCreated) {
+          alert("Impossible de préparer votre fiche avant le paiement. Vérifiez votre connexion et réessayez.");
+          return;
+        }
+      }
+
       const res = await fetch("/api/subscriptions/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -504,7 +546,11 @@ function InscriptionForm() {
           planId: selectedPlan !== "standard" ? selectedPlan : undefined,
           optionIds: selectedOptions,
           // Pas encore de fiche enregistrée à ce stade de l'inscription (voir
-          // plus bas) : transmis uniquement pour la notification interne.
+          // submit() plus bas) : proId est l'id pré-généré qui sera repris
+          // tel quel à la création de la fiche, pour que le crédit "Mises en
+          // contact" (qui a besoin d'un proId dès maintenant, voir /finalize)
+          // retombe bien sur la bonne fiche une fois celle-ci enregistrée.
+          proId: claimingPro ? claimingPro.id : newProId,
           companyName: form.companyName || undefined,
         }),
       });
@@ -558,9 +604,8 @@ function InscriptionForm() {
   const submit = async () => {
     if (!selectedPlan) return;
     // Un second clic avant que le bouton ne se désactive (ex: double-clic
-    // rapide, pas encore de re-rendu) créerait une fiche en double — chaque
-    // appel génère un nouvel id via generateId() tant qu'il ne s'agit pas
-    // d'une revendication de fiche existante.
+    // rapide, pas encore de re-rendu) redéclencherait inutilement tout le
+    // traitement (géocodage, écriture en base, email de confirmation).
     if (loading) return;
     // Honeypot anti-spam : un visiteur réel ne peut jamais remplir ce champ
     // (invisible, hors du parcours au clavier) — un robot qui l'a rempli est
@@ -577,7 +622,11 @@ function InscriptionForm() {
     } catch { /* optionnel */ }
 
     const pro: Professional = {
-      id: claimingPro ? claimingPro.id : generateId(),
+      // Même id que celui déjà transmis comme proId à /api/subscriptions/finalize
+      // (voir handleStripeSuccess) pour une inscription payante avec l'option
+      // "Mises en contact" — indispensable pour que le crédit déjà accordé
+      // pendant le paiement retombe sur cette fiche.
+      id: claimingPro ? claimingPro.id : newProId,
       companyName:   form.companyName,
       siren:         form.siren.replace(/\s/g,""),
       vatNumber:     form.vatNumber || undefined,
