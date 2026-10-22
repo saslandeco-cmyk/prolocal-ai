@@ -82,8 +82,13 @@ function DashboardContent() {
   const [downgrading, setDowngrading] = useState(false);
   const subscriptionManagerRef = useRef<SubscriptionManagerHandle>(null);
 
+  // Évite que le défilement générique vers le haut (ci-dessous) n'interrompe
+  // le défilement ciblé de goToContactRecharge vers une section précise.
+  const skipTabScrollRef = useRef(false);
+
   /** Bascule sur l'onglet Formule puis défile jusqu'à la section "Options complémentaires" (pack "Mises en contact"). */
   const goToContactRecharge = () => {
+    skipTabScrollRef.current = true;
     setActiveTab("plan");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -91,6 +96,13 @@ function DashboardContent() {
       });
     });
   };
+
+  // Remonte en haut de page à chaque changement d'onglet du tableau de bord
+  // (comportement attendu par le professionnel, cf. les étapes d'inscription).
+  useEffect(() => {
+    if (skipTabScrollRef.current) { skipTabScrollRef.current = false; return; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
 
   useEffect(() => { getCategoriesAsync().then(setCategories); }, []);
 
