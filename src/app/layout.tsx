@@ -6,6 +6,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import CookieConsent from "@/components/ui/CookieConsent";
 
 // Remplace l'ancien `@import url(fonts.googleapis.com/...)` dans globals.css
 // (chaîne de requêtes bloquant le rendu : HTML → CSS → CSS distant → police
@@ -114,6 +115,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             dans Vercel Dashboard → projet → onglet Analytics. */}
         <Analytics />
         <SpeedInsights />
+        {/* Google Analytics (GA4) — chargé uniquement après consentement
+            explicite du visiteur (cookies non strictement nécessaires,
+            contrairement aux deux ci-dessus) : voir CookieConsent.tsx. */}
+        <CookieConsent />
       </body>
     </html>
   );
