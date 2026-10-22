@@ -1,11 +1,47 @@
 "use client";
-import { useEffect, useState } from "react";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { GoogleAnalytics, sendGAEvent } from "@next/third-parties/google";
 
 const STORAGE_KEY = "cookie-consent";
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 type Consent = "accepted" | "rejected" | null;
+
+/**
+ * Envoie un événement page_view à chaque changement de route côté client.
+ *
+ * <GoogleAnalytics> n'initialise gtag qu'une seule fois, au montage — ce qui
+ * déclenche un premier page_view automatique, mais Next.js App Router ne
+ * remonte jamais ce composant (il vit dans le layout racine, persistant)
+ * lors d'une navigation interne (clic sur un lien du site) : sans ce
+ * traqueur, seule la toute première page de chaque visite serait comptée
+ * dans Google Analytics, jamais les pages suivantes.
+ *
+ * Isolé dans son propre composant, englobé par <Suspense> (requis par
+ * useSearchParams() en App Router), pour ne pas rendre l'ensemble de
+ * CookieConsent — et donc la bannière elle-même — dépendant d'un Suspense.
+ */
+function GAPageViewTracker() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      // La toute première page est déjà comptée par le page_view automatique
+      // de gtag('config', ...) déclenché au montage de <GoogleAnalytics> —
+      // la renvoyer ici ferait doublon.
+      isFirstRender.current = false;
+      return;
+    }
+    if (!pathname) return;
+    const query = searchParams.toString();
+    sendGAEvent("event", "page_view", { page_path: query ? `${pathname}?${query}` : pathname });
+  }, [pathname, searchParams]);
+
+  return null;
+}
 
 /**
  * Bannière de consentement aux cookies — nécessaire uniquement à cause de
@@ -41,7 +77,14 @@ export default function CookieConsent() {
 
   return (
     <>
-      {consent === "accepted" && <GoogleAnalytics gaId={GA_ID} />}
+      {consent === "accepted" && (
+        <>
+          <GoogleAnalytics gaId={GA_ID} />
+          <Suspense fallback={null}>
+            <GAPageViewTracker />
+          </Suspense>
+        </>
+      )}
 
       {ready && consent === null && (
         <div className="fixed bottom-0 inset-x-0 z-[9999] bg-landes-pine text-white shadow-2xl">
