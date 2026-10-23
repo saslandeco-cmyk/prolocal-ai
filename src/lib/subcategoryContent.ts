@@ -58,12 +58,14 @@ const SUBCATEGORY_INTROS: Record<string, string> = {
 
   // Artisanat & Métiers d'art
   "Archetier": "Vous recherchez un archetier dans les Landes pour l'entretien, la réparation ou l'achat d'un archet pour instrument à cordes ? Que vous soyez musicien professionnel, amateur ou parent d'un jeune apprenti, cet artisan spécialisé vous conseille selon votre pratique et votre budget.",
+  "Bijouterie fantaisie": "Vous recherchez un spécialiste de la bijouterie fantaisie dans les Landes pour un bijou tendance, une création artisanale ou un accessoire original ? Que ce soit pour compléter une tenue, offrir un cadeau abordable ou dénicher une pièce unique, cet artisan vous propose des créations variées à des prix accessibles.",
   "Bijoutier-Joaillier": "Vous recherchez un bijoutier-joaillier dans les Landes pour l'achat, la création sur-mesure ou la réparation d'un bijou ? Que ce soit pour une occasion spéciale, une transmission familiale ou un coup de cœur, cet artisan vous accompagne avec expertise et savoir-faire.",
   "Céramiste": "Vous recherchez un céramiste dans les Landes pour une pièce artisanale, un objet décoratif ou une création sur-mesure ? Que vous soyez particulier, professionnel de la décoration ou amateur d'art, cet artisan façonne des pièces uniques selon vos envies et son savoir-faire.",
   "Chaudronnier": "Vous recherchez un chaudronnier dans les Landes pour la fabrication, la réparation ou la transformation de pièces métalliques ? Que ce soit pour un projet industriel, artisanal ou une pièce sur-mesure, ce professionnel met son savoir-faire technique au service de votre projet.",
   "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "Vous recherchez un décorateur sur céramique ou un peintre sur faïence et porcelaine dans les Landes pour personnaliser ou restaurer une pièce ? Que ce soit pour un objet décoratif, un cadeau unique ou une restauration, cet artisan d'art met sa précision au service de votre projet.",
   "Doreur à la feuille": "Vous recherchez un doreur à la feuille dans les Landes pour la restauration ou la finition d'un objet, d'un cadre ou d'un meuble ? Que ce soit pour un projet de rénovation patrimoniale ou une création contemporaine, cet artisan maîtrise une technique ancestrale exigeante et minutieuse.",
   "Ébéniste": "Vous recherchez un ébéniste dans les Landes pour la création, la restauration ou la réparation d'un meuble en bois ? Que vous souhaitiez une pièce sur-mesure ou redonner vie à un meuble ancien, cet artisan vous apporte son savoir-faire et son sens du détail.",
+  "Fabrication & Restauration de meubles": "Vous recherchez un spécialiste de la fabrication et de la restauration de meubles dans les Landes pour une création sur-mesure ou redonner vie à un meuble ancien ? Que vous souhaitiez un meuble unique en bois ou la réparation d'une pièce de famille, cet artisan vous apporte son savoir-faire et son sens du détail.",
   "Encadreur": "Vous recherchez un encadreur dans les Landes pour mettre en valeur une œuvre, une photo ou un objet précieux ? Que ce soit pour un cadeau, une décoration d'intérieur ou la protection d'une pièce de valeur, cet artisan vous propose un encadrement sur-mesure adapté à votre projet.",
   "Ferronnier d'art": "Vous recherchez un ferronnier d'art dans les Landes pour la création ou la restauration d'une grille, d'un portail ou d'un élément en fer forgé ? Que ce soit pour un projet neuf ou une rénovation patrimoniale, cet artisan allie technique traditionnelle et créativité.",
   "Horloger": "Vous recherchez un horloger dans les Landes pour la réparation, l'entretien ou l'achat d'une montre ou d'une horloge ? Que ce soit une pièce de famille, une montre du quotidien ou une horloge ancienne, cet artisan met sa précision et son expertise au service de votre objet.",
@@ -95,6 +97,7 @@ const SUBCATEGORY_INTROS: Record<string, string> = {
   "Praticien en massage bien-être": "Vous recherchez un praticien en massage bien-être dans les Landes pour soulager les tensions ou vous accorder un moment de détente ? Que ce soit après une journée chargée ou pour un besoin spécifique, ce professionnel adapte sa technique à votre corps et à vos attentes.",
   "Prothésiste ongulaire": "Vous recherchez une prothésiste ongulaire dans les Landes pour une pose, un soin ou une décoration d'ongles ? Que ce soit pour un entretien régulier ou un événement particulier, cette professionnelle réalise des prestations soignées selon vos envies et votre style.",
   "Sophrologue / Réflexologue": "Vous recherchez un sophrologue ou un réflexologue dans les Landes pour mieux gérer le stress, les émotions ou des tensions physiques ? Que ce soit pour un accompagnement ponctuel ou régulier, ce praticien vous propose des séances adaptées à votre rythme et à vos objectifs.",
+  "Toilettage": "Vous recherchez un toiletteur dans les Landes pour l'entretien de votre chien ou de votre chat ? Que ce soit pour une tonte adaptée à la race, un bain ou un soin avant un évènement, ce professionnel prend soin du pelage et de l'hygiène de votre compagnon avec douceur et savoir-faire.",
 
   // Commerce & Vente
   "Ameublement": "Vous recherchez un magasin d'ameublement dans les Landes pour meubler ou réaménager votre intérieur ? Que ce soit pour une pièce entière ou un meuble précis, ces professionnels vous conseillent sur le style, les matériaux et l'agencement adaptés à votre logement.",
@@ -184,12 +187,14 @@ const SUBCATEGORY_DESCRIPTIONS: Record<string, string> = {
 
   // Artisanat & Métiers d'art
   "Archetier": "Un archetier fabrique, répare et entretient les archets des instruments à cordes (violon, alto, violoncelle, contrebasse).",
+  "Bijouterie fantaisie": "Un spécialiste en bijouterie fantaisie crée et vend des bijoux tendance à base de matériaux variés (métal, résine, perles), à des prix plus accessibles que la joaillerie en métaux précieux.",
   "Bijoutier-Joaillier": "Un bijoutier-joaillier crée, répare et vend des bijoux, et peut transformer ou remonter des pièces anciennes sur demande.",
   "Céramiste": "Un céramiste façonne, cuit et décore des pièces en terre ou en porcelaine, qu'il s'agisse de vaisselle, d'objets décoratifs ou de créations sur-mesure.",
   "Chaudronnier": "Un chaudronnier façonne, découpe, plie et assemble des pièces métalliques pour des projets industriels, artisanaux ou sur-mesure.",
   "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "Ce professionnel peint et décore des pièces en céramique, faïence ou porcelaine, qu'elles soient existantes ou entièrement créées sur-mesure.",
   "Doreur à la feuille": "Un doreur à la feuille applique de fines feuilles d'or ou d'argent sur des cadres, meubles ou objets, pour une finition décorative ou une restauration.",
   "Ébéniste": "Un ébéniste conçoit, fabrique et restaure des meubles en bois, en travaillant sur-mesure selon les besoins et le style recherché.",
+  "Fabrication & Restauration de meubles": "Ce professionnel conçoit des meubles sur-mesure et restaure des meubles anciens en bois, en travaillant selon vos besoins et le style recherché.",
   "Encadreur": "Un encadreur conçoit et réalise un encadrement sur-mesure pour une œuvre, une photo ou un objet, en choisissant les matériaux adaptés à sa conservation.",
   "Ferronnier d'art": "Un ferronnier d'art façonne et restaure des éléments en fer forgé (grilles, portails, rampes), alliant technique traditionnelle et créativité.",
   "Horloger": "Un horloger répare, entretient et vend des montres et des horloges, en intervenant aussi bien sur des pièces anciennes que récentes.",
@@ -221,6 +226,7 @@ const SUBCATEGORY_DESCRIPTIONS: Record<string, string> = {
   "Praticien en massage bien-être": "Un praticien en massage bien-être propose des massages adaptés à chacun pour soulager les tensions ou offrir un moment de détente.",
   "Prothésiste ongulaire": "Une prothésiste ongulaire réalise la pose, le soin et la décoration des ongles, selon les envies et le style de chaque cliente.",
   "Sophrologue / Réflexologue": "Ce praticien accompagne la gestion du stress, des émotions ou des tensions physiques par des séances de sophrologie ou de réflexologie.",
+  "Toilettage": "Un toiletteur lave, tond et entretient le pelage des chiens et des chats, en adaptant la coupe à la race et aux besoins de chaque animal.",
 
   // Commerce & Vente
   "Ameublement": "Un magasin d'ameublement vend des meubles et conseille sur l'agencement d'un intérieur, selon le style et les dimensions de chaque pièce.",
@@ -311,6 +317,7 @@ const SUBCATEGORY_ARTICLE: Record<string, "un" | "une"> = {
 
   // Artisanat & Métiers d'art
   "Archetier": "un",
+  "Bijouterie fantaisie": "une",
   "Bijoutier-Joaillier": "un",
   "Céramiste": "un",
   "Chaudronnier": "un",
@@ -318,6 +325,7 @@ const SUBCATEGORY_ARTICLE: Record<string, "un" | "une"> = {
   "Doreur à la feuille": "un",
   "Ébéniste": "un",
   "Encadreur": "un",
+  "Fabrication & Restauration de meubles": "une",
   "Ferronnier d'art": "un",
   "Horloger": "un",
   "Luthier": "un",
@@ -348,6 +356,7 @@ const SUBCATEGORY_ARTICLE: Record<string, "un" | "une"> = {
   "Praticien en massage bien-être": "un",
   "Prothésiste ongulaire": "une",
   "Sophrologue / Réflexologue": "un",
+  "Toilettage": "un",
 
   // Commerce & Vente
   "Ameublement": "un",
@@ -456,6 +465,7 @@ const SUBCATEGORY_ACTIVITY: Record<string, string> = {
 
   // Artisanat & Métiers d'art
   "Archetier": "des archetiers spécialisés dans la fabrication et la réparation d'archets pour instruments à cordes",
+  "Bijouterie fantaisie": "des spécialistes en bijouterie fantaisie proposant des créations tendance à prix accessibles",
   "Bijoutier-Joaillier": "des bijoutiers-joailliers proposant création, vente et réparation de bijoux",
   "Céramiste": "des céramistes créant des pièces artisanales en terre ou en porcelaine",
   "Chaudronnier": "des chaudronniers spécialisés dans la fabrication et la réparation de pièces métalliques",
@@ -463,6 +473,7 @@ const SUBCATEGORY_ACTIVITY: Record<string, string> = {
   "Doreur à la feuille": "des doreurs à la feuille spécialisés dans la dorure de cadres, meubles et objets",
   "Ébéniste": "des ébénistes spécialisés dans la création et la restauration de meubles en bois",
   "Encadreur": "des encadreurs réalisant des encadrements sur-mesure pour œuvres, photos et objets",
+  "Fabrication & Restauration de meubles": "des artisans spécialisés dans la fabrication et la restauration de meubles en bois",
   "Ferronnier d'art": "des ferronniers d'art spécialisés dans la création et la restauration d'éléments en fer forgé",
   "Horloger": "des horlogers spécialisés dans la réparation, l'entretien et la vente de montres et horloges",
   "Luthier": "des luthiers spécialisés dans la fabrication et la réparation d'instruments à cordes",
@@ -493,6 +504,7 @@ const SUBCATEGORY_ACTIVITY: Record<string, string> = {
   "Praticien en massage bien-être": "des praticiens en massage bien-être pour la détente et le soulagement des tensions",
   "Prothésiste ongulaire": "des prothésistes ongulaires proposant pose, soin et décoration d'ongles",
   "Sophrologue / Réflexologue": "des sophrologues et réflexologues pour la gestion du stress et des tensions",
+  "Toilettage": "des toiletteurs proposant toilettage, tonte et soins pour chiens et chats",
 
   // Commerce & Vente
   "Ameublement": "des magasins d'ameublement proposant meubles et conseils d'agencement",
@@ -687,6 +699,10 @@ const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
     { q: "Quand faut-il faire réviser un archet chez un archetier ?", a: "Un archet s'entretient régulièrement : rehaussage de la mèche, vérification du bois et des mécanismes. Un archetier recommande généralement un contrôle au moins une fois par an selon l'usage." },
     { q: "Un archetier peut-il réparer un archet ancien ou de famille ?", a: "Oui, la restauration d'archets anciens fait partie du savoir-faire de cet artisan, qui évalue l'état de la pièce avant d'intervenir." },
   ],
+  "Bijouterie fantaisie": [
+    { q: "La bijouterie fantaisie utilise-t-elle des matériaux précieux ?", a: "Non, contrairement à la joaillerie traditionnelle, la bijouterie fantaisie utilise des matériaux comme le métal plaqué, la résine ou les perles synthétiques, pour des créations tendance à prix plus accessibles." },
+    { q: "Peut-on commander une création personnalisée en bijouterie fantaisie ?", a: "Oui, de nombreux artisans proposent des créations sur-mesure selon vos envies, vos couleurs préférées ou l'occasion (mariage, cadeau, accessoire du quotidien)." },
+  ],
   "Bijoutier-Joaillier": [
     { q: "Un bijoutier peut-il transformer un bijou de famille ?", a: "Oui, de nombreux bijoutiers-joailliers proposent la transformation ou le remontage de bijoux anciens pour leur donner une nouvelle vie, selon vos envies." },
     { q: "Peut-on faire réparer une bague ou un collier abîmé ?", a: "Oui, la réparation (resserrage de pierre, redimensionnement, soudure) fait partie des prestations courantes proposées par ces artisans." },
@@ -714,6 +730,10 @@ const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
   "Encadreur": [
     { q: "Un encadreur peut-il proposer un encadrement adapté à une œuvre fragile ?", a: "Oui, l'encadreur choisit les matériaux (verre, passe-partout, fixation) en fonction de la nature de l'œuvre pour en assurer la meilleure conservation." },
     { q: "Peut-on faire encadrer un diplôme, une photo ou un objet particulier ?", a: "Oui, l'encadrement sur-mesure s'adapte à tout type de support : œuvre d'art, photo, diplôme ou objet à exposer." },
+  ],
+  "Fabrication & Restauration de meubles": [
+    { q: "Peut-on faire restaurer un meuble ancien abîmé ou de famille ?", a: "Oui, la restauration de meubles anciens (réparation, finition, remplacement de pièces) fait partie des prestations courantes de ces artisans." },
+    { q: "Peut-on commander un meuble sur-mesure en bois ?", a: "Oui, la fabrication de meubles sur-mesure selon vos dimensions, vos matériaux et votre style est une spécialité de ce métier." },
   ],
   "Ferronnier d'art": [
     { q: "Un ferronnier d'art peut-il restaurer un portail ou une grille ancienne ?", a: "Oui, la restauration d'éléments en fer forgé fait partie du savoir-faire de cet artisan, qui intervient aussi bien sur du patrimoine ancien que sur des créations récentes." },
@@ -822,6 +842,10 @@ const SUBCATEGORY_FAQ_EXTRA: Record<string, FaqItem[]> = {
   "Sophrologue / Réflexologue": [
     { q: "Combien de séances sont nécessaires avec un sophrologue ou un réflexologue ?", a: "Cela dépend de votre objectif et de votre ressenti personnel. Certains consultent ponctuellement, d'autres choisissent un suivi régulier sur plusieurs séances." },
     { q: "Ces séances sont-elles adaptées à la gestion du stress au travail ?", a: "Oui, la sophrologie et la réflexologie sont souvent utilisées pour accompagner la gestion du stress, de l'anxiété ou des tensions liées au quotidien professionnel." },
+  ],
+  "Toilettage": [
+    { q: "À quelle fréquence faut-il faire toiletter son chien ou son chat ?", a: "Cela dépend de la race et du type de pelage : certains chiens nécessitent un toilettage toutes les 4 à 6 semaines, d'autres animaux beaucoup moins souvent. Un toiletteur des Landes pourra vous conseiller selon votre compagnon." },
+    { q: "Un toiletteur peut-il s'occuper d'un animal anxieux ou peu habitué au toilettage ?", a: "La plupart des toiletteurs ont l'habitude de rassurer les animaux stressés et adaptent leur approche en douceur. N'hésitez pas à mentionner le tempérament de votre animal en prenant rendez-vous." },
   ],
 
   // Commerce & Vente
@@ -1066,12 +1090,14 @@ const SUBCATEGORY_PLURAL: Record<string, string> = {
 
   // Artisanat & Métiers d'art
   "Archetier": "archetiers",
+  "Bijouterie fantaisie": "spécialistes en bijouterie fantaisie",
   "Bijoutier-Joaillier": "bijoutiers-joailliers",
   "Céramiste": "céramistes",
   "Chaudronnier": "chaudronniers",
   "Décorateur sur céramique / Peintre sur faïence ou porcelaine": "décorateurs sur céramique et peintres sur faïence",
   "Doreur à la feuille": "doreurs à la feuille",
   "Ébéniste": "ébénistes",
+  "Fabrication & Restauration de meubles": "artisans en fabrication et restauration de meubles",
   "Encadreur": "encadreurs",
   "Ferronnier d'art": "ferronniers d'art",
   "Horloger": "horlogers",
@@ -1103,6 +1129,7 @@ const SUBCATEGORY_PLURAL: Record<string, string> = {
   "Praticien en massage bien-être": "praticiens en massage bien-être",
   "Prothésiste ongulaire": "prothésistes ongulaires",
   "Sophrologue / Réflexologue": "sophrologues et réflexologues",
+  "Toilettage": "toiletteurs",
 
   // Commerce & Vente
   "Ameublement": "magasins d'ameublement",
@@ -1192,9 +1219,10 @@ export function buildSubcategoryFaq(params: {
   }];
   const description = SUBCATEGORY_DESCRIPTIONS[subcategoryLabel]
     ?? `Un professionnel en ${subcategoryLabel} exerce une activité spécialisée dans ce domaine — consultez les fiches référencées ci-dessus pour en savoir plus sur les prestations proposées localement.`;
+  const article = SUBCATEGORY_ARTICLE[subcategoryLabel] ?? "un";
   return [
     {
-      q: `Que fait un ${subcategoryLabel} ?`,
+      q: `Que fait ${article} ${subcategoryLabel} ?`,
       a: description,
     },
     ...specific,
