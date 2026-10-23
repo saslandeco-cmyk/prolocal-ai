@@ -27,6 +27,21 @@ export async function dbGetTotalContactCredits(proId: string): Promise<number> {
   return rows[0]?.total ?? 0;
 }
 
+/**
+ * Même total que dbGetTotalContactCredits, mais pour tous les
+ * professionnels en une seule requête (export/import CSV admin) — évite
+ * une requête par fiche.
+ */
+export async function dbGetAllContactCreditTotals(): Promise<Record<string, number>> {
+  if (!isDbConfigured) return {};
+  const { rows } = await sql`
+    SELECT pro_id, SUM(quantity)::int AS total FROM contact_recharges GROUP BY pro_id
+  `;
+  const totals: Record<string, number> = {};
+  for (const row of rows) totals[row.pro_id] = row.total;
+  return totals;
+}
+
 /** Historique des recharges, les plus anciennes en premier — utilisé pour le détail affiché au professionnel. */
 export async function dbGetContactRecharges(proId: string): Promise<ContactRecharge[]> {
   if (!isDbConfigured) return [];

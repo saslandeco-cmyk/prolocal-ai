@@ -52,7 +52,13 @@ function normalizeLabelForMatch(s: string): string {
 
 // Bouton "Enregistrer" pour la photo hero — lit l'état depuis le storage
 // Colonnes disponibles pour l'export / import CSV — sélectionnables individuellement
-const COLUMN_DEFS: { label: string; getValue: (p: Professional) => string }[] = [
+// Le solde de "Mises en contact" achetées n'est pas un champ de la fiche
+// professionnelle (c'est une somme calculée sur la table contact_recharges,
+// voir src/lib/db/contactRecharges.ts) — getValue reçoit donc un contexte
+// optionnel avec le total déjà résolu par fiche, chargé une seule fois
+// avant l'export plutôt qu'avec une requête par ligne.
+type ColumnContext = { contactCredits?: Record<string, number> };
+const COLUMN_DEFS: { label: string; getValue: (p: Professional, ctx?: ColumnContext) => string }[] = [
   { label: "ID",                    getValue: p => p.id },
   { label: "Entreprise",            getValue: p => p.companyName },
   { label: "Titre de l'activité",   getValue: p => p.activityTitle ?? "" },
@@ -73,6 +79,7 @@ const COLUMN_DEFS: { label: string; getValue: (p: Professional) => string }[] = 
   { label: "Revendiquée",           getValue: p => (p as any).claimed ? "Oui" : "Non" },
   { label: "Option Encart publicitaire",      getValue: p => (p.complementaryOptions || []).includes("pub") ? "Oui" : "Non" },
   { label: "Option Gestion prospects/clients", getValue: p => (p.complementaryOptions || []).includes("crm") ? "Oui" : "Non" },
+  { label: "Mises en contact",      getValue: (p, ctx) => String(ctx?.contactCredits?.[p.id] ?? 0) },
   { label: "Site web",              getValue: p => p.website ?? "" },
   { label: "Service 1",             getValue: p => p.services?.[0] ?? "" },
   { label: "Service 2",             getValue: p => p.services?.[1] ?? "" },
@@ -2109,11 +2116,16 @@ export default function AdminPage() {
 
           {/* Export CSV */}
           <button
-            onClick={() => {
+            onClick={async () => {
               const cols = COLUMN_DEFS.filter(c => selectedColumns.has(c.label));
               if (cols.length === 0) { alert("Sélectionnez au moins une colonne avant d'exporter."); return; }
+              let contactCredits: Record<string, number> = {};
+              if (selectedColumns.has("Mises en contact")) {
+                const res = await fetch("/api/admin/contact-credits").catch(() => null);
+                if (res?.ok) contactCredits = (await res.json()).credits || {};
+              }
               const headers = cols.map(c => c.label);
-              const rows = pros.map(p => cols.map(c => c.getValue(p)).map(v => `"${String(v).replace(/"/g, '""')}"`));
+              const rows = pros.map(p => cols.map(c => c.getValue(p, { contactCredits })).map(v => `"${String(v).replace(/"/g, '""')}"`));
               const csv = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
               const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
               const url = URL.createObjectURL(blob);
@@ -2428,10 +2440,30 @@ export default function AdminPage() {
                 const hasChanges = !existing || JSON.stringify(existingWithoutTimestamp) !== JSON.stringify(updatedWithoutTimestamp);
 
                 if (hasChanges) {
-                  saveProfessional(await ensureGeocoded(updated));
+                  // Attendu (et non plus laissé en tâche de fond) : le solde
+                  // de mises en contact ci-dessous dépend d'une contrainte
+                  // de clé étrangère vers cette fiche — pour une fiche
+                  // nouvellement créée, elle doit exister en base avant cet
+                  // appel.
+                  await saveProfessional(await ensureGeocoded(updated));
                   if (existing) updatedCount++; else imported++;
                 } else {
                   unchangedCount++;
+                }
+
+                // Solde de "Mises en contact" : pas un champ de la fiche
+                // (table contact_recharges séparée, voir plus haut) — géré
+                // indépendamment de hasChanges, sinon une fiche par ailleurs
+                // inchangée ne verrait jamais son solde ajusté.
+                if (selectedColumns.has("Mises en contact")) {
+                  const targetTotal = parseInt(rawVal("Mises en contact"), 10);
+                  if (!Number.isNaN(targetTotal) && targetTotal >= 0) {
+                    await fetch("/api/admin/contact-credits", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ proId: id, targetTotal }),
+                    }).catch(() => {});
+                  }
                 }
               }
 
