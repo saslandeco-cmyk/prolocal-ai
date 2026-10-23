@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Professional } from "@/types";
 import { MapPin, Phone, Mail, ArrowRight, Award } from "lucide-react";
@@ -64,7 +65,12 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
       {/* Bannière + logo à cheval */}
       <div className="w-full h-32 relative flex-shrink-0">
         {bannerSrc
-          ? <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
+          // Les data URI (fiches pas encore migrées vers Vercel Blob, voir
+          // src/lib/blob.ts) ne passent pas par l'optimiseur next/image —
+          // une balise <img> classique reste le seul moyen de les afficher.
+          ? (bannerSrc.startsWith("data:")
+              ? <img src={bannerSrc} alt="" className="w-full h-full object-cover" />
+              : <Image src={bannerSrc} alt="" fill sizes="(max-width: 640px) 100vw, 400px" className="object-cover" />)
           : <div className="w-full h-full bg-gradient-to-br from-landes-pine via-landes-forest to-landes-ocean" />
         }
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -79,11 +85,21 @@ export default function ProfessionalCard({ pro: propPro, hideGoldRing = false }:
         {/* Logo positionné à cheval sur la bannière et le contenu */}
         <div className="absolute -bottom-7 left-5">
           {pro.logo ? (
-            <img
-              src={pro.logo}
-              alt={`Logo ${pro.companyName}`}
-              className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
-            />
+            pro.logo.startsWith("data:") ? (
+              <img
+                src={pro.logo}
+                alt={`Logo ${pro.companyName}`}
+                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+              />
+            ) : (
+              <Image
+                src={pro.logo}
+                alt={`Logo ${pro.companyName}`}
+                width={56}
+                height={56}
+                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+              />
+            )
           ) : (
             <div className="w-14 h-14 bg-gradient-to-br from-landes-forest to-landes-sage rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-md">
               {initials}
