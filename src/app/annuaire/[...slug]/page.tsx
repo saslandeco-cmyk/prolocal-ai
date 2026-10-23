@@ -13,6 +13,9 @@ import { getGoogleRating, combineRatings, getGoogleReviews } from "@/lib/googleP
 import AnnuaireCatchAllClient from "@/components/professional/AnnuaireCatchAllClient";
 import type { Professional } from "@/types";
 import { normalizeFrPhone } from "@/lib/phone";
+import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
+
+const DEFAULT_OG_IMAGE = { url: "/logo.jpg", width: 1254, height: 1254, alt: "Prolocal-Landes" };
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -90,11 +93,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         ? `Retrouvez tous les professionnels de la catégorie ${categoryLabel} à ${cityMeta.name}, dans les Landes. Coordonnées, avis et informations pratiques.`
         : cityMeta.seoTitle + `. Retrouvez tous les professionnels et commerçants référencés à ${cityMeta.name} (${cityMeta.postalCode}) sur Prolocal-Landes.`;
 
+      const bannerSrc = categoryLabel ? DEFAULT_BANNERS[categoryLabel] : undefined;
+
       return {
         title,
         description,
         alternates: { canonical: url },
-        openGraph: { title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "website" },
+        openGraph: {
+          title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "website",
+          images: bannerSrc
+            ? [{ url: bannerSrc, width: 1200, height: 400, alt: categoryLabel! }]
+            : [DEFAULT_OG_IMAGE],
+        },
       };
     }
   }
@@ -126,7 +136,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       openGraph: {
         title, description, url,
         siteName: "Prolocal-Landes", locale: "fr_FR", type: "profile",
-        images: pro.banner ? [{ url: pro.banner }] : pro.logo ? [{ url: pro.logo }] : undefined,
+        images: pro.banner
+          ? [{ url: pro.banner, alt: pro.companyName }]
+          : pro.logo
+          ? [{ url: pro.logo, alt: pro.companyName }]
+          : [DEFAULT_OG_IMAGE],
       },
     };
   }
@@ -139,7 +153,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "profile" },
+    openGraph: { title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "profile", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     description: "Comparez les formules Standard, Premium et Gold et les options complémentaires proposées aux professionnels landais.",
     url: `${baseUrl}/services-professionnels`,
     siteName: "Prolocal-Landes", locale: "fr_FR", type: "website",
+    images: [{ url: "/logo.jpg", width: 1254, height: 1254, alt: "Prolocal-Landes" }],
   },
 };
 

@@ -4,6 +4,7 @@ import { categoryLabelFromSlug, subcategoryLabelFromSlug, buildProfileUrl } from
 import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsBySubcategory } from "@/lib/db/professionals";
 import { buildSubcategoryFaq, buildSubcategoryMetaDescription } from "@/lib/subcategoryContent";
+import { DEFAULT_BANNERS, DEFAULT_SUBCATEGORY_BANNERS } from "@/lib/defaultBanners";
 import SubcategoryPage from "@/components/category/SubcategoryPage";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
@@ -47,11 +48,18 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   const cityCount = new Set(initialPros.map(p => p.city).filter(Boolean)).size;
   const description = buildSubcategoryMetaDescription({ subcategoryLabel, proCount: initialPros.length, cityCount });
 
+  const bannerSrc = DEFAULT_SUBCATEGORY_BANNERS[subcategoryLabel] || DEFAULT_BANNERS[categoryLabel];
+
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "website" },
+    openGraph: {
+      title, description, url, siteName: "Prolocal-Landes", locale: "fr_FR", type: "website",
+      images: bannerSrc
+        ? [{ url: bannerSrc, width: 1200, height: 400, alt: subcategoryLabel }]
+        : [{ url: "/logo.jpg", width: 1254, height: 1254, alt: "Prolocal-Landes" }],
+    },
   };
 }
 

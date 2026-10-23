@@ -5,6 +5,7 @@ import { dbGetCategories } from "@/lib/db/categories";
 import { dbGetProfessionalsByCategory } from "@/lib/db/professionals";
 import type { CategoryRecord } from "@/lib/categories";
 import { buildProfileUrl } from "@/lib/profileUrl";
+import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.prolocal-landes.fr";
 
@@ -60,6 +61,9 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
       siteName: "Prolocal-Landes",
       locale: "fr_FR",
       type: "website",
+      images: DEFAULT_BANNERS[cat.label]
+        ? [{ url: DEFAULT_BANNERS[cat.label], width: 1200, height: 400, alt: cat.label }]
+        : [{ url: "/logo.jpg", width: 1254, height: 1254, alt: "Prolocal-Landes" }],
     },
   };
 }

@@ -41,7 +41,9 @@ export const metadata: Metadata = {
     siteName: "Prolocal-Landes",
     locale: "fr_FR",
     type: "website",
+    images: [{ url: "/logo.jpg", width: 1254, height: 1254, alt: "Prolocal-Landes" }],
   },
+  twitter: { card: "summary_large_image" },
   // Balises géo classiques pour le référencement local (SEO local historique,
   // toujours reconnues par certains outils/annuaires) — centrées sur le
   // département des Landes.

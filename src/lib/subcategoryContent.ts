@@ -602,7 +602,11 @@ export function buildSubcategoryLandingContent(params: {
   };
 }
 
-const META_DESCRIPTION_MAX = 360;
+// Cible ~155-160 caractères (longueur d'affichage habituelle d'un extrait
+// Google) avec une marge de sécurité pour les libellés de sous-catégorie les
+// plus longs — au-delà, truncate() coupe proprement sur un mot entier plutôt
+// que de laisser Google tronquer lui-même en plein milieu d'une phrase.
+const META_DESCRIPTION_MAX = 165;
 
 /** Coupe proprement sur un mot entier plutôt qu'en plein milieu, avec une ellipse. */
 function truncate(text: string, max: number): string {
@@ -616,7 +620,9 @@ function truncate(text: string, max: number): string {
  * Meta description (et description OpenGraph) de la page sous-catégorie —
  * rédigée dans un ton naturel, comme on s'adresserait à un visiteur plutôt
  * qu'une accumulation de mots-clés, tout en restant pertinente localement
- * (Landes, nombre de professionnels, communes). Plafonnée à 360 caractères.
+ * (Landes, nombre de professionnels, communes). Volontairement courte
+ * (~155-160 caractères visés) pour ne jamais être tronquée au milieu d'une
+ * phrase dans les résultats de recherche Google.
  */
 export function buildSubcategoryMetaDescription(params: {
   subcategoryLabel: string;
@@ -626,8 +632,8 @@ export function buildSubcategoryMetaDescription(params: {
   const { subcategoryLabel, proCount, cityCount } = params;
 
   const text = proCount > 0
-    ? `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Prolocal-Landes recense ${proCount} professionnel${proCount > 1 ? "s" : ""} de confiance${cityCount > 0 ? `, réparti${proCount > 1 ? "s" : ""} dans ${cityCount} commune${cityCount > 1 ? "s" : ""} du département` : ""}, avec coordonnées et avis clients, pour trouver facilement la bonne personne près de chez vous.`
-    : `Vous cherchez un professionnel en ${subcategoryLabel} dans les Landes ? Aucune fiche n'est encore publiée pour ce secteur, mais notre plateforme s'enrichit chaque semaine. Vous exercez ce métier ? Référencez gratuitement votre entreprise dès maintenant.`;
+    ? `${subcategoryLabel} dans les Landes : ${proCount} professionnel${proCount > 1 ? "s" : ""} de confiance${cityCount > 0 ? ` dans ${cityCount} commune${cityCount > 1 ? "s" : ""}` : ""}, coordonnées et avis clients sur Prolocal-Landes.`
+    : `${subcategoryLabel} dans les Landes : aucun professionnel référencé pour l'instant. Vous exercez ce métier ? Référencez gratuitement votre entreprise.`;
 
   return truncate(text, META_DESCRIPTION_MAX);
 }
