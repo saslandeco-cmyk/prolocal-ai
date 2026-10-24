@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Camera, Upload, X, ImageIcon, Loader2 } from "lucide-react";
 import { getHeroImage, saveHeroImage, deleteHeroImage } from "@/lib/storage";
+import { canvasToCompressedDataUrl } from "@/lib/imageUtils";
 
-// Compresse une image hero (max 1400px, qualité 0.82)
+// Compresse une image hero (max 1400px, qualité 0.78, WebP avec repli JPEG)
 async function compressHeroImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -16,7 +17,7 @@ async function compressHeroImage(file: File): Promise<string> {
       canvas.width = width; canvas.height = height;
       canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.82));
+      resolve(canvasToCompressedDataUrl(canvas, 0.78));
     };
     img.onerror = reject;
     img.src = url;

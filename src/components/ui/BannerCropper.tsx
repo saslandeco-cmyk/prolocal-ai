@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { X, ZoomIn, ZoomOut, Check } from "lucide-react";
+import { canvasToCompressedDataUrl } from "@/lib/imageUtils";
 
 // Ratio fixe correspondant à l'affichage réel des bannières sur le site
 // (hero de fiche pro : h-44/h-56 sur toute la largeur ≈ 2.8:1), et à la
@@ -104,10 +105,12 @@ export default function BannerCropper({ file, onCropped, onCancel }: Props) {
 
     ctx.drawImage(imgRef.current, dx, dy, imgSize.width * srcScale, imgSize.height * srcScale);
 
-    // Qualité JPEG relevée (0.85 au lieu de 0.75) — le recadrage précis
-    // réduit déjà le poids du fichier par rapport à l'image source complète,
-    // la marge est utilisée pour préserver la netteté plutôt que le poids.
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    // Qualité relevée (0.80) — le recadrage précis réduit déjà le poids du
+    // fichier par rapport à l'image source complète, la marge est utilisée
+    // pour préserver la netteté plutôt que le poids. Encodage en WebP avec
+    // repli JPEG (voir canvasToCompressedDataUrl) pour un fichier plus léger
+    // à qualité égale.
+    const dataUrl = canvasToCompressedDataUrl(canvas, 0.80);
     setProcessing(false);
     onCropped(dataUrl);
   };
