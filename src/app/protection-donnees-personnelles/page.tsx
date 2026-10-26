@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 export const metadata = {
   title: "Protection des données personnelles — Prolocal-landes.fr",
   description: "Politique de protection des données personnelles (RGPD) du site Prolocal-landes.fr, annuaire des professionnels des Landes.",
+  alternates: { canonical: "/protection-donnees-personnelles" },
 };
 
 export default function DonneesPersonnellesPage() {

@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { CITY_META } from "@/lib/cityData";
 import { dbGetCategories } from "@/lib/db/categories";
 
 export const revalidate = 3600;
+
+// Sans metadata propre ici, la page héritait du titre/description
+// génériques du layout racine (partagés avec de nombreuses autres pages),
+// ce que Search Console signalait comme contenu en double sans URL
+// canonique sélectionnée.
+export const metadata: Metadata = {
+  title: "Toutes les catégories de professionnels dans les Landes | Prolocal-Landes",
+  description: "Parcourez toutes les catégories de professionnels et commerçants référencés dans les Landes (40) : artisanat, bâtiment, beauté, restauration, services à la personne et plus encore.",
+  alternates: { canonical: "/categories" },
+};
 
 export default async function CategoriesPage() {
   const categories = await dbGetCategories();

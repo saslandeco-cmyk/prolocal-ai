@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -21,6 +22,14 @@ import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 // régénération. Voir monitoring/README.md pour le contexte (réduction du
 // Fast Origin/Data Transfer Vercel).
 export const revalidate = 3600;
+
+// Sans canonical explicite ici, Search Console signalait la page d'accueil
+// comme "Page en double sans URL canonique sélectionnée par l'utilisateur"
+// — titre/description hérités du layout racine, seule l'URL canonique est
+// déclarée ici.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const STATS = [
   { value: "500+", label: "Professionnels référencés" },

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 export const metadata = {
   title: "Conditions Générales d'Utilisation — Prolocal-landes.fr",
   description: "Conditions Générales d'Utilisation (CGU) du site Prolocal-landes.fr, annuaire des professionnels des Landes.",
+  alternates: { canonical: "/cgu" },
 };
 
 export default function CguPage() {
