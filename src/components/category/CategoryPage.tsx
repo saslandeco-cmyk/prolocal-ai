@@ -7,6 +7,7 @@ import { Search, MapPin, ArrowRight, ChevronRight, ChevronDown, X, TrendingUp, L
 import { DEFAULT_BANNERS } from "@/lib/defaultBanners";
 import { getListingRank } from "@/lib/listingOrder";
 import { useInView } from "@/lib/useInView";
+import { useIsDesktop } from "@/lib/useIsDesktop";
 import { Professional } from "@/types";
 import ProfessionalCard from "@/components/professional/ProfessionalCard";
 import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
@@ -207,6 +208,10 @@ export default function CategoryPage({ meta, initialPros }: Props) {
   // "bootup-time") n'est montée qu'à l'approche du viewport, pour ne pas
   // bloquer le fil principal dès le chargement de la page.
   const [mapRef, mapInView] = useInView<HTMLDivElement>();
+  // Le `hidden lg:block` posé plus bas ne suffit pas à lui seul à empêcher le
+  // téléchargement de l'image sur mobile (voir useIsDesktop.ts) — ce
+  // composant n'est donc monté qu'une fois le viewport desktop confirmé.
+  const isDesktop = useIsDesktop();
 
   // FAQ — même contenu, calculé de façon identique, que le JSON-LD FAQPage
   // généré côté serveur (voir app/categories/[category]/page.tsx), pour que
@@ -271,41 +276,48 @@ export default function CategoryPage({ meta, initialPros }: Props) {
             </div>
 
             {/* RIGHT — diaporama des encarts publicitaires ciblés de cette catégorie
-                (ou image bannière par défaut / compteur si aucun encart actif) */}
-            <div className="hidden lg:block">
-              <HeroPubSlideshow
-                category={meta.category}
-                initialPros={initialPros}
-                fallback={
-                  DEFAULT_BANNERS[meta.category] ? (
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[400px]">
-                      {/* Pas de `priority` : masqué en CSS (hidden lg:block)
-                          sur mobile — voir le commentaire détaillé dans
-                          HeroPubSlideshow.tsx. */}
-                      <Image src={DEFAULT_BANNERS[meta.category]} alt={meta.category} fill sizes="600px" className="object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
-                        <p className="text-2xl font-bold">{pros.length}</p>
-                        <p className="text-xs text-white/70">professionnel{pros.length > 1 ? "s" : ""}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-6 h-[400px]">
-                      <div className="bg-white/10 backdrop-blur-sm rounded-3xl px-14 py-10 border border-white/20 flex flex-col items-center gap-4">
-                        <div className="text-8xl select-none">{meta.emoji}</div>
-                        <div className="text-center border-t border-white/20 pt-5 w-full">
-                          <p className="text-5xl font-bold text-white">{pros.length}</p>
-                          <p className="text-gray-300 text-sm mt-1">professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}</p>
+                (ou image bannière par défaut / compteur si aucun encart actif).
+                `min-h-[400px]` réserve la place immédiatement (évite un saut
+                de mise en page desktop le temps que useIsDesktop se résolve) ;
+                le contenu n'est monté qu'une fois le viewport desktop
+                confirmé — un simple `hidden lg:block` ne suffit pas à
+                empêcher le téléchargement de l'image sur mobile, voir
+                useIsDesktop.ts. */}
+            <div className="hidden lg:block min-h-[400px]">
+              {isDesktop && (
+                <>
+                  <HeroPubSlideshow
+                    category={meta.category}
+                    initialPros={initialPros}
+                    fallback={
+                      DEFAULT_BANNERS[meta.category] ? (
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[400px]">
+                          <Image src={DEFAULT_BANNERS[meta.category]} alt={meta.category} fill sizes="600px" className="object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
+                            <p className="text-2xl font-bold">{pros.length}</p>
+                            <p className="text-xs text-white/70">professionnel{pros.length > 1 ? "s" : ""}</p>
+                          </div>
                         </div>
-                      </div>
-                      <p className="text-white/40 text-xs text-center max-w-xs">Mise à jour en temps réel · Landes (40)</p>
-                    </div>
-                  )
-                }
-              />
-              <p className="text-xs text-white/50 text-center mt-3">
-                Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
-              </p>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-6 h-[400px]">
+                          <div className="bg-white/10 backdrop-blur-sm rounded-3xl px-14 py-10 border border-white/20 flex flex-col items-center gap-4">
+                            <div className="text-8xl select-none">{meta.emoji}</div>
+                            <div className="text-center border-t border-white/20 pt-5 w-full">
+                              <p className="text-5xl font-bold text-white">{pros.length}</p>
+                              <p className="text-gray-300 text-sm mt-1">professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}</p>
+                            </div>
+                          </div>
+                          <p className="text-white/40 text-xs text-center max-w-xs">Mise à jour en temps réel · Landes (40)</p>
+                        </div>
+                      )
+                    }
+                  />
+                  <p className="text-xs text-white/50 text-center mt-3">
+                    Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 

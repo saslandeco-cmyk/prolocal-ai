@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Briefcase, ChevronRight, Search, MapPin, X, Loader2, LocateFixed, ArrowRight, ChevronDown } from "lucide-react";
 import { getListingRank } from "@/lib/listingOrder";
 import { useInView } from "@/lib/useInView";
+import { useIsDesktop } from "@/lib/useIsDesktop";
 import { categorySlug } from "@/lib/profileUrl";
 import { CITY_META } from "@/lib/cityData";
 import { Professional } from "@/types";
@@ -172,6 +173,10 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
   const [mapRef, mapInView] = useInView<HTMLDivElement>();
   const catMeta = categories.find(c => c.label === categoryLabel);
   const bannerSrc = DEFAULT_SUBCATEGORY_BANNERS[subcategoryLabel] || DEFAULT_BANNERS[categoryLabel];
+  // Le `hidden lg:block` ci-dessous ne suffit pas à lui seul à empêcher le
+  // téléchargement de l'image sur mobile (voir useIsDesktop.ts) — ce
+  // composant n'est donc monté qu'une fois le viewport desktop confirmé.
+  const isDesktop = useIsDesktop();
 
   return (
     <div className="bg-landes-cream min-h-screen">
@@ -222,44 +227,50 @@ export default function SubcategoryPage({ categoryLabel, subcategoryLabel, initi
 
             {/* RIGHT — diaporama des encarts publicitaires ciblés de cette
                 sous-catégorie (ou image bannière par défaut / emoji si aucun
-                encart actif) */}
-            <div className="hidden lg:block">
-              <HeroPubSlideshow
-                category={categoryLabel}
-                subcategory={subcategoryLabel}
-                initialPros={initialPros}
-                fallback={
-                  bannerSrc ? (
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[400px]">
-                      {/* Pas de `priority` : masqué en CSS (hidden lg:block)
-                          sur mobile — voir le commentaire détaillé dans
-                          HeroPubSlideshow.tsx. */}
-                      <Image src={bannerSrc} alt={subcategoryLabel} fill sizes="600px" className="object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      {pros.length > 0 && (
-                        <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
-                          <p className="text-2xl font-bold">{pros.length}</p>
-                          <p className="text-xs text-white/70">professionnel{pros.length > 1 ? "s" : ""}</p>
+                encart actif). `min-h-[400px]` réserve la place immédiatement
+                (évite un saut de mise en page desktop le temps que
+                useIsDesktop se résolve) ; le contenu lui-même n'est monté
+                qu'une fois le viewport desktop confirmé — un simple
+                `hidden lg:block` ne suffit pas à empêcher le téléchargement
+                de l'image sur mobile, voir useIsDesktop.ts. */}
+            <div className="hidden lg:block min-h-[400px]">
+              {isDesktop && (
+                <>
+                  <HeroPubSlideshow
+                    category={categoryLabel}
+                    subcategory={subcategoryLabel}
+                    initialPros={initialPros}
+                    fallback={
+                      bannerSrc ? (
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[400px]">
+                          <Image src={bannerSrc} alt={subcategoryLabel} fill sizes="600px" className="object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          {pros.length > 0 && (
+                            <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white text-center">
+                              <p className="text-2xl font-bold">{pros.length}</p>
+                              <p className="text-xs text-white/70">professionnel{pros.length > 1 ? "s" : ""}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-6 min-h-[400px]">
-                      <div className="bg-white/10 backdrop-blur-sm rounded-3xl px-14 py-10 border border-white/20 flex flex-col items-center gap-4">
-                        <div className="text-8xl select-none">{catMeta?.emoji || "💼"}</div>
-                        <div className="text-center border-t border-white/20 pt-5 w-full">
-                          <p className="text-5xl font-bold text-white">{pros.length}</p>
-                          <p className="text-gray-300 text-sm mt-1">professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}</p>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-6 min-h-[400px]">
+                          <div className="bg-white/10 backdrop-blur-sm rounded-3xl px-14 py-10 border border-white/20 flex flex-col items-center gap-4">
+                            <div className="text-8xl select-none">{catMeta?.emoji || "💼"}</div>
+                            <div className="text-center border-t border-white/20 pt-5 w-full">
+                              <p className="text-5xl font-bold text-white">{pros.length}</p>
+                              <p className="text-gray-300 text-sm mt-1">professionnel{pros.length > 1 ? "s" : ""} référencé{pros.length > 1 ? "s" : ""}</p>
+                            </div>
+                          </div>
+                          <p className="text-white/40 text-xs text-center max-w-xs">Mise à jour en temps réel · Landes (40)</p>
                         </div>
-                      </div>
-                      <p className="text-white/40 text-xs text-center max-w-xs">Mise à jour en temps réel · Landes (40)</p>
-                    </div>
-                  )
-                }
-              />
-              <p className="text-xs text-white/50 text-center mt-3">
-                Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
-              </p>
+                      )
+                    }
+                  />
+                  <p className="text-xs text-white/50 text-center mt-3">
+                    Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -128,17 +128,17 @@ export default function HeroPubSlideshow({ category, subcategory, fallback, init
             large ici) — le wrapper relative+flex-1 reproduit exactement le
             dimensionnement qu'avait l'<img> d'origine, pour que `fill` sache
             quelle taille remplir.
-            ⚠️ Pas de `priority` ici volontairement : ce composant est
-            masqué en CSS (`hidden lg:block` posé par la page appelante) sur
-            mobile, où le sous-titre du hero devient le LCP à la place. Or
-            `priority` force un fetch immédiat en priorité "High" même pour
-            un élément display:none (vérifié via le réseau capturé par
-            Lighthouse) — gaspillant de la bande passante mobile et
-            retardant le téléchargement d'éléments réellement visibles. Sans
-            `priority`, next/image utilise le chargement différé natif du
-            navigateur, qui ne déclenche jamais le téléchargement tant que
-            l'élément reste display:none — et charge toujours aussi vite sur
-            desktop/tablette, où il est visible dès le premier écran. */}
+            ⚠️ Pas de `priority` ici volontairement : ce composant est caché
+            sur mobile (voir useIsDesktop.ts côté pages appelantes), où le
+            sous-titre du hero devient le LCP à la place.
+            ⚠️ Un simple `hidden lg:block` en CSS ne suffisait PAS à lui
+            seul à empêcher le téléchargement sur mobile malgré l'absence de
+            `priority` : vérifié par une capture réseau réelle sur le site
+            en production, l'image était quand même chargée — et même dans
+            une résolution plus grande que sur desktop (le ratio d'écran
+            mobile appliqué à `sizes="600px"` demandait une variante plus
+            large). Les pages appelantes ne montent donc ce composant
+            qu'après confirmation JS du viewport desktop. */}
         <div className="relative w-full flex-1 min-h-0 overflow-hidden">
           <Image
             src={pro.banner || pro.logo || "/placeholder-banner.jpg"}
