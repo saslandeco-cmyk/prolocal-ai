@@ -1,10 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search, MapPin, ArrowRight,
   Trees, Shield, TrendingUp,
 } from "lucide-react";
 import { PLANS } from "@/types";
-import HeroPubSlideshow from "@/components/ui/HeroPubSlideshow";
+import HeroPubSlideshowGate from "@/components/ui/HeroPubSlideshowGate";
 import NeedSearchBar from "@/components/ai/NeedSearchBar";
 import FeaturedProfessionals from "@/components/professional/FeaturedProfessionals";
 import FullWidthMap from "@/components/map/FullWidthMap";
@@ -72,12 +73,12 @@ export default async function HomePage() {
               </p>
             </div>
 
-            {/* RIGHT — diaporama des encarts publicitaires ciblés */}
-            <div className="hidden lg:block">
-              <HeroPubSlideshow initialPros={initialPros} />
-              <p className="text-xs text-white/50 text-center mt-3">
-                Pour afficher votre fiche professionnelle dans ce diaporama, activez l&apos;option « Encart publicitaire » dans votre tableau de bord.
-              </p>
+            {/* RIGHT — diaporama des encarts publicitaires ciblés.
+                `min-h-[400px]` réserve la place immédiatement (évite un
+                saut de mise en page desktop le temps que useIsDesktop se
+                résolve, voir HeroPubSlideshowGate.tsx). */}
+            <div className="hidden lg:block min-h-[400px]">
+              <HeroPubSlideshowGate initialPros={initialPros} />
             </div>
           </div>
 
@@ -128,8 +129,8 @@ export default async function HomePage() {
                 className="card overflow-hidden hover:shadow-md hover:border-landes-sage/30 border border-transparent transition-all duration-200 group flex flex-col">
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-landes-pine/5">
                   {image ? (
-                    <img src={image} alt={cat.label}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <Image src={image} alt={cat.label} fill sizes="(max-width: 1023px) 50vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-5xl">{cat.emoji}</div>
                   )}
