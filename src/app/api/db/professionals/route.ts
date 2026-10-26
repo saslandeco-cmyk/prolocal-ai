@@ -4,6 +4,7 @@ import { isDbConfigured } from "@/lib/db/client";
 import { dbGetAllProfessionals, dbSaveProfessional, dbGetProfessionalsByCategory, dbMarkMigrated } from "@/lib/db/professionals";
 import { uploadProfessionalImages } from "@/lib/blob";
 import { isRateLimited, getClientIp } from "@/lib/rateLimit";
+import { sanitizeDescriptionHtml } from "@/lib/sanitizeHtml";
 
 // Seuil volontairement généreux : cette route sert aussi bien l'écriture
 // ponctuelle (inscription, revendication, édition dashboard) que l'import
@@ -50,6 +51,12 @@ export async function POST(req: NextRequest) {
     const pro = await req.json();
     if (!pro?.id || !pro?.companyName) {
       return NextResponse.json({ error: "Objet Professional invalide (id et companyName requis)." }, { status: 400 });
+    }
+    // Nettoie le HTML de la description (éditeur de texte riche) avant tout
+    // enregistrement — elle est affichée sans échappement (dangerouslySetInnerHTML)
+    // sur la fiche publique et le tableau de bord. Voir src/lib/sanitizeHtml.ts.
+    if (typeof pro.description === "string") {
+      pro.description = sanitizeDescriptionHtml(pro.description);
     }
     // Remplace toute image encore en base64 (logo/bannière/photos) par son
     // URL Vercel Blob avant écriture — évite d'alourdir durablement la
