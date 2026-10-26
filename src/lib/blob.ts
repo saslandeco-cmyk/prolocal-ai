@@ -1,4 +1,5 @@
 import { put } from "@vercel/blob";
+import sharp from "sharp";
 import type { Professional } from "@/types";
 
 /**
@@ -36,17 +37,45 @@ function extensionFor(contentType: string): string {
   return ext ? ext.replace("jpeg", "jpg") : "jpg";
 }
 
+const ALLOWED_IMAGE_FORMATS = new Set(["jpeg", "png", "webp", "gif", "avif"]);
+
 /**
- * Remplace une image base64 par son URL Vercel Blob. Ne fait rien (retourne
- * la valeur telle quelle) si ce n'est pas une data URI (déjà une URL), si le
- * store Blob n'est pas configuré, ou en cas d'échec de l'upload — n'empêche
- * jamais l'enregistrement de la fiche pour autant.
+ * Vérifie que le buffer est réellement une image décodable dans un format
+ * autorisé, plutôt que de faire confiance au content-type déclaré par le
+ * client dans le préfixe de la data URI (`data:image/jpeg;base64,...`),
+ * trivialement falsifiable par un appel direct à l'API en contournant la
+ * compression canvas du navigateur — qui, elle, ne produit jamais que de
+ * vraies images. Sans cette vérification, un fichier arbitraire (y compris
+ * potentiellement malveillant) pourrait être hébergé sur le domaine du
+ * site, déguisé en logo/bannière/photo.
+ */
+async function isValidImageBuffer(buffer: Buffer): Promise<boolean> {
+  try {
+    const metadata = await sharp(buffer).metadata();
+    return Boolean(metadata.format && ALLOWED_IMAGE_FORMATS.has(metadata.format));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Remplace une image base64 par son URL Vercel Blob. Retourne `undefined`
+ * si le contenu n'est pas une image valide (voir isValidImageBuffer) —
+ * jamais stockée, ni en Blob ni en base64 dans la base de données. Sinon,
+ * ne fait rien (retourne la valeur telle quelle) si ce n'est pas une data
+ * URI (déjà une URL), si le store Blob n'est pas configuré, ou en cas
+ * d'échec de l'upload — n'empêche jamais l'enregistrement du reste de la
+ * fiche pour autant.
  */
 async function uploadIfDataUri(value: string | undefined, pathname: string): Promise<string | undefined> {
   if (!value || !value.startsWith("data:")) return value;
-  if (!isBlobConfigured) return value;
   const parsed = parseDataUri(value);
   if (!parsed) return value;
+  if (!(await isValidImageBuffer(parsed.buffer))) {
+    console.warn(`[blob] Fichier rejeté (contenu non reconnu comme une image valide) : ${pathname}`);
+    return undefined;
+  }
+  if (!isBlobConfigured) return value;
   try {
     const { url } = await put(`${pathname}.${extensionFor(parsed.contentType)}`, parsed.buffer, {
       access: "public",
