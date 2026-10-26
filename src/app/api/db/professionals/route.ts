@@ -3,6 +3,15 @@ import { revalidatePath } from "next/cache";
 import { isDbConfigured } from "@/lib/db/client";
 import { dbGetAllProfessionals, dbSaveProfessional, dbGetProfessionalsByCategory, dbMarkMigrated } from "@/lib/db/professionals";
 import { uploadProfessionalImages } from "@/lib/blob";
+import { isRateLimited, getClientIp } from "@/lib/rateLimit";
+
+// Seuil volontairement généreux : cette route sert aussi bien l'écriture
+// ponctuelle (inscription, revendication, édition dashboard) que l'import
+// CSV en masse depuis l'admin (potentiellement des centaines de lignes en
+// quelques minutes depuis la même IP) — l'objectif est de freiner un bot
+// créant des fiches en masse, pas de gêner un usage légitime.
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
 /**
  * GET  /api/db/professionals            → liste tous les professionnels
@@ -33,6 +42,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Base de données non configurée (POSTGRES_URL manquante)." }, { status: 503 });
   }
   try {
+    const ip = getClientIp(req);
+    if (isRateLimited(`professionals-post:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+      return NextResponse.json({ error: "Trop de requêtes récentes. Merci de réessayer dans quelques instants." }, { status: 429 });
+    }
+
     const pro = await req.json();
     if (!pro?.id || !pro?.companyName) {
       return NextResponse.json({ error: "Objet Professional invalide (id et companyName requis)." }, { status: 400 });

@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDbConfigured } from "@/lib/db/client";
 import { dbGetReviewsByPro, dbSaveReview } from "@/lib/db/reviews";
+import { isRateLimited, getClientIp } from "@/lib/rateLimit";
+
+// Partagé entre le dépôt d'avis public (rare, quelques-uns par visiteur) et
+// la modération en masse depuis l'admin (approbation/rejet de plusieurs
+// avis à la suite) — seuil choisi pour freiner un bot déposant des faux
+// avis en masse sans gêner une session de modération normale.
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
 /**
  * GET  /api/db/reviews?proId=X → avis d'un professionnel
@@ -28,6 +36,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Base de données non configurée (POSTGRES_URL manquante)." }, { status: 503 });
   }
   try {
+    const ip = getClientIp(req);
+    if (isRateLimited(`reviews-post:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+      return NextResponse.json({ error: "Trop de requêtes récentes. Merci de réessayer dans quelques instants." }, { status: 429 });
+    }
+
     const review = await req.json();
     if (!review?.id || !review?.proId) {
       return NextResponse.json({ error: "Objet Review invalide (id et proId requis)." }, { status: 400 });

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isRateLimited, getClientIp } from "@/lib/rateLimit";
+
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
  * POST /api/auth/send-reset-code
@@ -11,6 +15,12 @@ import { NextRequest, NextResponse } from "next/server";
  * envoi réel), pour permettre de tester le parcours complet malgré tout —
  * cohérent avec le reste du site (voir /api/invoices/send-xml).
  *
+ * Protection anti-spam légère (limite de débit par IP ET par email ciblé —
+ * un même visiteur ne demande jamais plus de quelques codes en 15 minutes,
+ * et un email donné ne doit pas pouvoir être "bombardé" même depuis des IP
+ * différentes). Voir src/lib/rateLimit.ts pour les limites de cette
+ * approche.
+ *
  * Body attendu : { email: string, code: string, companyName?: string }
  */
 export async function POST(req: NextRequest) {
@@ -18,6 +28,16 @@ export async function POST(req: NextRequest) {
     const { email, code, companyName } = await req.json();
     if (!email || !code) {
       return NextResponse.json({ error: "email et code sont requis." }, { status: 400 });
+    }
+
+    const ip = getClientIp(req);
+    const limitedByIp = isRateLimited(`reset-code:ip:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    const limitedByEmail = isRateLimited(`reset-code:email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (limitedByIp || limitedByEmail) {
+      return NextResponse.json(
+        { error: "Trop de demandes récentes. Merci de réessayer dans quelques minutes." },
+        { status: 429 }
+      );
     }
 
     const resendKey = process.env.RESEND_API_KEY;
