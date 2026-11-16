@@ -44,6 +44,18 @@ const nextConfig = {
         destination: "https://prolocal-landes.fr/:path*",
         permanent: true,
       },
+      // Domaine Vercel par défaut (prolocal-ai.vercel.app) — toujours actif
+      // en plus du domaine personnalisé une fois celui-ci relié au projet.
+      // Sans cette redirection, Google pourrait indexer les deux URLs comme
+      // du contenu dupliqué, et les visiteurs arrivant sur l'URL Vercel
+      // (liens partagés, anciens signets...) ne verraient jamais le vrai
+      // domaine du site.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "prolocal-ai.vercel.app" }],
+        destination: "https://www.prolocal-landes.fr/:path*",
+        permanent: true,
+      },
     ];
   },
 };
